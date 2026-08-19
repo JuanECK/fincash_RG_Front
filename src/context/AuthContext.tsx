@@ -1,0 +1,39 @@
+import React, { createContext, useContext, useState, type ReactNode,  } from 'react';
+
+// 🔄 Expandimos los roles permitidos en el sistema a tus 4 tipos reales
+export type UserRole = 'superAdmin' | 'admin' | 'clienteApp' | 'capturista';
+
+interface User {
+  idUsuario: string;
+  Usuario: string;
+  role: UserRole;
+  nombreCompleto: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  login: (userData: User) => void;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+
+  const login = (userData: User) => setUser(userData);
+  const logout = () => setUser(null);
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+//   console.log({contextoUsuario:context})
+  if (!context) throw new Error('useAuth debe usarse dentro de un AuthProvider');
+  return context;
+};
