@@ -1,4 +1,4 @@
-import  React  from 'react';
+// import  React  from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
@@ -18,7 +18,8 @@ function App() {
           <Route 
             path="/admin/dashboard" 
             element={
-              <ProtectedRoute allowedRoles={['superAdmin']}>
+              <ProtectedRoute allowedRoles={[1]}>
+              {/* <ProtectedRoute allowedRoles={['superAdmin']}> */}
                 <AdminDashboard />
               </ProtectedRoute>
             } 
@@ -28,21 +29,22 @@ function App() {
           <Route 
             path="/user/home" 
             element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <UserHome />
+              <ProtectedRoute allowedRoles={[2]}>
+              {/* <ProtectedRoute allowedRoles={['clienteApp']}> */}
+              <UserHome />
               </ProtectedRoute>
             } 
           />
           
           {/* 🔒 Rutas Protegidas para Clientes Regulares */}
-          <Route 
+          {/* <Route 
             path="/user/home" 
             element={
               <ProtectedRoute allowedRoles={['clienteApp']}>
                 <UserHome />
               </ProtectedRoute>
             } 
-          />
+          /> */}
 
           {/* Redirección por defecto si escriben cualquier otra cosa */}
           <Route path="*" element={<Navigate to="/" replace />} />

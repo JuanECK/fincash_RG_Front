@@ -1,12 +1,15 @@
 import React, { createContext, useContext, useState, type ReactNode,  } from 'react';
 
 // 🔄 Expandimos los roles permitidos en el sistema a tus 4 tipos reales
-export type UserRole = 'superAdmin' | 'admin' | 'clienteApp' | 'capturista';
+// export type UserRole = 'superAdmin' | 'admin' | 'clienteApp' | 'capturista';
+export type UserRole = 1 | 2;
 
 interface User {
   idUsuario: string;
   Usuario: string;
+  idPerfil:number;
   role: UserRole;
+  // role:1 | 2 ;
   nombreCompleto: string;
 }
 
