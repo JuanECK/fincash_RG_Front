@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { api } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext'; // Importamos el contexto
-import fa from 'zod/v4/locales/fa.cjs';
 
 const loginSchema = z.object({
   email: z.email('Verifica tu escritura, correo electrónico no válido'),
@@ -20,12 +19,53 @@ export const LoginPage: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false); // 👈 Controla la transición de opacidad
   const navigate = useNavigate(); // 🔄 Instancia del navegador
   const { login } = useAuth();    // 🔄 Instancia del contexto global
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true); // 👈 Nuevo: Evita parpadeos visuales
 
   const handleToggle = () => setShowPassword((prev) => !prev);
 
   const isButtonDisabled = email.trim() === '' || password.trim() === '' || isLoading;
-  
-    // ⏱️ EFECTO PARA EL POPUP DE 4 SEGUNDOS CON TRANSICIÓN SUAVE
+
+  // =============================================================================================
+  // 🛡️ REHIDRATACIÓN DE SESIÓN: Comprueba si ya existe una cookie activa al cargar la página
+  // =============================================================================================
+    useEffect(() => {
+    const verificarSesionActiva = async () => {
+      try {
+        const response = await api.get('/auth/me');
+        
+        if (response.data.status === 200) {
+          const { idUsuario, idPerfil, nombreCompleto } = response.data;
+          
+          const perfilNumero = Number.parseInt(idPerfil, 10);
+          const userRole = (perfilNumero === 1 || perfilNumero === 2) ? 1 : 2;
+
+          console.log(response.data)
+
+        //   // Restauramos el estado global
+          login({ role: userRole, idPerfil:idPerfil, idUsuario:idUsuario, nombreCompleto:nombreCompleto });
+
+          const mapaRutas: Record<1 | 2, string> = {
+            1: '/admin/dashboard',
+            2: '/user/home'
+          };
+
+          // Auto-redirección inmediata sin pedir credenciales
+          navigate(mapaRutas[userRole], { replace: true });
+        }
+      } catch {
+        // Si falla (no hay cookie o expiró), simplemente dejamos al usuario en el formulario
+        console.log('Sin sesión previa activa en las cookies.');
+      } finally {
+        setIsCheckingAuth(false); // Apagamos la pantalla de carga
+      }
+    };
+
+    verificarSesionActiva();
+  }, [navigate, login]);
+
+  // =============================================================================================
+  // ⏱️ EFECTO PARA EL POPUP DE 4 SEGUNDOS CON TRANSICIÓN SUAVE
+  // =============================================================================================
   useEffect(() => {
     if (serverError) {
       // 1. Aparece suavemente al cambiar a true
@@ -47,12 +87,13 @@ export const LoginPage: React.FC = () => {
       };
     }
   }, [serverError]);
-
-  //Verifica que la estructura del correo sea la correcta con el efecto onBlur
+// =============================================================================================
+// VERIFICA QUE LA ESTRUCTURA DEL CORREO SEA LA CORRECTA CON EL EFECTO ONBLUR
+// =============================================================================================
   const verificaEmail = () => {
     const validation = loginSchema.safeParse({ email });
     if (!validation.success) {
-      setErrors({email:'Verifica tu escritura, correo electrónico no válido'});
+      setErrors({email:'El formato del correo no es correcto'});
       
       return;
     }
@@ -60,6 +101,9 @@ export const LoginPage: React.FC = () => {
 
   }
 
+// =============================================================================================
+// INICIAMOS EL SUBMIT DE LOGIN
+// =============================================================================================
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrors({});
@@ -81,32 +125,32 @@ export const LoginPage: React.FC = () => {
     try {
       const response = await api.post('/auth/login', { email, password });
 
-      
       if (response.data.status !== 200) {
         //muestra una u otra respuesta de error debajo de los input
         switch (response.data.status){
           case 500:
             setServerError(response.data.error.message);
+          break
           case 401:
             response.data.error.code === '401-1' ? setErrors({email:response.data.error.message}) : setErrors({password:response.data.error.message})
+          break
         }
         setIsLoading(false);
         return;
       }
 
-      const { user, redirectTo } = response.data;
+      const { user } = response.data;
+      // const { user, redirectTo } = response.data;
 
-      const perfilNumero = parseInt(user.idPerfil, 10);
-      let userRole: 1 | 2 = 2; // Por defecto inicializa en el número 2
+      const perfilNumero = Number.parseInt(user.idPerfil, 10);
+      let userRole: 1 | 2 = 2; //Número de roles disponibles
        if (perfilNumero === 1 || perfilNumero === 2) {
         userRole = 1; // 1 y 2 mapean al número 1
-      } else if (perfilNumero === 3 || perfilNumero === 4) {
-        userRole = 2; // 3 y 4 mapean al número 2
       }
+      //  else if (perfilNumero === 3 || perfilNumero === 4) {
+      //   userRole = 2; // 3 y 4 mapean al número 2
+      // }
 
-
-      // const { idUsuario, idPerfil, nombreCompleto, Usuario } = response.data.user;
-      // const { redirectTo } = response.data
 
       // 🗺️ DICCIONARIO DE TRADUCCIÓN: Convierte el número ID de SQL Server a Rol de Frontend
       // const mapaRoles: Record<string | number, 'superAdmin' | 'admin' | 'clienteApp' | 'capturista'> = {
@@ -116,45 +160,45 @@ export const LoginPage: React.FC = () => {
       //   4: 'capturista'
       // };
 
-      const mapaRoles: Record< number, 1 | 2 > = {
-        1:1,
-        2:1,
-        3:2,
-        4:2
-      }
+      // const mapaRoles: Record< number, 1 | 2 > = {
+      //   1:1,
+      //   2:1,
+      //   3:2,
+      //   4:2
+      // }
 
-      // Extraemos el rol. Si la BD manda algo raro por error, cae en 'clienteApp' por seguridad (Fallback)
-      // const userRole = mapaRoles[idPerfil] || 'capturista';
-      // const userRole = mapaRoles[user.idPerfil];
-      
-      // console.log({redirectTo:redirectTo}, idUsuario, idPerfil, nombreCompleto, Usuario)
-      console.log('rold del usuario ',userRole)
-      login({ role: userRole, idPerfil:user.idPerfil, Usuario: user.Usuario, idUsuario: user.idUsuario, nombreCompleto:user.nombreCompleto });
-            // Guardamos la sesión en el contexto global
-      // login({
-      //   idUsuario,
-      //   Usuario,
-      //   role: userRole,
-      //   nombreCompleto,
-      // });
-      console.log(redirectTo)
+      login({ role: userRole, idPerfil:user.idPerfil, idUsuario: user.idUsuario, nombreCompleto:user.nombreCompleto });
 
+      const mapaRutas: Record<1 | 2, string> = {
+        1: '/admin/dashboard',
+        2: '/user/home'
+      };
+
+      // Guardamos la sesión en el contexto global
        setTimeout(() => {
-        navigate(redirectTo, { replace: true });
+        navigate(mapaRutas[userRole], { replace: true });
       }, 0);
 
-      // navigate(redirectTo);
-      // alert(`Redirigiendo a: ${redirectTo}`);
       
-    } catch (error) {
+    // Mientras revisa si hay una cookie, mostramos una pantalla limpia de carga
+    } catch {
       setServerError('problema de conexión con el servidor');
     } finally {
       setIsLoading(false);
     }
-
-
   };
 
+// =============================================================================================
+// ACTIVAMOS EL SPINNER DE CARGA PARA NO MOSTRAR UN PARPADEO DE PANTALLA O UNA PANTALLA VACIA
+// =============================================================================================
+    if (isCheckingAuth) {
+    return (
+      <div className="login-page-container">
+        <span className="spinner" />
+      </div>
+    );
+  }
+// =============================================================================================
   return (
     <div className="login-page-container">
       <div className="login-card">
