@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { logoutSession } from '../services/api';
+import { api, logoutSession } from '../services/api';
 
 export const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -15,19 +15,86 @@ export const AdminDashboard: React.FC = () => {
     { id: '2', nombre: 'Juan Pérez González', tarjeta: '9158 6042 3371 4289', vigencia: '25/12/2026', correo: 'juan@fincashrg.com', clienteNo: '000006', asignada: '1111 0000 2222 0000' },
     { id: '3', nombre: 'María López Hernández', tarjeta: '2764 8519 1043 6975', vigencia: '25/12/2026', correo: 'maria@fincashrg.com', clienteNo: '000007', asignada: '3333 4444 5555 6666' },
     { id: '4', nombre: 'Carlos Ramírez Torres', tarjeta: '6381 4725 9806 1537', vigencia: '24/12/2026', correo: 'carlos@fincashrg.com', clienteNo: '000008', asignada: '7777 8888 9999 0000' },
-    { id: '5', nombre: 'Ana Martínez Sánchez', tarjeta: '7490 2816 5347 9201', vigencia: '24/12/2026', correo: 'ana@fincashrg.com', clienteNo: '000009', asignada: '1234 5678 9012 3456' },
+    { id: '5', nombre: 'Carlos Ramírez Torres', tarjeta: '6381 4725 9806 1537', vigencia: '24/12/2026', correo: 'carlos@fincashrg.com', clienteNo: '000008', asignada: '7777 8888 9999 0000' },
+    { id: '6', nombre: 'Ana Martínez Sánchez', tarjeta: '7490 2816 5347 9201', vigencia: '24/12/2026', correo: 'ana@fincashrg.com', clienteNo: '000009', asignada: '1234 5678 9012 3456' },
+    { id: '7', nombre: 'Hugo Sánchez Márques', tarjeta: '4827 1936 7504 8612', vigencia: '25/12/2026', correo: 'usuario@fincashrg.com', clienteNo: '000005', asignada: '0000 0000 0000 0000' },
+    { id: '8', nombre: 'Juan Pérez González', tarjeta: '9158 6042 3371 4289', vigencia: '25/12/2026', correo: 'juan@fincashrg.com', clienteNo: '000006', asignada: '1111 0000 2222 0000' },
+    { id: '9', nombre: 'María López Hernández', tarjeta: '2764 8519 1043 6975', vigencia: '25/12/2026', correo: 'maria@fincashrg.com', clienteNo: '000007', asignada: '3333 4444 5555 6666' },
+    { id: '10', nombre: 'Carlos Ramírez Torres', tarjeta: '6381 4725 9806 1537', vigencia: '24/12/2026', correo: 'carlos@fincashrg.com', clienteNo: '000008', asignada: '7777 8888 9999 0000' },
+    { id: '11', nombre: 'Ana Martínez Sánchez', tarjeta: '7490 2816 5347 9201', vigencia: '24/12/2026', correo: 'ana@fincashrg.com', clienteNo: '000009', asignada: '1234 5678 9012 3456' },
+    { id: '12', nombre: 'Hugo Sánchez Márques', tarjeta: '4827 1936 7504 8612', vigencia: '25/12/2026', correo: 'usuario@fincashrg.com', clienteNo: '000005', asignada: '0000 0000 0000 0000' },
+    { id: '13', nombre: 'Juan Pérez González', tarjeta: '9158 6042 3371 4289', vigencia: '25/12/2026', correo: 'juan@fincashrg.com', clienteNo: '000006', asignada: '1111 0000 2222 0000' },
+    { id: '14', nombre: 'María López Hernández', tarjeta: '2764 8519 1043 6975', vigencia: '25/12/2026', correo: 'maria@fincashrg.com', clienteNo: '000007', asignada: '3333 4444 5555 6666' },
+    { id: '15', nombre: 'Carlos Ramírez Torres', tarjeta: '6381 4725 9806 1537', vigencia: '24/12/2026', correo: 'carlos@fincashrg.com', clienteNo: '000008', asignada: '7777 8888 9999 0000' },
   ];
   
   // PROVICIONALES A LAS CONSULTAS REALES
-  const [selectedClient, setSelectedClient] = useState(mockTarjetahabientes[0]);
+  // const [selectedClient, setSelectedClient] = useState(mockTarjetahabientes[0]);
+  // const [centroActivo, setCentroActivo] = useState('Xolos');
+
+  // 🔢 ESTADOS DE PAGINACIÓN DINÁMICA
+  const [tarjetahabientes, setTarjetahabientes] = useState<any[]>([]);
+  const [selectedClient, setSelectedClient] = useState<any | null>(null);
+  const [idCentroN, setidCentroN] = useState(1);
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [isLoadingTable, setIsLoadingTable] = useState(false);
   const [centroActivo, setCentroActivo] = useState('Xolos');
+  const limitePorPagina = 5; // Cantidad de filas exactas por pantalla según tu diseño
 
 // Mock de historial simula sp_historial_movimientos_app
 const mockCompras = [
   { fecha: '12 Diciembre 2025', items: [{ desc: 'Carga de gasolina', precio: '$700.00' }, { desc: 'Limpiadores líquidos', precio: '$150.00' }, { desc: 'Limpiadores líquidos', precio: '$150.00' }] },
   { fecha: '7 Noviembre 2025', items: [{ desc: 'Carga de gasolina', precio: '$700.00' }, { desc: 'Limpiadores líquidos', precio: '$150.00' }, { desc: 'Carga de gasolina', precio: '$700.00' }, { desc: 'Limpiadores líquidos', precio: '$150.00' }] }
 ];
+// =============================================================================================
 
+  // 🔄 EFFECT: Se ejecuta al cargar la página y cada vez que cambia 'paginaActual'
+  useEffect(() => {
+    const cargarDatosPaginados = async () => {
+      setIsLoadingTable(true);
+      try {
+        // Hacemos la consulta parametrizada al Backend pasando la página actual
+        const response = await api.get(`/admin/targetahabientes?idCentroN=${idCentroN}&page=${paginaActual}&limit=${limitePorPagina}`);
+        console.log(response)
+        
+        if (response.data.status === 'success') {
+          const { tarjetahabientes: datosFilas, paginacion } = response.data.data;
+          
+          setTarjetahabientes(datosFilas);
+          setTotalPaginas(paginacion.totalPaginas);
+          
+          // Seleccionamos automáticamente el primer cliente de la nueva página por estética
+          if (datosFilas.length > 0) {
+            setSelectedClient(datosFilas[0]);
+          }
+        }
+      } catch (error) {
+        console.error('Error cargando la tabla paginada de red:', error);
+      } finally {
+        setIsLoadingTable(false);
+      }
+    };
+
+    cargarDatosPaginados();
+  }, [paginaActual]); // 👈 Escucha los cambios de página
+
+    // Función auxiliar para renderizar los números de las páginas dinámicamente
+  const renderNumerosPaginacion = () => {
+    const paginas = [];
+    for (let i = 1; i <= totalPaginas; i++) {
+      paginas.push(
+        <button type="button"
+          key={i}
+          onClick={() => setPaginaActual(i)}
+          className={`pagination-btn ${paginaActual === i ? 'active' : ''}`}
+        >
+          {i}
+        </button>
+      );
+    }
+    return paginas;
+  };
 
 // =============================================================================================
 // INICIAMOS EL CIERRE DE SESION SEGURA
@@ -184,45 +251,28 @@ return (
           
           <div className="flex justify-between items-center py-2">
             <div className="bg-(--MediumBlue) rounded-full px-5 py-3 font-semibold text-[14px]">
-              <span>No. de tarjetas <samp className="pr-5"></samp> <strong className="text-white ">35</strong></span>
+              <span className="input-condensed">No. de tarjetas <samp className="pr-5"></samp> <strong className="text-white input-condensed">35</strong></span>
             </div>
            
             
             <div className="bg-(--MediumBlue) rounded-full text-right flex items-center justify-between px-5">
-              <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 px-9 ">Cargos Globales</p>
-              <p className="text-2xl font-black text-[#00E5FF] tracking-tight">$3,500,000.00</p>
+              <p className="text-[15px] font-bold tracking-wider text-slate-400 pr-14 py-2">Cargos Globales</p>
+              <p className="input-condensed text-2xl font-bold text-white tracking-tight py-1">$3,500,000.00</p>
             </div>
           </div>
         </section>
-        {/* <section className="stats-card-header"> 
-          <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight pl-3">{centroActivo}</h1>
-            <div className="bg-(--MediumBlue) rounded-full px-5 py-3 mt-2 font-semibold text-[14px]">
-              <span>No. de tarjetas <samp className="pr-5"></samp> <strong className="text-white ">35</strong></span>
-            </div>
-          </div>
-          
-          <div className="flex items-center flex-col gap-4">
-            <div className="relative">
-              <input type="text" placeholder="No. de tarjeta o nombre de tarjetahabiente" className="search-input-box" />
-              <span className="absolute right-3 top-2.5 text-slate-400 text-xs">🔍</span>
-            </div>
-            
-            <div className="text-right">
-              <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Cargos Globales</p>
-              <p className="text-2xl font-black text-[#00E5FF] tracking-tight">$3,500,000.00</p>
-            </div>
-          </div>
-        </section> */}
+
 
         {/* Listado de Tarjetahabientes (Tabla) */}
         <section className="table-container">
-          <table className="data-table">
+          
+          {/* <table className="data-table">
             <thead>
               <tr>
                 <th>Tarjetahabiente</th>
                 <th>No. de Tarjeta</th>
                 <th>Vigencia</th>
+                <td className="w-3 p-0"></td>
                 <th className="text-center">Acciones</th>
               </tr>
             </thead>
@@ -231,35 +281,68 @@ return (
                 <tr 
                   key={item.id} 
                   onClick={() => setSelectedClient(item)}
-                  className={selectedClient.id === item.id ? 'selected' : ''}
+                  className={selectedClient.id === item.id ? 'selected ' : ''}
                 >
-                  <td className="font-bold text-white">{item.nombre}</td>
+                  <td className="font-bold text-white rounded-tl-full rounded-bl-full">{item.nombre}</td>
                   <td className="font-mono text-slate-300 tracking-wider">{item.tarjeta}</td>
-                  <td>{item.vigencia}</td>
-                  <td>
-                    <div className="flex justify-center gap-2">
-                      <button className="action-icon-btn">💳</button>
-                      <button className="action-icon-btn">📊</button>
-                      <button className="action-icon-btn">📄</button>
+                  <td className="rounded-tr-full rounded-br-full ">{item.vigencia}</td>
+
+                  <td className="w-3 p-0 bg-(--fondo)! [.selected>&]:bg-(--fondo)!"></td>
+
+                  <td className="rounded-tl-full rounded-bl-full rounded-tr-full rounded-br-full ">
+                    <div className="flex justify-center gap-2 ">
+                      <button type="button" className="action-icon-btn">
+                        <span>
+                        <svg width="14" height="13" viewBox="0 0 14 13" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M11.5312 2.0918C12.1406 2.0918 12.5996 2.24414 12.9082 2.54883C13.2168 2.84961 13.3711 3.30273 13.3711 3.9082V9.97266C13.3711 10.5781 13.2246 11.0312 12.9316 11.332C12.6387 11.6367 12.2305 11.7891 11.707 11.7891H6.24609C6.40625 11.5117 6.53125 11.2148 6.62109 10.8984C6.71094 10.582 6.75586 10.2539 6.75586 9.91406C6.75586 9.39453 6.65625 8.9082 6.45703 8.45508C6.26172 7.99805 5.99023 7.5957 5.64258 7.24805C5.29492 6.90039 4.89258 6.62891 4.43555 6.43359C3.97852 6.23438 3.49023 6.13477 2.9707 6.13477V3.9082C2.9707 3.30273 3.12305 2.84961 3.42773 2.54883C3.73633 2.24414 4.19727 2.0918 4.81055 2.0918H11.5312ZM5.85938 2.32031C5.85938 1.88672 5.96094 1.49609 6.16406 1.14844C6.36719 0.796875 6.64258 0.517578 6.99023 0.310547C7.33789 0.103516 7.73047 0 8.16797 0C8.60547 0 8.99805 0.103516 9.3457 0.310547C9.69727 0.517578 9.97461 0.796875 10.1777 1.14844C10.3809 1.49609 10.4824 1.88672 10.4824 2.32031L9.53906 2.32617C9.53906 2.04492 9.48047 1.79688 9.36328 1.58203C9.25 1.36719 9.08984 1.19922 8.88281 1.07812C8.67969 0.953125 8.44141 0.890625 8.16797 0.890625C7.89844 0.890625 7.66016 0.953125 7.45312 1.07812C7.25 1.19922 7.08984 1.36719 6.97266 1.58203C6.85938 1.79688 6.80273 2.04492 6.80273 2.32617L5.85938 2.32031ZM2.97656 12.8906C2.57031 12.8906 2.1875 12.8125 1.82812 12.6562C1.46875 12.5039 1.15234 12.291 0.878906 12.0176C0.605469 11.7441 0.390625 11.4277 0.234375 11.0684C0.078125 10.709 0 10.3242 0 9.91406C0 9.50391 0.078125 9.12109 0.234375 8.76562C0.390625 8.40625 0.605469 8.08984 0.878906 7.81641C1.15234 7.53906 1.46875 7.32422 1.82812 7.17188C2.1875 7.01562 2.57031 6.9375 2.97656 6.9375C3.38672 6.9375 3.77148 7.01562 4.13086 7.17188C4.49023 7.32422 4.80664 7.53711 5.08008 7.81055C5.35352 8.08398 5.56641 8.40039 5.71875 8.75977C5.875 9.11914 5.95312 9.50391 5.95312 9.91406C5.95312 10.3203 5.875 10.7031 5.71875 11.0625C5.5625 11.4219 5.3457 11.7383 5.06836 12.0117C4.79492 12.2852 4.47852 12.5 4.11914 12.6562C3.75977 12.8125 3.37891 12.8906 2.97656 12.8906ZM2.9707 11.7773C3.08008 11.7773 3.16602 11.7441 3.22852 11.6777C3.29492 11.6113 3.32812 11.5254 3.32812 11.4199V10.2715H4.47656C4.58203 10.2715 4.66797 10.2383 4.73438 10.1719C4.80078 10.1094 4.83398 10.0234 4.83398 9.91406C4.83398 9.80469 4.80078 9.71875 4.73438 9.65625C4.66797 9.58984 4.58203 9.55664 4.47656 9.55664H3.32812V8.4082C3.32812 8.30273 3.29492 8.2168 3.22852 8.15039C3.16602 8.08398 3.08008 8.05078 2.9707 8.05078C2.86133 8.05078 2.77344 8.08398 2.70703 8.15039C2.64453 8.2168 2.61328 8.30273 2.61328 8.4082V9.55664H1.46484C1.35938 9.55664 1.27344 9.58984 1.20703 9.65625C1.14062 9.71875 1.10742 9.80469 1.10742 9.91406C1.10742 10.0234 1.14062 10.1094 1.20703 10.1719C1.27344 10.2383 1.35938 10.2715 1.46484 10.2715H2.61328V11.4199C2.61328 11.5254 2.64453 11.6113 2.70703 11.6777C2.77344 11.7441 2.86133 11.7773 2.9707 11.7773Z"/>
+                        </svg>
+                        </span>
+                      </button>
+                      <button type="button" className="action-icon-btn">
+                        <span>
+                          <svg width="16" height="10" viewBox="0 0 16 10" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M0 9.2168V0.462891C0 0.322266 0.0429688 0.210938 0.128906 0.128906C0.214844 0.0429687 0.328125 0 0.46875 0H15.0059C15.1465 0 15.2578 0.0429687 15.3398 0.128906C15.4258 0.210938 15.4688 0.322266 15.4688 0.462891V9.2168C15.4688 9.35742 15.4258 9.4707 15.3398 9.55664C15.2578 9.64258 15.1465 9.68555 15.0059 9.68555H0.46875C0.328125 9.68555 0.214844 9.64258 0.128906 9.55664C0.0429688 9.4707 0 9.35742 0 9.2168ZM1.07227 8.25586C1.07227 8.49414 1.18945 8.61328 1.42383 8.61328H14.0449C14.2793 8.61328 14.3965 8.49414 14.3965 8.25586V1.42969C14.3965 1.19141 14.2793 1.07227 14.0449 1.07227H1.42383C1.18945 1.07227 1.07227 1.19141 1.07227 1.42969V8.25586ZM1.68164 7.86328V1.82227C1.68164 1.72852 1.72852 1.68164 1.82227 1.68164H6.39258C6.08789 1.99414 5.84961 2.42188 5.67773 2.96484C5.50586 3.50391 5.41992 4.12695 5.41992 4.83398C5.41992 5.54102 5.50586 6.16797 5.67773 6.71484C5.85352 7.25781 6.0957 7.6875 6.4043 8.00391H1.82227C1.72852 8.00391 1.68164 7.95703 1.68164 7.86328ZM6.12305 4.83398C6.12305 4.22461 6.1875 3.69141 6.31641 3.23438C6.44922 2.77734 6.63477 2.42188 6.87305 2.16797C7.11523 1.91406 7.39453 1.78711 7.71094 1.78711C8.03906 1.78711 8.32617 1.91406 8.57227 2.16797C8.82227 2.42188 9.01562 2.77734 9.15234 3.23438C9.28906 3.69141 9.35742 4.22461 9.35742 4.83398C9.35742 5.44336 9.28906 5.97656 9.15234 6.43359C9.01562 6.89062 8.82227 7.24805 8.57227 7.50586C8.32617 7.75977 8.03906 7.88672 7.71094 7.88672C7.39453 7.88672 7.11523 7.75977 6.87305 7.50586C6.63477 7.24805 6.44922 6.89062 6.31641 6.43359C6.1875 5.97656 6.12305 5.44336 6.12305 4.83398ZM9.05273 8.00391C9.36523 7.6875 9.60938 7.25781 9.78516 6.71484C9.96484 6.16797 10.0547 5.54102 10.0547 4.83398C10.0547 4.12695 9.9668 3.50391 9.79102 2.96484C9.61523 2.42188 9.37109 1.99414 9.05859 1.68164H13.6465C13.7402 1.68164 13.7871 1.72852 13.7871 1.82227V7.86328C13.7871 7.95703 13.7402 8.00391 13.6465 8.00391H9.05273Z"/>
+                          </svg>
+                        </span>
+                      </button>
+                      <button type="button" className="action-icon-btn">
+                        <span>
+                          <svg width="15" height="11" viewBox="0 0 15 11" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1.83984 10.7871C1.23047 10.7871 0.771484 10.6348 0.462891 10.3301C0.154297 10.0293 0 9.57617 0 8.9707V1.81641C0 1.21094 0.154297 0.757812 0.462891 0.457031C0.771484 0.152344 1.23047 0 1.83984 0H9.84375C10.457 0 10.916 0.152344 11.2207 0.457031C11.5293 0.757812 11.6836 1.21094 11.6836 1.81641V2.49609C11.4805 2.44141 11.2793 2.41406 11.0801 2.41406C10.8926 2.41406 10.709 2.43945 10.5293 2.49023C10.3535 2.53711 10.1855 2.60742 10.0254 2.70117C9.98633 2.69336 9.94531 2.6875 9.90234 2.68359C9.86328 2.67969 9.82031 2.67773 9.77344 2.67773H1.75781C1.49609 2.67773 1.29492 2.74805 1.1543 2.88867C1.01367 3.02539 0.943359 3.22852 0.943359 3.49805V9.02344C0.943359 9.29297 1.01367 9.49609 1.1543 9.63281C1.29492 9.77344 1.49609 9.84375 1.75781 9.84375H6.79102C6.75977 9.99609 6.74609 10.1504 6.75 10.3066C6.75391 10.4668 6.78906 10.627 6.85547 10.7871H1.83984ZM4.69336 4.78125C4.5918 4.78125 4.52148 4.76367 4.48242 4.72852C4.44336 4.68945 4.42383 4.61914 4.42383 4.51758V4.17188C4.42383 4.07031 4.44336 4 4.48242 3.96094C4.52148 3.92188 4.5918 3.90234 4.69336 3.90234H5.03906C5.14453 3.90234 5.2168 3.92188 5.25586 3.96094C5.29492 4 5.31445 4.07031 5.31445 4.17188V4.51758C5.31445 4.61914 5.29492 4.68945 5.25586 4.72852C5.2168 4.76367 5.14453 4.78125 5.03906 4.78125H4.69336ZM6.64453 4.78125C6.53906 4.78125 6.4668 4.76367 6.42773 4.72852C6.38867 4.68945 6.36914 4.61914 6.36914 4.51758V4.17188C6.36914 4.07031 6.38867 4 6.42773 3.96094C6.4668 3.92188 6.53906 3.90234 6.64453 3.90234H6.98438C7.08984 3.90234 7.16211 3.92188 7.20117 3.96094C7.24023 4 7.25977 4.07031 7.25977 4.17188V4.51758C7.25977 4.61914 7.24023 4.68945 7.20117 4.72852C7.16211 4.76367 7.08984 4.78125 6.98438 4.78125H6.64453ZM2.74805 6.69727C2.64648 6.69727 2.57422 6.67969 2.53125 6.64453C2.49219 6.60547 2.47266 6.53516 2.47266 6.43359V6.08789C2.47266 5.98633 2.49219 5.91797 2.53125 5.88281C2.57422 5.84375 2.64648 5.82422 2.74805 5.82422H3.09375C3.19531 5.82422 3.26562 5.84375 3.30469 5.88281C3.34766 5.91797 3.36914 5.98633 3.36914 6.08789V6.43359C3.36914 6.53516 3.34766 6.60547 3.30469 6.64453C3.26562 6.67969 3.19531 6.69727 3.09375 6.69727H2.74805ZM4.69336 6.69727C4.5918 6.69727 4.52148 6.67969 4.48242 6.64453C4.44336 6.60547 4.42383 6.53516 4.42383 6.43359V6.08789C4.42383 5.98633 4.44336 5.91797 4.48242 5.88281C4.52148 5.84375 4.5918 5.82422 4.69336 5.82422H5.03906C5.14453 5.82422 5.2168 5.84375 5.25586 5.88281C5.29492 5.91797 5.31445 5.98633 5.31445 6.08789V6.43359C5.31445 6.53516 5.29492 6.60547 5.25586 6.64453C5.2168 6.67969 5.14453 6.69727 5.03906 6.69727H4.69336ZM6.64453 6.69727C6.53906 6.69727 6.4668 6.67969 6.42773 6.64453C6.38867 6.60547 6.36914 6.53516 6.36914 6.43359V6.08789C6.36914 5.98633 6.38867 5.91797 6.42773 5.88281C6.4668 5.84375 6.53906 5.82422 6.64453 5.82422H6.98438C7.08984 5.82422 7.16211 5.84375 7.20117 5.88281C7.24023 5.91797 7.25977 5.98633 7.25977 6.08789V6.43359C7.25977 6.53516 7.24023 6.60547 7.20117 6.64453C7.16211 6.67969 7.08984 6.69727 6.98438 6.69727H6.64453ZM2.74805 8.61914C2.64648 8.61914 2.57422 8.59961 2.53125 8.56055C2.49219 8.52148 2.47266 8.45117 2.47266 8.34961V8.00391C2.47266 7.90234 2.49219 7.83398 2.53125 7.79883C2.57422 7.75977 2.64648 7.74023 2.74805 7.74023H3.09375C3.19531 7.74023 3.26562 7.75977 3.30469 7.79883C3.34766 7.83398 3.36914 7.90234 3.36914 8.00391V8.34961C3.36914 8.45117 3.34766 8.52148 3.30469 8.56055C3.26562 8.59961 3.19531 8.61914 3.09375 8.61914H2.74805ZM4.69336 8.61914C4.5918 8.61914 4.52148 8.59961 4.48242 8.56055C4.44336 8.52148 4.42383 8.45117 4.42383 8.34961V8.00391C4.42383 7.90234 4.44336 7.83398 4.48242 7.79883C4.52148 7.75977 4.5918 7.74023 4.69336 7.74023H5.03906C5.14453 7.74023 5.2168 7.75977 5.25586 7.79883C5.29492 7.83398 5.31445 7.90234 5.31445 8.00391V8.34961C5.31445 8.45117 5.29492 8.52148 5.25586 8.56055C5.2168 8.59961 5.14453 8.61914 5.03906 8.61914H4.69336ZM6.64453 8.61914C6.53906 8.61914 6.4668 8.59961 6.42773 8.56055C6.38867 8.52148 6.36914 8.45117 6.36914 8.34961V8.00391C6.36914 7.90234 6.38867 7.83398 6.42773 7.79883C6.4668 7.75977 6.53906 7.74023 6.64453 7.74023H6.98438C7.08984 7.74023 7.16211 7.75977 7.20117 7.79883C7.24023 7.83398 7.25977 7.90234 7.25977 8.00391V8.34961C7.25977 8.45117 7.24023 8.52148 7.20117 8.56055C7.16211 8.59961 7.08984 8.61914 6.98438 8.61914H6.64453ZM8.58984 4.78125C8.48828 4.78125 8.41602 4.76367 8.37305 4.72852C8.33398 4.68945 8.31445 4.61914 8.31445 4.51758V4.17188C8.31445 4.07031 8.33398 4 8.37305 3.96094C8.41602 3.92188 8.48828 3.90234 8.58984 3.90234H8.8418C8.71289 4.17188 8.63477 4.46484 8.60742 4.78125H8.58984ZM8.58984 6.69727C8.48828 6.69727 8.41602 6.67969 8.37305 6.64453C8.33398 6.60547 8.31445 6.53516 8.31445 6.43359V6.08789C8.31445 5.98633 8.33398 5.91797 8.37305 5.88281C8.41602 5.84375 8.48828 5.82422 8.58984 5.82422H8.72461C8.75977 5.97656 8.80859 6.12305 8.87109 6.26367C8.9375 6.40039 9.01172 6.5293 9.09375 6.65039C9.07812 6.66992 9.05664 6.68359 9.0293 6.69141C9.00586 6.69531 8.97461 6.69727 8.93555 6.69727H8.58984ZM8.25 10.7812C8.02734 10.7812 7.85156 10.7324 7.72266 10.6348C7.59766 10.5371 7.53516 10.4004 7.53516 10.2246C7.53516 9.95117 7.61523 9.66602 7.77539 9.36914C7.93945 9.06836 8.17578 8.78711 8.48438 8.52539C8.79297 8.25977 9.16602 8.04492 9.60352 7.88086C10.041 7.7168 10.5332 7.63477 11.0801 7.63477C11.627 7.63477 12.1172 7.7168 12.5508 7.88086C12.9883 8.04492 13.3594 8.25977 13.6641 8.52539C13.9727 8.78711 14.209 9.06836 14.373 9.36914C14.5371 9.66602 14.6191 9.95117 14.6191 10.2246C14.6191 10.4004 14.5547 10.5371 14.4258 10.6348C14.3008 10.7324 14.127 10.7812 13.9043 10.7812H8.25ZM11.0801 6.88477C10.7793 6.88477 10.5 6.80273 10.2422 6.63867C9.98828 6.47461 9.7832 6.25391 9.62695 5.97656C9.4707 5.69531 9.39258 5.38086 9.39258 5.0332C9.39258 4.68945 9.4707 4.38086 9.62695 4.10742C9.7832 3.83008 9.98828 3.61328 10.2422 3.45703C10.5 3.29688 10.7793 3.2168 11.0801 3.2168C11.377 3.2168 11.6523 3.29492 11.9062 3.45117C12.1641 3.60742 12.3711 3.82227 12.5273 4.0957C12.6836 4.36914 12.7617 4.67773 12.7617 5.02148C12.7617 5.37305 12.6836 5.68945 12.5273 5.9707C12.375 6.25195 12.1699 6.47461 11.9121 6.63867C11.6582 6.80273 11.3809 6.88477 11.0801 6.88477Z"/>
+                          </svg>
+                        </span>
+                      </button>
                     </div>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table> */}
 
           {/* Componente de Paginación */}
-          <div className="pagination-container">
-            <button className="pagination-btn">‹</button>
-            <button className="pagination-btn active">1</button>
-            <button className="pagination-btn">2</button>
-            <button className="pagination-btn">3</button>
-            <button className="pagination-btn">4</button>
-            <button className="pagination-btn">5</button>
+          {/* <div className="pagination-container">
+            <button type="button" className="pagination-btn">
+              <span>
+                <svg width="7" height="11" viewBox="0 0 7 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1.18362e-06 5.36719C0.00390741 5.21875 0.0332043 5.08398 0.0878917 4.96289C0.142579 4.83789 0.228517 4.7168 0.345704 4.59961L4.77539 0.263671C4.95508 0.0878896 5.17188 -1.02312e-06 5.42578 -1.06751e-06C5.59766 -1.09757e-06 5.75391 0.0429676 5.89453 0.128905C6.03906 0.210936 6.1543 0.322264 6.24023 0.462889C6.32617 0.603514 6.36914 0.759764 6.36914 0.931639C6.36914 1.19336 6.26758 1.42187 6.06445 1.61719L2.20313 5.36133L6.06445 9.11133C6.26758 9.31445 6.36914 9.54492 6.36914 9.80273C6.36914 9.97461 6.32617 10.1309 6.24024 10.2715C6.1543 10.4121 6.03906 10.5234 5.89453 10.6055C5.75391 10.6914 5.59766 10.7344 5.42578 10.7344C5.17188 10.7344 4.95508 10.6445 4.77539 10.4648L0.345704 6.12891C0.224611 6.01172 0.13672 5.89258 0.0820325 5.77148C0.027345 5.64648 1.20889e-06 5.51172 1.18362e-06 5.36719Z" fill="#02FFA2"/>
+                </svg>
+              </span>
+            </button>
+            <button type="button" className="pagination-btn active">1</button>
+            <button type="button" className="pagination-btn">2</button>
+            <button type="button" className="pagination-btn">3</button>
+            <button type="button" className="pagination-btn">4</button>
+            <button type="button" className="pagination-btn">5</button>
             <span>...</span>
-            <button className="pagination-btn">12</button>
-            <button className="pagination-btn">›</button>
-          </div>
+            <button type="button" className="pagination-btn">12</button>
+            <button type="button" className="pagination-btn">
+              <span>
+                <svg width="7" height="11" viewBox="0 0 7 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6.36914 5.36719C6.36523 5.51562 6.33594 5.65039 6.28125 5.77148C6.22656 5.89648 6.14063 6.01758 6.02344 6.13477L1.59375 10.4707C1.41406 10.6465 1.19727 10.7344 0.943359 10.7344C0.771484 10.7344 0.615235 10.6914 0.47461 10.6055C0.330078 10.5234 0.214844 10.4121 0.128906 10.2715C0.0429689 10.1309 1.89018e-07 9.97461 2.04043e-07 9.80273C2.26924e-07 9.54102 0.101563 9.3125 0.304688 9.11719L4.16602 5.37305L0.304688 1.62305C0.101563 1.41992 9.5704e-07 1.18945 9.79579e-07 0.93164C9.94605e-07 0.759765 0.0429698 0.603515 0.128907 0.46289C0.214845 0.322265 0.330079 0.210937 0.47461 0.128906C0.615235 0.0429682 0.771485 -5.48783e-07 0.94336 -5.33757e-07C1.19727 -5.1156e-07 1.41406 0.0898433 1.59375 0.269531L6.02344 4.60547C6.14453 4.72266 6.23242 4.8418 6.28711 4.96289C6.3418 5.08789 6.36914 5.22266 6.36914 5.36719Z" fill="#02FFA2"/>
+                </svg>
+              </span>
+            </button>
+          </div> */}
         </section>
       </main>
 
@@ -270,37 +353,101 @@ return (
             <h3 className="text-base font-bold text-white tracking-tight">Tarjetahabiente</h3>
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 block">Ficha de Cliente</span>
           </div>
-          <button className="text-xs text-[#00E5FF] hover:underline font-semibold">Editar</button>
+          <button type="button" className="text-xs text-[#00E5FF] hover:underline font-semibold">Editar</button>
         </div>
 
         {/* Ficha técnica del Cliente seleccionado en la tabla */}
         <div className="space-y-4 border-b border-[#1a5f74] pb-5 text-xs">
           <div>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Nombre</p>
-            <p className="font-bold text-white">{selectedClient.nombre}</p>
+            {/* <p className="font-bold text-white">{selectedClient.nombre}</p> */}
           </div>
           <div>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Correo</p>
-            <p className="text-slate-300 font-medium break-all">{selectedClient.correo}</p>
+            {/* <p className="text-slate-300 font-medium break-all">{selectedClient.correo}</p> */}
           </div>
           <div className="flex gap-8">
             <div>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">No. de cliente</p>
-              <p className="font-mono text-white font-bold">{selectedClient.clienteNo}</p>
+              {/* <p className="font-mono text-white font-bold">{selectedClient.clienteNo}</p> */}
             </div>
             <div>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Vigencia</p>
-              <p className="text-white font-bold">{selectedClient.vigencia}</p>
+              {/* <p className="text-white font-bold">{selectedClient.vigencia}</p> */}
             </div>
           </div>
           <div>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">No. de tarjeta asignada</p>
-            <p className="font-mono text-[#00E5FF] font-bold tracking-widest">{selectedClient.tarjeta}</p>
+            {/* <p className="font-mono text-[#00E5FF] font-bold tracking-widest">{selectedClient.tarjeta}</p> */}
           </div>
         </div>
-      </aside>
 
         {/* Historial de Movimientos de Compras del Cliente */}
+                    <div className="flex-1 flex flex-col min-h-[300px]">
+          {/* Título de la Sección de Movimientos */}
+          <div className="flex items-center justify-between mb-4 border-b border-[#1a5f74]/30 pb-2">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <svg xmlns="http://w3.org" className="h-4 w-4 text-[#00E5FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
+              Historial de Compras
+            </h4>
+            <span className="text-[10px] bg-[#155A6F] border border-[#1e6f8a] text-[#00E5FF] px-2 py-0.5 rounded-md font-bold font-mono">
+              {mockCompras.reduce((acc, curr) => acc + curr.items.length, 0)} Movs
+            </span>
+          </div>
+          
+          {/* Contenedor con Scroll Interno para prevenir desbordamientos */}
+          <div className="purchase-history-box pr-1 overflow-y-auto max-h-[350px] scrollbar-thin scrollbar-thumb-[#155A6F] scrollbar-track-transparent">
+            {mockCompras.map((grupo, idx) => (
+              <div key={idx} className="mb-5 last:mb-2">
+                {/* Cabecera de Fecha del Grupo de Movimientos */}
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-[10px] font-black text-[#00E5FF] uppercase tracking-widest bg-[#155A6F]/30 border border-[#1e6f8a]/20 px-2.5 py-0.5 rounded-md">
+                    {grupo.fecha}
+                  </p>
+                  <div className="h-[1px] bg-[#1a5f74]/40 flex-1"></div>
+                </div>
+
+                {/* Listado de Ítems Comprados en esa Fecha */}
+                <div className="space-y-1.5 pl-1">
+                  {grupo.items.map((compra, cIdx) => (
+                    <div 
+                      key={cIdx} 
+                      className="purchase-item-row group hover:bg-[#155A6F]/20 p-2 rounded-lg transition-all border-b border-[#114E60]/30 last:border-0 flex justify-between items-center"
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-slate-200 font-bold tracking-wide group-hover:text-white transition-colors">
+                          {compra.desc}
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">
+                          Cargo Procesado
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2.5">
+                        <span className="font-mono font-black text-white text-right tracking-tight bg-[#114E60]/50 px-2 py-1 rounded-md border border-[#1a5f74]/20 group-hover:border-[#00E5FF]/30 transition-all">
+                          {compra.precio}
+                        </span>
+                        <button 
+                          title="Ver comprobante digital"
+                          className="action-icon-btn !p-1 !bg-transparent border-0 opacity-40 group-hover:opacity-100 text-[#00E5FF] hover:scale-110 transition-all"
+                        >
+                          📄
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+
+      </aside>
+
+        
     </div>
 
             )

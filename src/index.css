@@ -1,4 +1,18 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap');
+@theme {
+  --font-roboto:"Roboto", sans-serif;
+}
+@layer base {
+  html, body, input, textarea, select, button {
+    font-family: var(--font-roboto);
+  }
+}
+.input-condensed {
+  font-family: "Roboto Condensed", sans-serif;
+  font-variant-numeric: tabular-nums; /* Opcional: alinea bien los números */
+}
 
 :root{
   --blanco: #FFFFFF;
@@ -123,11 +137,8 @@
 }
 
 .stats-card-header {
-  @apply  p-6 flex flex-col;
+  @apply  p-6 pb-0 flex flex-col;
 }
-/* .stats-card-header {
-  @apply  p-6 flex justify-between items-center;
-} */
 
 .search-input-box {
   @apply bg-(--MediumBlue) rounded-full px-4 py-2.5 pr-10 text-white placeholder-slate-400 focus:outline-none focus:border-[#00E5FF] w-72 text-xs;
@@ -135,7 +146,7 @@
 
 /* 🗂️ TABLAS DE DATOS */
 .table-container {
-  @apply bg-[#0E3E4D] border border-[#1a5f74] rounded-2xl flex-1 p-6 flex flex-col justify-between overflow-x-auto;
+  @apply flex-1 p-6 flex flex-col justify-between overflow-x-auto;
 }
 
 .data-table {
@@ -143,19 +154,35 @@
 }
 
 .data-table th {
-  @apply text-slate-300 font-semibold border-b border-[#1a5f74] pb-4 px-3 text-xs tracking-wider uppercase;
+  @apply text-(--blanco) text-[15px] font-bold pb-4 px-3 text-xs tracking-wider;
 }
 
 .data-table td {
-  @apply py-3.5 px-3 border-b border-[#114E60] text-slate-200 text-xs font-medium transition-colors;
+  @apply py-1 px-3 text-(--GrisLight) text-xs font-medium transition-colors ;
+  /* @apply py-3.5 px-3 border-b border-[#114E60] text-slate-200 text-xs font-medium transition-colors; */
 }
 
 .data-table tbody tr {
-  @apply cursor-pointer hover:bg-[#155A6F]/40;
+  @apply hover:bg-[#155A6F]/40;
 }
 
 .data-table tbody tr.selected {
-  @apply bg-[#008D96]/20 border-l-4 border-l-[#00E5FF];
+  @apply bg-(--DeepBlue) ;
+  /* @apply bg-(--DeepBlue) border-l-4 border-l-[#00E5FF]; */
+}
+
+/* 🕹️ ICONOS DE ACCIONES */
+.action-icon-btn {
+  @apply p-1.5 text-white hover:text-(--DeepBlue) transition-all ;
+}
+
+.action-icon-btn span svg {
+  @apply text-white transition-all cursor-pointer;
+  fill: currentColor; 
+}
+
+.action-icon-btn:hover span svg {
+  @apply text-(--VerdeNeon);
 }
 
 /* 💳 BARRA DE DETALLES LATERAL DERECHA (TARJETAHABIENTE COMPRAS) */
@@ -187,8 +214,22 @@
 .pagination-btn.active {
   @apply text-[#00E5FF] bg-[#155A6F] px-2.5 py-1 rounded-lg border border-[#1e6f8a];
 }
-
-/* 🕹️ ICONOS DE ACCIONES */
-.action-icon-btn {
-  @apply p-1.5 rounded-lg bg-[#114E60] border border-[#1e6f8a] text-slate-300 hover:text-[#00E5FF] hover:border-[#00E5FF] transition-all;
+.purchase-history-box {
+  @apply flex-1 flex flex-col gap-2;
 }
+
+/* 📥 Personalización de barra de desplazamiento fina (Scrollbar) para Webkit/Chrome */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #155A6F;
+  border-radius: 99px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #00E5FF;
+}
+
