@@ -24,6 +24,7 @@
   --Error-validacion-correo:#FF9500;
   --PopUpErrores:#FFCC00;
   --VerdeNeon:#02FFA2;
+  --VerdeNeonDisabled:#48836c;
   --TextoInactivo:#0A7591;
 }
 /* ANIMACIONES */
@@ -161,6 +162,9 @@
   @apply py-1 px-3 text-(--GrisLight) text-xs font-medium transition-colors ;
   /* @apply py-3.5 px-3 border-b border-[#114E60] text-slate-200 text-xs font-medium transition-colors; */
 }
+.data-table td:first-child {
+  @apply pl-5
+}
 
 .data-table tbody tr {
   @apply hover:bg-[#155A6F]/40;
@@ -204,15 +208,15 @@
 
 /* 🔢 PAGINACIÓN */
 .pagination-container {
-  @apply flex justify-center items-center gap-3 text-xs font-semibold text-slate-400 mt-4;
+  @apply flex justify-center items-center gap-1 text-xs font-semibold text-slate-400 mt-4;
 }
 
 .pagination-btn {
-  @apply hover:text-[#00E5FF] px-2 py-1 rounded transition-colors;
+  @apply hover:text-(--DeepBlue) text-(--VerdeNeon) px-2 py-1 transition-colors font-bold text-[13px];
 }
 
 .pagination-btn.active {
-  @apply text-[#00E5FF] bg-[#155A6F] px-2.5 py-1 rounded-lg border border-[#1e6f8a];
+  @apply text-(--DeepBlue) px-2.5 py-1;
 }
 .purchase-history-box {
   @apply flex-1 flex flex-col gap-2;

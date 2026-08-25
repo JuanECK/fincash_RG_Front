@@ -39,7 +39,7 @@ export const LoginPage: React.FC = () => {
           const perfilNumero = Number.parseInt(idPerfil, 10);
           const userRole = (perfilNumero === 1 || perfilNumero === 2) ? 1 : 2;
 
-          console.log(response.data)
+          // console.log(response.data)
 
         //   // Restauramos el estado global
           login({ role: userRole, idPerfil:idPerfil, idUsuario:idUsuario, nombreCompleto:nombreCompleto });

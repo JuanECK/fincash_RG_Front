@@ -39,6 +39,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   }
 
   // Si pasa los filtros, renderiza la pantalla solicitada
-  console.log('✅ Acceso Concedido.');
+  // console.log('✅ Acceso Concedido.');
   return <>{children}</>;
 };
