@@ -35,6 +35,7 @@ export const AdminDashboard: React.FC = () => {
   // 🔢 ESTADOS DE PAGINACIÓN DINÁMICA
   const [tarjetahabientes, setTarjetahabientes] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
+  const [detallesCliente, setDetallesCliente] = useState<any | null>(null);
   const [montoTotalCargos, setMontoTotalCargos] = useState(0);
   const [idCentroN, setidCentroN] = useState(1);
   const [paginaActual, setPaginaActual] = useState(1);
@@ -42,7 +43,7 @@ export const AdminDashboard: React.FC = () => {
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
   const [centroActivo, setCentroActivo] = useState('Xolos');
-  const limitePorPagina = 5; // Cantidad de filas exactas por pantalla según tu diseño
+  const limitePorPagina = 15; // Cantidad de filas exactas por pantalla según tu diseño
 
 // Mock de historial simula sp_historial_movimientos_app
 const mockCompras = [
@@ -58,13 +59,23 @@ const mockCompras = [
     }).format(numero);
   };
 
-  const selecionaClienteTarjetabiente = async (idTarjeta:number) => {
-    const response = await api.post('/admin/detalleCliente',{idTarjeta})
-    console.log(response)
+  const selecionaClienteTarjetabiente = async (idTarjeta:number, item:any) => {
+    // idTarjeta = 200
+    try {
+      const response = await api.post('/admin/detalleCliente',{idTarjeta})
+      if(response.status === 200){
+        setSelectedClient(item)
+        setDetallesCliente(response.data.data)
+        console.log(response.data.data.historico)
+        return
+      }
+    } catch {
+      
+    }
+    
     // console.log(cliente)
     // tarjetahabientes.forEach((item) => { 
     //   if (item.idTarjeta === cliente){
-    //     setSelectedClient(item)
     //   }
       
     // })
@@ -89,18 +100,18 @@ const mockCompras = [
           setTotalRegistros(paginacion.totalRegistros);
           setMontoTotalCargos(MontoTotalCargos);
 
-          if (tarjetahabientes && tarjetahabientes.length > 0) {
-            setSelectedClient(tarjetahabientes[0]); // 👈 Asegúrate de que tenga el [0]
-          } else {
-            setSelectedClient(null);
-          }
+          // if (tarjetahabientes && tarjetahabientes.length > 0) {
+          //   setSelectedClient(tarjetahabientes[0]); // 👈 Asegúrate de que tenga el [0]
+          // } else {
+          //   setSelectedClient(null);
+          // }
 
           
           // Seleccionamos automáticamente el primer cliente de la nueva página por estética
-          // if (tarjetahabientes.length > 0) {
-          //     setSelectedClient(tarjetahabientes);
-          //   }
-            console.log(selectedClient)
+          if (tarjetahabientes.length > 0) {
+              setSelectedClient(tarjetahabientes);
+            }
+            // console.log(selectedClient)
         }
       } catch (error) {
         console.error('Error cargando la tabla paginada de red:', error);
@@ -377,7 +388,7 @@ return (
                 {tarjetahabientes.map((item) => (
                   <tr 
                     key={item.idTarjeta} 
-                    onClick={() => selecionaClienteTarjetabiente(item.idTarjeta)}
+                    onClick={() => selecionaClienteTarjetabiente(item.idTarjeta, item)}
                     // onClick={() => {setSelectedClient(item); console.log({idTarjeta:item.idTarjeta, cleinteSelec:selectedClient})}}
                     className={selectedClient.idTarjeta === item.idTarjeta ? 'selected ' : ''}
                   >
@@ -461,34 +472,34 @@ return (
       {/* 💳 BARRA DE DETALLES DERECHA (Información del Tarjetahabiente Seleccionado) */}
       <aside className="details-panel">
 
-      {!selectedClient ? (
+      {/* {!detallesCliente ? (
           <div className="flex-1 flex items-center justify-center text-slate-400 text-xs font-medium">
             Selecciona un cliente de la lista para ver su ficha técnica.
           </div>
         ) : (
-          <>
+          <> */}
             <div className="details-header">
               <div>
-                <h3 className="text-base font-bold text-white tracking-tight">Tarjetahabiente</h3>
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 block">Ficha de Cliente</span>
+                <h3 className="input-condensed text-[20px] font-bold text-white tracking-tight">Tarjetahabiente</h3>
+                {/* <span className="text-[10px] text-slate-400 font-bold  tracking-widest mt-0.5 block">Ficha de Cliente</span> */}
               </div>
-              <button type="button" className="text-xs text-[#00E5FF] hover:underline font-semibold">Editar</button>
+              <button type="button" disabled={detallesCliente ? false : true} onClick={()=> console.log('activo')} className="text-xs text-[#00E5FF] hover:underline font-semibold">Editar</button>
             </div>
 
             {/* Ficha técnica del Cliente seleccionado en la tabla */}
             <div className="space-y-4 border-b border-[#1a5f74] pb-5 text-xs">
               <div>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Nombre</p>
-                <p className="font-bold text-white">{selectedClient.Cliente}</p>
+                <p className="text-[10px] text-slate-400 font-bold  tracking-wider mb-0.5">Nombre</p>
+                <p className="font-bold text-white">{!detallesCliente ? '': detallesCliente.usuario.Cliente}</p>
               </div>
               <div>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Correo</p>
-                {/* <p className="text-slate-300 font-medium break-all">{selectedClient.correo}</p> */}
+                <p className="text-[10px] text-slate-400 font-bold  tracking-wider mb-0.5">Correo</p>
+                <p className="text-slate-300 font-medium break-all">{!detallesCliente ? '': detallesCliente.usuario.correo}</p>
               </div>
               <div className="flex gap-8">
                 <div>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">No. de cliente</p>
-                  <p className="font-mono text-white font-bold">{selectedClient.clienteNo}</p>
+                  <p className="text-[10px] text-slate-400 font-bold  tracking-wider mb-0.5">No. de cliente</p>
+                  <p className="font-mono text-white font-bold">{!detallesCliente ? '': detallesCliente.usuario.noCliente}</p>
                 </div>
                 {/* <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Vigencia</p>
@@ -496,34 +507,81 @@ return (
                 </div> */}
               </div>
               <div>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">No. de tarjeta asignada</p>
-                <p className="font-mono text-[#00E5FF] font-bold tracking-widest">{selectedClient.noTarjeta}</p>
+                <p className="text-[10px] text-slate-400 font-bold  tracking-wider mb-0.5">No. de tarjeta asignada</p>
+                <p className="font-mono text-[#00E5FF] font-bold tracking-widest">{!detallesCliente ? '' : detallesCliente.usuario.noTarjeta}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-400 font-bold  tracking-wider mb-0.5">Teléfono</p>
+                <p className="font-mono text-[#00E5FF] font-bold tracking-widest">{!detallesCliente ? '' : detallesCliente.usuario.telefono}</p>
               </div>
             </div>
-          </>
+          {/* </>
         )
-      }
+      } */}
 
         {/* Historial de Movimientos de Compras del Cliente */}
         <div className="flex-1 flex flex-col min-h-[300px]">
           {/* Título de la Sección de Movimientos */}
-          <div className="flex items-center justify-between mb-4 border-b border-[#1a5f74]/30 pb-2">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <svg xmlns="http://w3.org" className="h-4 w-4 text-[#00E5FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-              </svg>
-              Historial de Compras
-            </h4>
-            <span className="text-[10px] bg-[#155A6F] border border-[#1e6f8a] text-[#00E5FF] px-2 py-0.5 rounded-md font-bold font-mono">
+          <div className="flex items-center justify-between pb-0">
+            <h4 className="input-condensed text-[20px] font-bold text-white flex items-center gap-2">Compras</h4>
+            {/* <span className="text-[10px] bg-[#155A6F] border border-[#1e6f8a] text-[#00E5FF] px-2 py-0.5 rounded-md font-bold font-mono">
               {mockCompras.reduce((acc, curr) => acc + curr.items.length, 0)} Movs
-            </span>
+            </span> */}
           </div>
           
           {/* Contenedor con Scroll Interno para prevenir desbordamientos */}
+          {/* ===============CONTINUAR DESDE AQUI================ */}
           <div className="purchase-history-box pr-1 overflow-y-auto max-h-[350px] scrollbar-thin scrollbar-thumb-[#155A6F] scrollbar-track-transparent">
-            {mockCompras.map((grupo, idx) => (
+            {detallesCliente.historico.map((item:any, track:number) => (
+              <div key={track} className="mb-5 last:mb-2">
+               {/* { item.monto ==='' ? (
+                
+                <>
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-[10px] font-black text-[#00E5FF] uppercase tracking-widest bg-[#155A6F]/30 border border-[#1e6f8a]/20 px-2.5 py-0.5 rounded-md">
+                    {grupo.fecha}
+                  </p>
+                  <div className="h-[1px] bg-[#1a5f74]/40 flex-1"></div>
+                </div>
+                </>
+               ):() } */}
+               
+
+                {/* Listado de Ítems Comprados en esa Fecha */}
+                {/* <div className="space-y-1.5 pl-1">
+                  {grupo.items.map((compra, cIdx) => (
+                    <div 
+                      key={cIdx} 
+                      className="purchase-item-row group hover:bg-[#155A6F]/20 p-2 rounded-lg transition-all border-b border-[#114E60]/30 last:border-0 flex justify-between items-center"
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-slate-200 font-bold tracking-wide group-hover:text-white transition-colors">
+                          {compra.desc}
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">
+                          Cargo Procesado
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2.5">
+                        <span className="font-mono font-black text-white text-right tracking-tight bg-[#114E60]/50 px-2 py-1 rounded-md border border-[#1a5f74]/20 group-hover:border-[#00E5FF]/30 transition-all">
+                          {compra.precio}
+                        </span>
+                        <button 
+                          title="Ver comprobante digital"
+                          className="action-icon-btn !p-1 !bg-transparent border-0 opacity-40 group-hover:opacity-100 text-[#00E5FF] hover:scale-110 transition-all"
+                        >
+                          📄
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div> */}
+              </div>
+            ))}
+            {/* {mockCompras.map((grupo, idx) => (
               <div key={idx} className="mb-5 last:mb-2">
-                {/* Cabecera de Fecha del Grupo de Movimientos */}
+
                 <div className="flex items-center gap-2 mb-2">
                   <p className="text-[10px] font-black text-[#00E5FF] uppercase tracking-widest bg-[#155A6F]/30 border border-[#1e6f8a]/20 px-2.5 py-0.5 rounded-md">
                     {grupo.fecha}
@@ -531,7 +589,7 @@ return (
                   <div className="h-[1px] bg-[#1a5f74]/40 flex-1"></div>
                 </div>
 
-                {/* Listado de Ítems Comprados en esa Fecha */}
+             
                 <div className="space-y-1.5 pl-1">
                   {grupo.items.map((compra, cIdx) => (
                     <div 
@@ -562,7 +620,7 @@ return (
                   ))}
                 </div>
               </div>
-            ))}
+            ))} */}
           </div>
         </div>
 
