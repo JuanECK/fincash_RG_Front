@@ -26,6 +26,7 @@
   --VerdeNeon:#02FFA2;
   --VerdeNeonDisabled:#48836c;
   --TextoInactivo:#0A7591;
+  --rojo:#FF3B30;
 }
 /* ANIMACIONES */
 
@@ -104,7 +105,7 @@
 /* ============================================================================= */
 /* 🏢 DASHBOARD CONFIGURACIÓN GENERAL */
 .dashboard-layout {
-  @apply min-h-screen bg-(--fondo) text-slate-100 flex p-4 gap-4 font-sans text-sm antialiased;
+  @apply min-h-screen min-w-[1240px] bg-(--fondo) text-slate-100 flex p-4 gap-4 font-sans text-sm antialiased;
 }
 
 /* 📁 BARRA LATERAL (CENTROS DE NEGOCIO) */
@@ -195,7 +196,7 @@
 }
 
 .details-header {
-  @apply flex items-center justify-between border-b border-[#1a5f74] pb-4;
+  @apply flex;
 }
 
 .purchase-history-box {
@@ -203,7 +204,7 @@
 }
 
 .purchase-item-row {
-  @apply flex justify-between items-start py-2 border-b border-[#114E60]/50 text-xs;
+  @apply flex justify-between items-start py-1 border-b border-[#114E60]/50 text-xs;
 }
 
 /* 🔢 PAGINACIÓN */
