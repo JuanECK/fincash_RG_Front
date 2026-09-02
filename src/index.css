@@ -27,6 +27,8 @@
   --VerdeNeonDisabled:#48836c;
   --TextoInactivo:#0A7591;
   --rojo:#FF3B30;
+  --rojoCancelar:#FF3B30;
+  --verdeSuccess:#34C759;
 }
 /* ANIMACIONES */
 
@@ -34,6 +36,7 @@
 /* 🎨 CONTENEDORES PRINCIPALES */ 
 .login-page-container {
   @apply min-h-screen flex items-center justify-center p-4 bg-(--fondo);
+  
 }
 
 .login-card {

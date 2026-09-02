@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { api, logoutSession } from '../services/api';
+import { Modal, ModalAviso, ModalContraseña } from '../modals/ModalGeneral';
+// import ModalAviso from '../modals/ModalAviso';
 
 interface TarjetaUsuario {
   Cliente: string;
@@ -24,12 +26,41 @@ interface RespuestaBackend {
   historico: Historico[];
 }
 
+interface InputTarjetahabiente {
+  Cliente: string;
+  correo: string;
+  idTarjeta: number;
+  noCliente: string;
+  noTarjeta: string;
+  telefono: string;
+}
+interface selectCliente {
+  Cliente:string,
+  fechaVencimiento:string,
+  idCentroN:number;
+  idCliente:number;
+  idTarjeta:number;
+  noTarjeta:number;
+}
+// interface MiComponenteProps {
+//   detallesCliente?: {
+//     usuario?: InputTarjetahabiente;
+//   };
+// }
+
 export const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [tarjetahabientes, setTarjetahabientes] = useState<any[]>([]);
-  const [selectedClient, setSelectedClient] = useState<any | null>(null);
+  const [selectedClient, setSelectedClient] = useState<selectCliente>({ 
+    Cliente:'',
+    fechaVencimiento:'',
+    idCentroN:0,
+    idCliente:0,
+    idTarjeta:0,
+    noTarjeta:0 
+  });
   const [detallesCliente, setDetallesCliente] = useState<RespuestaBackend | null>(null);
   const [montoTotalCargos, setMontoTotalCargos] = useState(0);
   const [idCentroN, setidCentroN] = useState(1);
@@ -39,16 +70,69 @@ export const AdminDashboard: React.FC = () => {
   const [isLoadingTable, setIsLoadingTable] = useState(false);
   const [centroActivo, setCentroActivo] = useState('Xolos');
   const [ btnTarjetahabientes, setBtnTarjetahabientes ] = useState(true);
+  const [ btnGuardarTarjetahabientes, setbtnGuardarTarjetahabientes ] = useState(true);
+  const [ dataInputs, getDataInput ] = useState<InputTarjetahabiente>({
+    Cliente: '',
+    correo: '',
+    idTarjeta: 0,
+    noCliente: '',
+    noTarjeta: '',
+    telefono: ''
+  });
+  const [showModalElimina, setShowModalElimina] = useState(false);
+  const [ varRandom, setVarRandom ] = useState<number | string>( '' );
+  const [showModalAviso, setShowModalAviso] = useState(false);
+  const [showModalGuardado, setShowModalGuardado] = useState(false);
+  const [showModalContraseña, setShowModalContraseña] = useState(false);
   const limitePorPagina = 15; // Cantidad de filas exactas por pantalla según tu diseño
 
-// =============================================================================================
-// cuando se este en modop edidicon se va a a deabilitar el iconode la pluma y se abilitara el icono de guardar (carrito),
-// y toda la pantalla se bloqueara con un fondo obscuros y se resaltara solamente la card de tarjetahabiente
-// cuando se termine la edicion y se guarde se regresara a la pantalla normal se refrescara la pantalla 
+  const BtnsTatrjetahabientes = () => {
+    setbtnGuardarTarjetahabientes(false)
+    setBtnTarjetahabientes(true)
+  }
 
-const BtnsTatrjetahabientes = () => {
-  console.log('activo')
-}
+  const cancelaEdicion = () => {
+    setbtnGuardarTarjetahabientes(true)
+    setSelectedClient({
+      Cliente:'',
+      fechaVencimiento:'',
+      idCentroN:0,
+      idCliente:0,
+      idTarjeta:0,
+      noTarjeta:0
+    })
+    setDetallesCliente(null)
+    setShowModalAviso(false)
+  }
+
+  const eliminaTargetahabiente = () =>{
+    // ===========================================================================================================================================
+    // aqui va la api para guardar los datos modificados del Tarjetahabiente asi como tambien los errores que se pudieran producir en el backend
+    // y cuando sea exitoso refrescar la lista 
+    // ===========================================================================================================================================
+    console.log(varRandom)
+    setShowModalElimina(false)
+  }
+  const guardaEdicion = async () => {
+    console.log("Elemento eliminado de la base de datos");
+    // ===========================================================================================================================================
+    // aqui va la api para guardar los datos modificados del Tarjetahabiente asi como tambien los errores que se pudieran producir en el backend
+    // y cuando sea exitoso refrescar la lista 
+    // ===========================================================================================================================================
+    setbtnGuardarTarjetahabientes(true)
+    setSelectedClient({
+      Cliente:'',
+      fechaVencimiento:'',
+      idCentroN:0,
+      idCliente:0,
+      idTarjeta:0,
+      noTarjeta:0
+    })
+    setDetallesCliente(null)
+    setShowModalGuardado(true); // Abrimos el modal para avisar de los datos actualizados correctemante
+    // console.log(dataInputs)
+    // setbtnGuardarTarjetahabientes(true)
+  }
 
   const formatearAPesos = (numero:number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -57,23 +141,58 @@ const BtnsTatrjetahabientes = () => {
     }).format(numero);
   };
 
-  const selecionaClienteTarjetabiente = async (idTarjeta:number, item:any) => {
+  const selecionaClienteTarjetabiente = async (idTarjeta:number, item:any, idCliente:number) => {
     // idTarjeta = 200
     try {
       const response = await api.post('/admin/detalleCliente',{idTarjeta})
-      response.data.data.usuario.length === 0 ? setBtnTarjetahabientes(true) : setBtnTarjetahabientes(false)
-
-      if(response.status === 200){
+      // console.log(response.data.status)
+      
+      if(response.data.status === 200){
+        response.data.data.usuario.length === 0 ? setBtnTarjetahabientes(true) : setBtnTarjetahabientes(false)
         setSelectedClient(item)
         setDetallesCliente(response.data.data)
+        getDataInput(response.data.data.usuario)
+        setbtnGuardarTarjetahabientes(true)
+        setVarRandom(idCliente)
+        console.log(selectedClient)
 
         return
       }
-    } catch {
       
+        console.log('sesion caducada: ',response.data.status);
+        endSessionCockie()
+
+    } catch (error) {
+      console.error('Error cargando los detalles del tarjetahabiente:',error);
     }
 
   }
+
+// Sincronizar el estado cuando la lista de selección (API) cambie
+    useEffect(() => {
+    if (detallesCliente?.usuario) {
+      getDataInput(detallesCliente.usuario);
+    } else {
+      // Limpiar el formulario si no hay selección
+      getDataInput({
+        Cliente: '',
+        correo: '',
+        idTarjeta: 0,
+        noCliente: '',
+        noTarjeta: '',
+        telefono: ''
+      });
+    }
+  }, [detallesCliente]);
+
+    // Manejador dinámico para actualizar cualquier input del formulario
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    getDataInput((prev) => ({
+      ...prev,
+      [name]: value // Actualiza dinámicamente la propiedad de la interfaz
+    }));
+  };
 
   // 🔄 EFFECT: Se ejecuta al cargar la página y cada vez que cambia 'paginaActual'
   useEffect(() => {
@@ -91,7 +210,7 @@ const BtnsTatrjetahabientes = () => {
           setTotalPaginas(paginacion.totalPaginas);
           setTotalRegistros(paginacion.totalRegistros);
           setMontoTotalCargos(MontoTotalCargos);
-
+          // console.log(tarjetahabientes)
           // if (tarjetahabientes && tarjetahabientes.length > 0) {
           //   setSelectedClient(tarjetahabientes[0]); // 👈 Asegúrate de que tenga el [0]
           // } else {
@@ -106,7 +225,10 @@ const BtnsTatrjetahabientes = () => {
 
             console.log(selectedClient)
             // console.log(selectedClient)
+            return
         }
+        console.log('sesion caducada: ',response.data.status);
+        endSessionCockie()
       } catch (error) {
         console.error('Error cargando la tabla paginada de red:', error);
       } finally {
@@ -209,6 +331,13 @@ const BtnsTatrjetahabientes = () => {
     // 3. Redirigimos al Login borrando el historial de navegación
     navigate('/', { replace: true });
   };
+  const endSessionCockie = () => {
+      setIsLoggingOut(true);
+    // 2. Limpiamos el estado global en el Frontend de React
+    logout();
+    // 3. Redirigimos al Login borrando el historial de navegación
+    navigate('/', { replace: true });
+  }
 
 //   return (
 //     <div className="login-page-container flex-col gap-6">
@@ -229,7 +358,17 @@ const BtnsTatrjetahabientes = () => {
 //   );
 
 return (
+
+  <>
+
     <div className="dashboard-layout">
+
+      {!btnGuardarTarjetahabientes && (
+        <div 
+          className="absolute inset-0 z-40 bg-[#0a1f26]/40 backdrop-blur-xs cursor-pointer transition-all duration-300"
+          onClick={() => {setShowModalAviso(true)}} 
+        />
+      )}
       
       {/* 📁 BARRA LATERAL IZQUIERDA (Centros de Negocio) */}
       <aside className="sidebar-panel">
@@ -395,7 +534,7 @@ return (
                 {tarjetahabientes.map((item) => (
                   <tr 
                     key={item.idTarjeta} 
-                    onClick={() => selecionaClienteTarjetabiente(item.idTarjeta, item)}
+                    onClick={() => selecionaClienteTarjetabiente(item.idTarjeta, item, item.idCliente)}
                     // onClick={() => {setSelectedClient(item); console.log({idTarjeta:item.idTarjeta, cleinteSelec:selectedClient})}}
                     className={selectedClient.idTarjeta === item.idTarjeta ? 'selected ' : ''}
                   >
@@ -477,7 +616,7 @@ return (
     
 
       {/* 💳 BARRA DE DETALLES DERECHA (Información del Tarjetahabiente Seleccionado) */}
-      <aside className="details-panel">
+      <aside className="details-panel z-50">
 
       {/* {!detallesCliente ? (
           <div className="flex-1 flex items-center justify-center text-slate-400 text-xs font-medium">
@@ -503,21 +642,21 @@ return (
                       />
                     </svg>
                   </button>
-                  <button type="button" disabled={btnTarjetahabientes} onClick={()=>{BtnsTatrjetahabientes()}} className={`mx-3.5 ${btnTarjetahabientes ? 'cursor-not-allowed':'cursor-pointer text-(--VerdeNeon)'}`}>
+                  <button type="button" disabled={btnTarjetahabientes} onClick={()=>{setShowModalContraseña(true)}} className={`mx-3.5 ${btnTarjetahabientes ? 'cursor-not-allowed':'cursor-pointer text-(--VerdeNeon)'}`}>
                     <svg width="16" height="13" viewBox="0 0 16 13" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                       <path d="M12.5439 4.84668C12.0609 4.84668 11.8193 4.63932 11.8193 4.22461C11.8193 4.21094 11.8193 4.19954 11.8193 4.19043C11.8193 4.18132 11.8193 4.1722 11.8193 4.16309C11.8193 3.86686 11.8968 3.62533 12.0518 3.43848C12.2067 3.24707 12.4049 3.06706 12.6465 2.89844C12.929 2.70247 13.141 2.53841 13.2822 2.40625C13.4281 2.26953 13.501 2.09863 13.501 1.89355C13.501 1.68392 13.4212 1.51074 13.2617 1.37402C13.1068 1.2373 12.904 1.16895 12.6533 1.16895C12.5257 1.16895 12.4072 1.18945 12.2979 1.23047C12.193 1.26693 12.0928 1.32617 11.9971 1.4082C11.9059 1.48568 11.8239 1.58138 11.751 1.69531L11.6553 1.8252C11.5824 1.91634 11.498 1.98926 11.4023 2.04395C11.3112 2.09408 11.1995 2.11914 11.0674 2.11914C10.9079 2.11914 10.7689 2.06673 10.6504 1.96191C10.5365 1.85254 10.4795 1.71126 10.4795 1.53809C10.4795 1.47428 10.4863 1.41276 10.5 1.35352C10.5137 1.28971 10.5319 1.22591 10.5547 1.16211C10.6641 0.843099 10.9124 0.569661 11.2998 0.341797C11.6872 0.113932 12.1748 0 12.7627 0C13.1774 0 13.5579 0.0729167 13.9043 0.21875C14.2507 0.360026 14.5264 0.567383 14.7314 0.84082C14.9411 1.1097 15.0459 1.43327 15.0459 1.81152C15.0459 2.20345 14.9479 2.51562 14.752 2.74805C14.5605 2.97591 14.2939 3.2015 13.9521 3.4248C13.7425 3.56152 13.5739 3.69368 13.4463 3.82129C13.3232 3.94434 13.2549 4.09017 13.2412 4.25879C13.2412 4.27246 13.2389 4.28841 13.2344 4.30664C13.2344 4.32031 13.2344 4.33171 13.2344 4.34082C13.2161 4.4821 13.1455 4.60286 13.0225 4.70312C12.904 4.79883 12.7445 4.84668 12.5439 4.84668ZM12.5371 6.98633C12.3001 6.98633 12.0996 6.91341 11.9355 6.76758C11.7715 6.61719 11.6895 6.43034 11.6895 6.20703C11.6895 5.97917 11.7715 5.79232 11.9355 5.64648C12.0996 5.49609 12.3001 5.4209 12.5371 5.4209C12.7741 5.4209 12.9746 5.49382 13.1387 5.63965C13.3027 5.78548 13.3848 5.97461 13.3848 6.20703C13.3848 6.4349 13.3005 6.62174 13.1318 6.76758C12.9678 6.91341 12.7695 6.98633 12.5371 6.98633ZM1.27148 12.9062C0.875 12.9062 0.562826 12.8151 0.334961 12.6328C0.111654 12.4551 0 12.209 0 11.8945C0 11.457 0.13444 10.9967 0.40332 10.5137C0.672201 10.0306 1.05957 9.57943 1.56543 9.16016C2.07129 8.73633 2.67969 8.39225 3.39062 8.12793C4.10612 7.86361 4.90592 7.73145 5.79004 7.73145C6.67871 7.73145 7.47852 7.86361 8.18945 8.12793C8.90495 8.39225 9.51335 8.73633 10.0146 9.16016C10.5205 9.57943 10.9079 10.0306 11.1768 10.5137C11.4502 10.9967 11.5869 11.457 11.5869 11.8945C11.5869 12.209 11.473 12.4551 11.2451 12.6328C11.0218 12.8151 10.7119 12.9062 10.3154 12.9062H1.27148ZM5.79688 6.52832C5.29102 6.52832 4.82845 6.39388 4.40918 6.125C3.98991 5.85156 3.65267 5.48698 3.39746 5.03125C3.14681 4.57096 3.02148 4.05599 3.02148 3.48633C3.02148 2.9349 3.14681 2.43359 3.39746 1.98242C3.65267 1.52669 3.98991 1.16667 4.40918 0.902344C4.83301 0.633464 5.29557 0.499023 5.79688 0.499023C6.29818 0.499023 6.75846 0.631185 7.17773 0.895508C7.59701 1.15983 7.93424 1.51758 8.18945 1.96875C8.44466 2.41536 8.57227 2.91895 8.57227 3.47949C8.57227 4.04915 8.44466 4.56413 8.18945 5.02441C7.9388 5.4847 7.60156 5.85156 7.17773 6.125C6.75846 6.39388 6.29818 6.52832 5.79688 6.52832Z" 
                       // fill="#02FFA2"
                       />
                     </svg>
                   </button>
-                  <button type="button"  disabled={btnTarjetahabientes} onClick={()=>{BtnsTatrjetahabientes()}} className={`mx-3.5 ${btnTarjetahabientes ? 'cursor-not-allowed':'cursor-pointer text-(--rojo)'}`}>
+                  <button type="button"  disabled={btnTarjetahabientes} onClick={()=>{setShowModalElimina(true)}} className={`mx-3.5 ${btnTarjetahabientes ? 'cursor-not-allowed':'cursor-pointer text-(--rojo)'}`}>
                     <svg width="14" height="16" viewBox="0 0 14 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                       <path d="M4.82617 13.1797C4.67578 13.1797 4.55501 13.1364 4.46387 13.0498C4.37272 12.9587 4.32487 12.8402 4.32031 12.6943L4.11523 5.63965C4.11068 5.49382 4.15397 5.3776 4.24512 5.29102C4.33626 5.19987 4.45703 5.1543 4.60742 5.1543C4.75781 5.1543 4.87858 5.19987 4.96973 5.29102C5.06543 5.3776 5.11556 5.49154 5.12012 5.63281L5.3252 12.6875C5.3252 12.8333 5.27962 12.9518 5.18848 13.043C5.09733 13.1341 4.97656 13.1797 4.82617 13.1797ZM6.8291 13.1797C6.67871 13.1797 6.55566 13.1364 6.45996 13.0498C6.36882 12.9587 6.32324 12.8402 6.32324 12.6943V5.63965C6.32324 5.49382 6.36882 5.3776 6.45996 5.29102C6.55566 5.19987 6.67871 5.1543 6.8291 5.1543C6.98405 5.1543 7.1071 5.19987 7.19824 5.29102C7.29395 5.3776 7.3418 5.49382 7.3418 5.63965V12.6943C7.3418 12.8402 7.29395 12.9587 7.19824 13.0498C7.1071 13.1364 6.98405 13.1797 6.8291 13.1797ZM8.83887 13.1797C8.68392 13.1797 8.56087 13.1341 8.46973 13.043C8.37858 12.9518 8.33529 12.8333 8.33984 12.6875L8.54492 5.63965C8.54948 5.49382 8.59733 5.3776 8.68848 5.29102C8.77962 5.19987 8.90039 5.1543 9.05078 5.1543C9.20573 5.1543 9.3265 5.19987 9.41309 5.29102C9.50423 5.3776 9.54753 5.49382 9.54297 5.63965L9.34473 12.6943C9.34017 12.8402 9.29004 12.9587 9.19434 13.0498C9.10319 13.1364 8.9847 13.1797 8.83887 13.1797ZM3.64355 3.1582V1.70898C3.64355 1.17122 3.80762 0.751953 4.13574 0.451172C4.46842 0.150391 4.93099 0 5.52344 0H8.12793C8.72038 0 9.18066 0.150391 9.50879 0.451172C9.84147 0.751953 10.0078 1.17122 10.0078 1.70898V3.1582H8.61328V1.77051C8.61328 1.611 8.55859 1.4834 8.44922 1.3877C8.3444 1.28743 8.20312 1.2373 8.02539 1.2373H5.62598C5.44824 1.2373 5.30469 1.28743 5.19531 1.3877C5.09049 1.4834 5.03809 1.611 5.03809 1.77051V3.1582H3.64355ZM0.676758 4.05371C0.489909 4.05371 0.330404 3.98991 0.198242 3.8623C0.0660807 3.7347 0 3.5752 0 3.38379C0 3.19694 0.0660807 3.03971 0.198242 2.91211C0.330404 2.78451 0.489909 2.7207 0.676758 2.7207H12.9883C13.1751 2.7207 13.3324 2.78451 13.46 2.91211C13.5921 3.03516 13.6582 3.19238 13.6582 3.38379C13.6582 3.5752 13.5944 3.7347 13.4668 3.8623C13.3392 3.98991 13.1797 4.05371 12.9883 4.05371H0.676758ZM3.68457 15.5791C3.13314 15.5791 2.69336 15.4264 2.36523 15.1211C2.03711 14.8158 1.86165 14.3874 1.83887 13.8359L1.37402 3.91699H2.74805L3.20605 13.5625C3.21517 13.763 3.27669 13.9248 3.39062 14.0479C3.50911 14.1709 3.66178 14.2324 3.84863 14.2324H9.80273C9.99414 14.2324 10.1468 14.1709 10.2607 14.0479C10.3792 13.9294 10.443 13.7676 10.4521 13.5625L10.8965 3.91699H12.291L11.8262 13.8291C11.8034 14.3851 11.6257 14.8158 11.293 15.1211C10.9648 15.4264 10.5273 15.5791 9.98047 15.5791H3.68457Z" 
                       // fill="#02FFA2"
                       />
                     </svg>
                   </button>
-                  <button type="button" disabled={btnTarjetahabientes} onClick={()=>{BtnsTatrjetahabientes()}} className={`mx-3.5 pt-1 ${btnTarjetahabientes ? 'cursor-not-allowed':'cursor-pointer text-(--VerdeNeon)'}`}>
+                  <button type="button" disabled={btnGuardarTarjetahabientes} onClick={()=>{guardaEdicion()}} className={`mx-3.5 pt-1 ${btnGuardarTarjetahabientes ? 'cursor-not-allowed':'cursor-pointer text-(--VerdeNeon)'}`}>
                     <svg width="19" height="14" viewBox="0 0 19 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                       <path d="M7.36914 11.9629C7.60156 11.612 7.78158 11.2292 7.90918 10.8145C8.03678 10.3997 8.10059 9.96908 8.10059 9.52246C8.10059 8.87533 7.9707 8.26921 7.71094 7.7041C7.45573 7.139 7.10938 6.64909 6.67188 6.23438H15.8594C16.429 6.23438 16.9303 6.35514 17.3633 6.59668C17.8008 6.83822 18.1403 7.17546 18.3818 7.6084C18.6234 8.03678 18.7441 8.53353 18.7441 9.09863C18.7441 9.66374 18.6234 10.1628 18.3818 10.5957C18.1403 11.0241 17.8008 11.359 17.3633 11.6006C16.9303 11.8421 16.429 11.9629 15.8594 11.9629H7.36914ZM17.7871 5.63965C17.2083 5.33887 16.5658 5.18848 15.8594 5.18848H5.46191C5.37533 5.18848 5.28874 5.19303 5.20215 5.20215C5.11556 5.21126 5.03581 5.22493 4.96289 5.24316C4.78516 5.1748 4.60286 5.12012 4.41602 5.0791C4.22917 5.03809 4.0332 5.00846 3.82812 4.99023L5.26367 1.68848C5.49609 1.14616 5.83789 0.729167 6.28906 0.4375C6.74023 0.145833 7.28027 0 7.90918 0H13.4189C14.0479 0 14.5879 0.145833 15.0391 0.4375C15.4948 0.729167 15.8389 1.14616 16.0713 1.68848L17.7871 5.63965ZM14.916 9.09863C14.916 9.3584 15.0072 9.57943 15.1895 9.76172C15.3763 9.94401 15.5973 10.0329 15.8525 10.0283C16.1032 10.0238 16.3197 9.93262 16.502 9.75488C16.6842 9.57715 16.7754 9.3584 16.7754 9.09863C16.7754 8.85254 16.6842 8.63835 16.502 8.45605C16.3197 8.26921 16.1032 8.17578 15.8525 8.17578C15.5973 8.17578 15.3763 8.26921 15.1895 8.45605C15.0072 8.63835 14.916 8.85254 14.916 9.09863ZM3.55469 13.084C3.06706 13.084 2.60905 12.9906 2.18066 12.8037C1.75228 12.6169 1.37402 12.3594 1.0459 12.0312C0.722331 11.7077 0.467122 11.3317 0.280273 10.9033C0.0934245 10.4749 0 10.0169 0 9.5293C0 9.03711 0.0934245 8.5791 0.280273 8.15527C0.467122 7.72689 0.722331 7.34863 1.0459 7.02051C1.37402 6.69238 1.75228 6.43717 2.18066 6.25488C2.60905 6.06803 3.06706 5.97461 3.55469 5.97461C4.04232 5.97461 4.50033 6.06803 4.92871 6.25488C5.3571 6.43717 5.73535 6.69238 6.06348 7.02051C6.3916 7.34408 6.64681 7.72005 6.8291 8.14844C7.01139 8.57682 7.10254 9.03711 7.10254 9.5293C7.10254 10.0124 7.00911 10.4681 6.82227 10.8965C6.63997 11.3249 6.38477 11.7031 6.05664 12.0312C5.72852 12.3594 5.35026 12.6169 4.92188 12.8037C4.49349 12.9906 4.03776 13.084 3.55469 13.084ZM3.12402 11.4639C3.31543 11.4639 3.45898 11.3955 3.55469 11.2588L5.53027 8.56543C5.56673 8.5153 5.5918 8.46289 5.60547 8.4082C5.6237 8.35352 5.63281 8.30339 5.63281 8.25781C5.63281 8.10742 5.5804 7.9821 5.47559 7.88184C5.37077 7.78158 5.24544 7.73145 5.09961 7.73145C4.91732 7.73145 4.76921 7.8112 4.65527 7.9707L3.08301 10.1445L2.32422 9.30371C2.27865 9.24902 2.22168 9.20801 2.15332 9.18066C2.08952 9.15332 2.0166 9.13965 1.93457 9.13965C1.79329 9.13965 1.66797 9.1875 1.55859 9.2832C1.45378 9.37891 1.40137 9.50879 1.40137 9.67285C1.40137 9.73665 1.41504 9.80273 1.44238 9.87109C1.46973 9.9349 1.50846 9.99414 1.55859 10.0488L2.69336 11.2861C2.74805 11.3499 2.81413 11.3955 2.8916 11.4229C2.96908 11.4502 3.04655 11.4639 3.12402 11.4639Z" 
                       // fill="#02FFA2"
@@ -532,11 +671,12 @@ return (
             <div className="space-y-4 border-b border-[#1a5f74] pb-3 text-xs">
               <div className="mb-1">
                 <p className="text-[14px] text-(--TextoInactivo) font-normal mb-0.5">Nombre</p>
-                <p className="text-[14px] text-white font-normal">{!detallesCliente ? '': detallesCliente.usuario.Cliente}</p>
+                <input type="text" name='Cliente' autoComplete={"off"} disabled={btnGuardarTarjetahabientes} className={`text-[14px] text-white font-normal w-full ${ btnGuardarTarjetahabientes ? '':'border-b-1 border-(--GrisLight) focus:outline-none' }`} value={dataInputs?.Cliente || ''} onChange={handleInputChange}/>
+
               </div>
               <div className="mb-1">
                 <p className="text-[14px] text-(--TextoInactivo) font-normal mb-0.5">Correo</p>
-                <p className="text-[14px] text-white font-normal">{!detallesCliente ? '': detallesCliente.usuario.correo}</p>
+                <input type="text" name='correo' autoComplete={"off"} disabled={btnGuardarTarjetahabientes} className={`text-[14px] text-white font-normal w-full ${ btnGuardarTarjetahabientes ? '':'border-b-1 border-(--GrisLight) focus:outline-none' }`} value={dataInputs?.correo || ''} onChange={handleInputChange}/>
               </div>
               <div className="mb-1">
                 <p className="text-[14px] text-(--TextoInactivo) font-normal mb-0.5">No. de cliente</p>
@@ -544,11 +684,11 @@ return (
               </div>
               <div className="mb-1">
                 <p className="text-[14px] text-(--TextoInactivo) font-normal mb-0.5">No. de tarjeta asignada</p>
-                <p className="text-[14px] text-white font-normal">{!detallesCliente ? '' : detallesCliente.usuario.noTarjeta}</p>
+                <input type="text" name='noTarjeta' autoComplete={"off"} disabled={btnGuardarTarjetahabientes} className={`text-[14px] text-white font-normal w-full ${ btnGuardarTarjetahabientes ? '':'border-b-1 border-(--GrisLight) focus:outline-none' }`} value={dataInputs?.noTarjeta || ''} onChange={handleInputChange}/>
               </div>
               <div>
                 <p className="text-[14px] text-(--TextoInactivo) font-normal mb-0.5">Teléfono</p>
-                <p className="text-[14px] text-white font-normal">{!detallesCliente ? '' : detallesCliente.usuario.telefono}</p>
+                <input type="text" name='telefono' autoComplete={"off"} disabled={btnGuardarTarjetahabientes} className={`text-[14px] text-white font-normal w-full ${ btnGuardarTarjetahabientes ? '':'border-b-1 border-(--GrisLight) focus:outline-none' }`} value={dataInputs?.telefono || ''} onChange={handleInputChange}/>
               </div>
             </div>
           {/* </>
@@ -556,7 +696,7 @@ return (
       } */}
 
         {/* Historial de Movimientos de Compras del Cliente */}
-        <div className="flex-1 flex flex-col min-h-[300px]">
+        <div className="flex-1 flex flex-col min-h-[300px] justify-between">
           {/* Título de la Sección de Movimientos */}
           <div className="flex items-center justify-between pb-0">
             <h4 className="input-condensed text-[25px] font-bold text-white flex items-center gap-2">Compras</h4>
@@ -567,7 +707,7 @@ return (
           
           {/* Contenedor con Scroll Interno para prevenir desbordamientos */}
           {/* ===============CONTINUAR DESDE AQUI================ */}
-          <div className="purchase-history-box pr-1 overflow-y-auto max-h-[400px] scrollbar-thin scrollbar-thumb-[#155A6F] scrollbar-track-transparent">
+          <div className="purchase-history-box pr-1 overflow-y-auto max-h-[395px] scrollbar-thin scrollbar-thumb-[#155A6F] scrollbar-track-transparent">
 
           {detallesCliente?.historico.length === 0 ? (
             <div className="flex-1 flex items-center justify-center text-slate-400 text-xs font-medium">
@@ -619,52 +759,9 @@ return (
               </div>
             ))}
           </>
-        )}
-
-            {/* ====================================================================== */}
-            {/* {mockCompras.map((grupo, idx) => (
-              <div key={idx} className="mb-5 last:mb-2">
-
-                <div className="flex items-center gap-2 mb-2">
-                  <p className="text-[10px] font-black text-[#00E5FF] uppercase tracking-widest bg-[#155A6F]/30 border border-[#1e6f8a]/20 px-2.5 py-0.5 rounded-md">
-                    {grupo.fecha}
-                  </p>
-                  <div className="h-[1px] bg-[#1a5f74]/40 flex-1"></div>
-                </div>
-
-             
-                <div className="space-y-1.5 pl-1">
-                  {grupo.items.map((compra, cIdx) => (
-                    <div 
-                      key={cIdx} 
-                      className="purchase-item-row group hover:bg-[#155A6F]/20 p-2 rounded-lg transition-all border-b border-[#114E60]/30 last:border-0 flex justify-between items-center"
-                    >
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-slate-200 font-bold tracking-wide group-hover:text-white transition-colors">
-                          {compra.desc}
-                        </span>
-                        <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">
-                          Cargo Procesado
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2.5">
-                        <span className="font-mono font-black text-white text-right tracking-tight bg-[#114E60]/50 px-2 py-1 rounded-md border border-[#1a5f74]/20 group-hover:border-[#00E5FF]/30 transition-all">
-                          {compra.precio}
-                        </span>
-                        <button 
-                          title="Ver comprobante digital"
-                          className="action-icon-btn !p-1 !bg-transparent border-0 opacity-40 group-hover:opacity-100 text-[#00E5FF] hover:scale-110 transition-all"
-                        >
-                          📄
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))} */}
-          </div>
+          )}
+        </div>
+        <button type="button" disabled={btnGuardarTarjetahabientes} onClick={()=>{cancelaEdicion()}} className={`relative top-1 ${btnGuardarTarjetahabientes ? 'cursor-not-allowed text-(--TextoInactivo)':'cursor-pointer text-(--blanco)'}`}>Cancelar</button>
         </div>
 
 
@@ -673,5 +770,51 @@ return (
         
     </div>
 
-            )
+    <div className="flex flex-col items-center justify-center text-white">
+      {/* Llamada al componentes con propiedades dinámicas */}
+      <Modal 
+        isOpen={showModalElimina}
+        title="Eliminar tarjetahabiente"
+        description="Eliminar un tarjetahabiente afecta el balance general del Centro de Negocios al que pertenece, porque todas las operaciones (abonos y cargos) también serán eliminadas."
+        textCancel="No eliminar"
+        textConfirm="Eliminar"
+        onCancel={() => setShowModalElimina(false)}
+        onConfirm={eliminaTargetahabiente}
+      />
+
+      <Modal
+        isOpen={showModalAviso}
+        title="¡Aun no has guardado!"
+        description="Estás saliendo del modo de edición sin haber guardado, los cambios se perderán"
+        textCancel="No salir"
+        textConfirm="Salir de cualquier forma"
+        onCancel={() => setShowModalAviso(false)}
+        onConfirm={cancelaEdicion}
+      />
+
+      <ModalAviso
+        isOpen={showModalGuardado}
+        title="¡Datos guardados correctamente!"
+        textConfirm="Entendido"
+        onConfirm={() => setShowModalGuardado(false)}
+      />
+      <ModalContraseña 
+        isOpen={showModalContraseña}
+        icono={<svg width="27" height="24" viewBox="0 0 27 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22.3999 8.65479C21.5373 8.65479 21.106 8.28451 21.106 7.54395C21.106 7.51953 21.106 7.49919 21.106 7.48291C21.106 7.46663 21.106 7.45036 21.106 7.43408C21.106 6.90511 21.2443 6.4738 21.521 6.14014C21.7977 5.79834 22.1517 5.47689 22.583 5.17578C23.0876 4.82585 23.466 4.53288 23.7183 4.29688C23.9787 4.05273 24.1089 3.74756 24.1089 3.38135C24.1089 3.007 23.9665 2.69775 23.6816 2.45361C23.4049 2.20947 23.0428 2.0874 22.5952 2.0874C22.3674 2.0874 22.1558 2.12402 21.9604 2.19727C21.7733 2.26237 21.5942 2.36816 21.4233 2.51465C21.2606 2.65299 21.1141 2.82389 20.9839 3.02734L20.813 3.25928C20.6828 3.42204 20.5322 3.55225 20.3613 3.6499C20.1986 3.73942 19.9992 3.78418 19.7632 3.78418C19.4784 3.78418 19.2301 3.69059 19.0186 3.50342C18.8151 3.30811 18.7134 3.05583 18.7134 2.74658C18.7134 2.63265 18.7256 2.52279 18.75 2.41699C18.7744 2.30306 18.807 2.18913 18.8477 2.0752C19.043 1.50553 19.4865 1.01725 20.1782 0.610352C20.87 0.203451 21.7407 0 22.7905 0C23.5311 0 24.2106 0.130208 24.8291 0.390625C25.4476 0.642904 25.9399 1.01318 26.3062 1.50146C26.6805 1.98161 26.8677 2.55941 26.8677 3.23486C26.8677 3.93473 26.6927 4.49219 26.3428 4.90723C26.001 5.31413 25.5249 5.71696 24.9146 6.11572C24.5402 6.35986 24.2391 6.59587 24.0112 6.82373C23.7915 7.04346 23.6694 7.30387 23.645 7.60498C23.645 7.62939 23.641 7.65788 23.6328 7.69043C23.6328 7.71484 23.6328 7.73519 23.6328 7.75146C23.6003 8.00374 23.4741 8.2194 23.2544 8.39844C23.0428 8.56934 22.758 8.65479 22.3999 8.65479ZM22.3877 12.4756C21.9645 12.4756 21.6064 12.3454 21.3135 12.085C21.0205 11.8164 20.874 11.4827 20.874 11.084C20.874 10.6771 21.0205 10.3434 21.3135 10.083C21.6064 9.81445 21.9645 9.68018 22.3877 9.68018C22.8109 9.68018 23.1689 9.81038 23.4619 10.0708C23.7549 10.3312 23.9014 10.6689 23.9014 11.084C23.9014 11.4909 23.7508 11.8245 23.4497 12.085C23.1567 12.3454 22.8027 12.4756 22.3877 12.4756ZM2.27051 23.0469C1.5625 23.0469 1.00505 22.8841 0.598145 22.5586C0.199382 22.2412 0 21.8018 0 21.2402C0 20.459 0.240072 19.637 0.720215 18.7744C1.20036 17.9118 1.89209 17.1061 2.79541 16.3574C3.69873 15.6006 4.78516 14.9862 6.05469 14.5142C7.33236 14.0422 8.76058 13.8062 10.3394 13.8062C11.9263 13.8062 13.3545 14.0422 14.624 14.5142C15.9017 14.9862 16.9881 15.6006 17.8833 16.3574C18.7866 17.1061 19.4784 17.9118 19.9585 18.7744C20.4468 19.637 20.6909 20.459 20.6909 21.2402C20.6909 21.8018 20.4875 22.2412 20.0806 22.5586C19.6818 22.8841 19.1284 23.0469 18.4204 23.0469H2.27051ZM10.3516 11.6577C9.44824 11.6577 8.62223 11.4176 7.87354 10.9375C7.12484 10.4492 6.52262 9.79818 6.06689 8.98438C5.6193 8.16243 5.39551 7.24284 5.39551 6.22559C5.39551 5.24089 5.6193 4.3457 6.06689 3.54004C6.52262 2.72624 7.12484 2.08333 7.87354 1.61133C8.63037 1.13118 9.45638 0.891113 10.3516 0.891113C11.2467 0.891113 12.0687 1.12712 12.8174 1.59912C13.5661 2.07113 14.1683 2.70996 14.624 3.51562C15.0798 4.31315 15.3076 5.2124 15.3076 6.21338C15.3076 7.23063 15.0798 8.15023 14.624 8.97217C14.1764 9.79411 13.5742 10.4492 12.8174 10.9375C12.0687 11.4176 11.2467 11.6577 10.3516 11.6577Z" fill="#02FFA2"/>
+              </svg>
+              }
+        title="Cambio de contraseña                                   "
+        tarjetahabiente={dataInputs?.Cliente}
+        cta="No salir"
+        noCliente="No salir"
+        textConfirm="Cancelar"
+        textCancel="Guardar"
+        onConfirm={() => setShowModalContraseña(false)}
+        onCancel={() => setShowModalContraseña(false)}
+      />
+    </div>
+
+  </>
+  )
 };
