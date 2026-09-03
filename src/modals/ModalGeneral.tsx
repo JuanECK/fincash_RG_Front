@@ -261,10 +261,10 @@ export const ModalAviso: React.FC<ModalAvisoProps> = ({
                   No. Cliente: <span className="font-bold ">{noCliente}</span>
                 </p>
                 </div>
-                {!noCliente ? (''):(
+                {!noOperacion ? (''):(
                 <div className="flex justify-start">
                 <p className="text-sm  text-write  font-[200] text-[16px]">
-                  No. de operación: <span className="font-bold ">{noCliente}</span>
+                  No. Operación: <span className="font-bold ">{noOperacion}</span>
                 </p>
                 </div>
                 ) }

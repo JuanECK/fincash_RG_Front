@@ -1,11 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite'; //Tailwind v4
+import basicSsl from '@vitejs/plugin-basic-ssl';
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
-    tailwindcss() //Activamos el compilador nativo de Tailwind v4
+    tailwindcss(), //Activamos el compilador nativo de Tailwind v4
+    basicSsl()
   ],
 })

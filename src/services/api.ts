@@ -2,7 +2,8 @@ import axios from 'axios';
 import CryptoJS from 'crypto-js';
 
 // En producción, esto vendría de un archivo .env del frontend (import.meta.env.VITE_API_URL)
-const API_URL = 'http://localhost:3000/api/v1';
+const API_URL = 'https://appfrg.mx/api/v1';
+// const API_URL = 'http://localhost:3000/api/v1';
 const HMAC_SECRET = 'FincashRG2026!';
 
 export const api = axios.create({
