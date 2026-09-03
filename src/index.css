@@ -148,6 +148,9 @@
 .search-input-box {
   @apply bg-(--MediumBlue) rounded-full px-4 py-2.5 pr-10 text-white placeholder-slate-400 focus:outline-none focus:border-[#00E5FF] w-72 text-xs;
 }
+.input-generico{
+  @apply bg-(--MediumBlue) rounded-full px-4 py-2.5 pr-10 text-white focus:outline-none text-xs;
+}
 
 /* 🗂️ TABLAS DE DATOS */
 .table-container {
