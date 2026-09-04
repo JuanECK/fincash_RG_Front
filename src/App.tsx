@@ -2,9 +2,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
-import { AdminDashboard } from './pages/AdminDashboard';
-import { UserHome } from './pages/UserDashboard';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminLayout } from './pages/AdminLayout';        // 🔄 Sub-página 1
+import { AdminDashboard } from './pages/AdminDashboard';  // 🔄 Sub-página 1
+import { AdminHistorial } from './pages/AdminHistorial';  // 🔄 Sub-página 2
+import { UserHome } from './pages/UserDashboard';
 
 // =============================================================================================
 // PREVENIMOS QUE EL USUARIO SE SALGA AL LOGIN PULSANDO LA FLECHA DE RETROCESO DE CHROME
@@ -41,18 +43,17 @@ function App() {
             } 
           />
 
-          {/* 🔒 Rutas Protegidas Exclusivas para Super Administradores */}
+         {/* 🔒 RUTAS ANIDADAS Y PROTEGIDAS PARA EL ROL 1 (ADMINS) */}
           <Route 
             path="/admin/dashboard" 
             element={
               <ProtectedRoute allowedRoles={[1]}>
-              {/* <ProtectedRoute allowedRoles={['superAdmin']}> */}
                 <AdminDashboard />
               </ProtectedRoute>
             } 
           />
 
-          {/* 🔒 Rutas Protegidas para Administradores */}
+           {/* 🔒 Ruta del Rol 2 (Clientes) */}
           <Route 
             path="/user/home" 
             element={

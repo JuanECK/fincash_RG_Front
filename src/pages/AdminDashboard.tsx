@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { api, logoutSession } from "../services/api";
-import { Modal, ModalAbono, ModalAgregarTarjetahabiente, ModalAviso, ModalContraseña, ModalGasto} from "../modals/ModalGeneral";
+import { Modal, ModalAbono, ModalAgregarCentroNegocios, ModalAgregarTarjetahabiente, ModalAviso, ModalContraseña, ModalGasto} from "../modals/ModalGeneral";
 
 interface TarjetaUsuario {
   Cliente: string;
@@ -88,6 +88,7 @@ export const AdminDashboard: React.FC = () => {
   const [showModalAbono, setShowModalAbono] = useState(false);
   const [showModalGasto, setShowModalGasto] = useState(false);
   const [showModalTargetahabiente, setShowModalTargetahabiente] = useState(false);
+  const [showModalAgregaCentroNegocio, setShowModalAgregaCentroNegocio] = useState(false);
   const [loading, setLoading] = useState<boolean>(false);
   const limitePorPagina = 15; // Cantidad de filas exactas por pantalla según tu diseño
 
@@ -467,6 +468,7 @@ export const AdminDashboard: React.FC = () => {
                 {/* <button type="button" className="px-2 py-1.5 transition-transform duration-300 ease-in-out hover:scale-110 hover:animate-[pulse_1s_infinite]">+</button> */}
                 <button
                   type="button"
+                  onClick={()=> setShowModalAgregaCentroNegocio(true)}
                   className="text-[15px] font-bold cursor-pointer py-1.5 px-3"
                 >
                   +
@@ -1206,10 +1208,15 @@ export const AdminDashboard: React.FC = () => {
       <ModalAgregarTarjetahabiente 
         isOpen={showModalTargetahabiente}
         centroNegocio="Xolos Rg"
-        onClose={() => setShowModalTargetahabiente(false)}
-        onSave={() =>setShowModalTargetahabiente(false)}
+        onCancel={() => setShowModalTargetahabiente(false)}
+        onConfirm={() =>setShowModalTargetahabiente(false)}
       />
 
+      <ModalAgregarCentroNegocios
+        isOpen={showModalAgregaCentroNegocio}
+        onCancel={()=> setShowModalAgregaCentroNegocio(false)}
+        onConfirm={()=> setShowModalAgregaCentroNegocio(false)}
+      />
         {/* <ModalAgregarTarjetahabiente
           isOpen={showModalTargetahabiente}
           icono={
