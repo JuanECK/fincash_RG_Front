@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { api, logoutSession } from "../services/api";
-import { Modal, ModalAbono, ModalAviso, ModalContraseña, ModalGasto, ModalTarjetahabiente } from "../modals/ModalGeneral";
+import { Modal, ModalAbono, ModalAgregarTarjetahabiente, ModalAviso, ModalContraseña, ModalGasto} from "../modals/ModalGeneral";
 
 interface TarjetaUsuario {
   Cliente: string;
@@ -1196,14 +1196,21 @@ export const AdminDashboard: React.FC = () => {
           title="Agregar Gasto"
           tarjetahabiente={dataInputs?.Cliente}
           cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
-          // noCliente={dataInputs?.noCliente} 
+          noCliente={dataInputs?.noCliente} 
           textConfirm="Agregar"
           textCancel="Cancelar"
           onConfirm={() => setShowModalGasto(false)}
           onCancel={() => setShowModalGasto(false)} 
         />
 
-        <ModalTarjetahabiente
+      <ModalAgregarTarjetahabiente 
+        isOpen={showModalTargetahabiente}
+        centroNegocio="Xolos Rg"
+        onClose={() => setShowModalTargetahabiente(false)}
+        onSave={() =>setShowModalTargetahabiente(false)}
+      />
+
+        {/* <ModalAgregarTarjetahabiente
           isOpen={showModalTargetahabiente}
           icono={
             <svg width="33" height="21" viewBox="0 0 33 21" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1216,7 +1223,7 @@ export const AdminDashboard: React.FC = () => {
           textCancel="Cancelar"
           onConfirm={() => setShowModalTargetahabiente(false)}
           onCancel={() => setShowModalTargetahabiente(false)}
-        />
+        /> */}
       </div>
     </>
   );

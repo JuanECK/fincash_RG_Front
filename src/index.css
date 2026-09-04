@@ -148,8 +148,28 @@
 .search-input-box {
   @apply bg-(--MediumBlue) rounded-full px-4 py-2.5 pr-10 text-white placeholder-slate-400 focus:outline-none focus:border-[#00E5FF] w-72 text-xs;
 }
+
 .input-generico{
-  @apply bg-(--MediumBlue) rounded-full px-4 py-2.5 pr-10 text-white focus:outline-none text-xs;
+  @apply bg-(--MediumBlue) rounded-full px-4 py-2.5 text-white focus:outline-none text-xs font-light;
+}
+
+.input-date{
+  @apply bg-(--MediumBlue) text-white font-light text-xs rounded-full px-4 py-2.5 outline-none border-none appearance-none cursor-pointer;
+}
+.custom-date-input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;   /* Oculta el icono nativo */
+  width: 12px;
+  height: 12px;
+  cursor: pointer;
+  z-index: 20; /* Se posiciona por encima del SVG para recibir el click */
+}
+
+.input-style {
+  @apply w-full bg-(--MediumBlue) border-none rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none disabled:bg-slate-900/10 disabled:border-slate-800/20 disabled:cursor-not-allowed transition-all;
 }
 
 /* 🗂️ TABLAS DE DATOS */
