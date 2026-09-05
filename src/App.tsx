@@ -44,25 +44,45 @@ function App() {
           />
 
          {/* 🔒 RUTAS ANIDADAS Y PROTEGIDAS PARA EL ROL 1 (ADMINS) */}
-          <Route 
+         <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute allowedRoles={[1]}>
+                <AdminLayout /> {/* 🏢 El Layout se queda fijo en pantalla */}
+              </ProtectedRoute>
+            }
+          >
+            {/* Sub-rutas inyectadas dentro del <Outlet /> sin refrescar la página */}
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="historial" element={<AdminHistorial />} />
+            
+            {/* Redirección interna por si entran a /admin a secas */}
+            <Route index element={<Navigate to="dashboard" replace />} />
+          </Route>
+
+         {/* ========================================================= */}
+          {/* <Route 
             path="/admin/dashboard" 
             element={
               <ProtectedRoute allowedRoles={[1]}>
                 <AdminDashboard />
               </ProtectedRoute>
             } 
-          />
+            /> */}
+            {/* ========================================================= */}
 
            {/* 🔒 Ruta del Rol 2 (Clientes) */}
-          <Route 
+            <Route path="/user/home" element={<ProtectedRoute allowedRoles={[2]}><UserHome /></ProtectedRoute>} />
+            {/* ========================================================= */}
+          {/* <Route 
             path="/user/home" 
             element={
               <ProtectedRoute allowedRoles={[2]}>
-              {/* <ProtectedRoute allowedRoles={['clienteApp']}> */}
               <UserHome />
               </ProtectedRoute>
             } 
-          />
+            /> */}
+            {/* ========================================================= */}
           
           {/* Redirección por defecto si escriben cualquier otra cosa */}
           <Route path="*" element={<Navigate to="/" replace />} />
