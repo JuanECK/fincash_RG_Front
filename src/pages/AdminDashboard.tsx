@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { api, logoutSession } from "../services/api";
-import { Modal, ModalAbono, ModalAgregarTarjetahabiente, ModalAviso, ModalContraseña, ModalGasto} from "../modals/ModalGeneral";
+import { Modal, ModalAbono, ModalAgregarTarjetahabiente, ModalAviso, ModalContraseña, ModalDetalleGasto, ModalGasto} from "../modals/ModalGeneral";
 import { useOutletContext } from 'react-router-dom';
 
 
@@ -42,6 +42,15 @@ interface selectCliente {
   idCliente: number;
   idTarjeta: number;
   noTarjeta: number;
+} 
+interface DetalleGastos{
+  Fecha:string;
+  comprobante:string;
+  concepto:string;
+  idMovimiento:string;
+  nombreNegocio:string;
+  precio:string;
+  tipoMovimiento:string;
 }
 
 interface AdminContextType {
@@ -95,13 +104,50 @@ export const AdminDashboard: React.FC = () => {
   const [showModalAbono, setShowModalAbono] = useState(false);
   const [showModalGasto, setShowModalGasto] = useState(false);
   const [showModalTargetahabiente, setShowModalTargetahabiente] = useState(false);
+  const [showModalDetalleGasto, setShowModalDetalleGasto] = useState(false);
 
   const [loading, setLoading] = useState<boolean>(false);
+  const [detalleClienteSelecionado, setDetalleClienteSelecionado] = useState<DetalleGastos>({
+    Fecha:'',
+    comprobante:'',
+    concepto:'',
+    idMovimiento:'',
+    nombreNegocio:'',
+    precio:'',
+    tipoMovimiento:'',
+  });
+  const [idMovimientoEdicion, setIdMovimientoEdicion] = useState<string>('')
   const limitePorPagina = 15; // Cantidad de filas exactas por pantalla según tu diseño
 
   const BtnsTatrjetahabientes = () => {
     setbtnGuardarTarjetahabientes(false);
     setBtnTarjetahabientes(true);
+  };
+
+  const handleDetalleMovimiento = async ( id:number ) => {
+    try{
+      const response = await api.post("/admin/detalleGastos", { id });
+
+      if( response.data.status === 200 ){
+        console.log(response.data.data.datos)
+       setShowModalDetalleGasto(true); 
+       setDetalleClienteSelecionado(response.data.data.datos)
+       return
+      }
+    
+      // console.log("sesion caducada: ", response.data.status);
+      // endSessionCockie();
+
+    } catch (error) {
+      console.error("Error cargando los detalles del tarjetahabiente:", error);
+    }
+  }
+
+  const handleEditar = () => {
+    console.log("Editando detalle de gasto");
+    setShowModalDetalleGasto(false);
+    setIdMovimientoEdicion(detalleClienteSelecionado?.idMovimiento)
+    setShowModalGasto(true)
   };
 
   const cancelaEdicion = () => {
@@ -199,7 +245,7 @@ export const AdminDashboard: React.FC = () => {
         getDataInput(response.data.data.usuario);
         setbtnGuardarTarjetahabientes(true);
         setVarRandom(idCliente);
-        console.log(selectedClient);
+        console.log({targetaSelecionada:response.data});
 
         return;
       }
@@ -417,7 +463,7 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <>
-      <div className="dashboard-layout">
+      <div className="dashboard-layout-Admin">
         {!btnGuardarTarjetahabientes && (
           <div
             className="absolute inset-0 z-40 bg-[#0a1f26]/40 backdrop-blur-xs cursor-pointer transition-all duration-300"
@@ -950,8 +996,8 @@ export const AdminDashboard: React.FC = () => {
                     Compras
                   </h4>
                   {/* <span className="text-[10px] bg-[#155A6F] border border-[#1e6f8a] text-[#00E5FF] px-2 py-0.5 rounded-md font-bold font-mono">
-              {mockCompras.reduce((acc, curr) => acc + curr.items.length, 0)} Movs
-            </span> */}
+                {mockCompras.reduce((acc, curr) => acc + curr.items.length, 0)} Movs
+              </span> */}
                 </div>
 
                 {/* Contenedor con Scroll Interno para prevenir desbordamientos */}
@@ -996,6 +1042,7 @@ export const AdminDashboard: React.FC = () => {
                                     <button
                                       type="button"
                                       title="Ver comprobante digital"
+                                      onClick={compra.precio.charAt(0) === "+" ? (()=>{}): (()=>{handleDetalleMovimiento(compra.idMovimiento)}) }
                                       className="action-icon-btn !p-1 !bg-transparent border-0 opacity-40 group-hover:opacity-100 text-[#00E5FF] hover:scale-110 transition-all"
                                     >
                                       <span>
@@ -1112,19 +1159,15 @@ export const AdminDashboard: React.FC = () => {
 
         <ModalGasto
           isOpen={showModalGasto}
-          icono={
-            <svg width="27" height="26" viewBox="0 0 27 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M23.0625 4.18359C24.2812 4.18359 25.1992 4.48828 25.8164 5.09766C26.4336 5.69922 26.7422 6.60547 26.7422 7.81641V19.9453C26.7422 21.1562 26.4492 22.0625 25.8633 22.6641C25.2773 23.2734 24.4609 23.5781 23.4141 23.5781H12.4922C12.8125 23.0234 13.0625 22.4297 13.2422 21.7969C13.4219 21.1641 13.5117 20.5078 13.5117 19.8281C13.5117 18.7891 13.3125 17.8164 12.9141 16.9102C12.5234 15.9961 11.9805 15.1914 11.2852 14.4961C10.5898 13.8008 9.78516 13.2578 8.87109 12.8672C7.95703 12.4688 6.98047 12.2695 5.94141 12.2695V7.81641C5.94141 6.60547 6.24609 5.69922 6.85547 5.09766C7.47266 4.48828 8.39453 4.18359 9.62109 4.18359H23.0625ZM11.7188 4.64062C11.7188 3.77344 11.9219 2.99219 12.3281 2.29688C12.7344 1.59375 13.2852 1.03516 13.9805 0.621094C14.6758 0.207031 15.4609 0 16.3359 0C17.2109 0 17.9961 0.207031 18.6914 0.621094C19.3945 1.03516 19.9492 1.59375 20.3555 2.29688C20.7617 2.99219 20.9648 3.77344 20.9648 4.64062L19.0781 4.65234C19.0781 4.08984 18.9609 3.59375 18.7266 3.16406C18.5 2.73437 18.1797 2.39844 17.7656 2.15625C17.3594 1.90625 16.8828 1.78125 16.3359 1.78125C15.7969 1.78125 15.3203 1.90625 14.9062 2.15625C14.5 2.39844 14.1797 2.73437 13.9453 3.16406C13.7188 3.59375 13.6055 4.08984 13.6055 4.65234L11.7188 4.64062ZM5.95312 25.7812C5.14062 25.7812 4.375 25.625 3.65625 25.3125C2.9375 25.0078 2.30469 24.582 1.75781 24.0352C1.21094 23.4883 0.78125 22.8555 0.46875 22.1367C0.15625 21.418 0 20.6484 0 19.8281C0 19.0078 0.15625 18.2422 0.46875 17.5312C0.78125 16.8125 1.21094 16.1797 1.75781 15.6328C2.30469 15.0781 2.9375 14.6484 3.65625 14.3438C4.375 14.0312 5.14062 13.875 5.95312 13.875C6.77344 13.875 7.54297 14.0312 8.26172 14.3438C8.98047 14.6484 9.61328 15.0742 10.1602 15.6211C10.707 16.168 11.1328 16.8008 11.4375 17.5195C11.75 18.2383 11.9062 19.0078 11.9062 19.8281C11.9062 20.6406 11.75 21.4062 11.4375 22.125C11.125 22.8438 10.6914 23.4766 10.1367 24.0234C9.58984 24.5703 8.95703 25 8.23828 25.3125C7.51953 25.625 6.75781 25.7812 5.95312 25.7812ZM5.94141 23.5547C6.16016 23.5547 6.33203 23.4883 6.45703 23.3555C6.58984 23.2227 6.65625 23.0508 6.65625 22.8398V20.543H8.95312C9.16406 20.543 9.33594 20.4766 9.46875 20.3438C9.60156 20.2188 9.66797 20.0469 9.66797 19.8281C9.66797 19.6094 9.60156 19.4375 9.46875 19.3125C9.33594 19.1797 9.16406 19.1133 8.95312 19.1133H6.65625V16.8164C6.65625 16.6055 6.58984 16.4336 6.45703 16.3008C6.33203 16.168 6.16016 16.1016 5.94141 16.1016C5.72266 16.1016 5.54688 16.168 5.41406 16.3008C5.28906 16.4336 5.22656 16.6055 5.22656 16.8164V19.1133H2.92969C2.71875 19.1133 2.54688 19.1797 2.41406 19.3125C2.28125 19.4375 2.21484 19.6094 2.21484 19.8281C2.21484 20.0469 2.28125 20.2188 2.41406 20.3438C2.54688 20.4766 2.71875 20.543 2.92969 20.543H5.22656V22.8398C5.22656 23.0508 5.28906 23.2227 5.41406 23.3555C5.54688 23.4883 5.72266 23.5547 5.94141 23.5547Z" fill="#02FFA2"/>
-            </svg>
-          }
-          title="Agregar Gasto"
+          title={!idMovimientoEdicion ? 'Agregar Gasto' : 'Edición de Gasto' }
           tarjetahabiente={dataInputs?.Cliente}
           cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
           noCliente={dataInputs?.noCliente} 
+          noOperacion={idMovimientoEdicion}
           textConfirm="Agregar"
           textCancel="Cancelar"
           onConfirm={() => setShowModalGasto(false)}
-          onCancel={() => setShowModalGasto(false)} 
+          onCancel={() => {setShowModalGasto(false); setIdMovimientoEdicion('')}} 
         />
 
       <ModalAgregarTarjetahabiente 
@@ -1132,6 +1175,18 @@ export const AdminDashboard: React.FC = () => {
         centroNegocio="Xolos Rg"
         onCancel={() => setShowModalTargetahabiente(false)}
         onConfirm={() =>setShowModalTargetahabiente(false)}
+      />
+
+      <ModalDetalleGasto 
+        isOpen={showModalDetalleGasto}
+        monto={detalleClienteSelecionado?.precio}
+        nomComercio = {detalleClienteSelecionado?.nombreNegocio}
+        concepto = {detalleClienteSelecionado?.concepto}
+        fechaCargo = {detalleClienteSelecionado?.Fecha}
+        noOperacion = {detalleClienteSelecionado?.idMovimiento}
+        comprobante = {detalleClienteSelecionado?.comprobante}              
+        onCancel={() => {setShowModalDetalleGasto(false)}}
+        onEdit={() => {handleEditar()}}
       />
 
 
