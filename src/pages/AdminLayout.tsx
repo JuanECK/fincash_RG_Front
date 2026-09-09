@@ -1,16 +1,48 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { logoutSession } from '../services/api';
+import { api, logoutSession } from '../services/api';
 import { ModalAgregarCentroNegocios } from '../modals/ModalGeneral';
+
+
 
 export const AdminLayout: React.FC = () => {
 
     const [showModalAgregaCentroNegocio, setShowModalAgregaCentroNegocio] = useState(false);
-    const [centroActivo, setCentroActivo] = useState("Xolos");
-//   const { user, logout } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation(); // Sabe en qué URL estamos para pintar el botón activo
+    const [centroActivo, setCentroActivo] = useState('');
+    const [centroId, setCentroId] = useState(1);
+    const [cNegocio, setCNegocio] = useState<any[]>([]);
+    const { user, logout } = useAuth();
+
+    // const navigate = useNavigate();
+    // const location = useLocation(); // Sabe en qué URL estamos para pintar el botón activo
+
+    
+    const cargaCentroNegocios = async () => {
+      const { idUsuario } = user!
+      const response = await api.post("/admin/centroNegocios", { idUsuario });
+
+      if( response.data.status === 200 ){
+        setCNegocio(response.data.data.cNegocios)
+        setCentroActivo(response.data.data.cNegocios[0]?.centroNegocio)
+      }
+
+    }
+
+    useEffect(()=>{
+      cargaCentroNegocios()
+    },[])
+
+  const handleCloseModal = (resultado: '1' | '0') => {
+    setShowModalAgregaCentroNegocio(false); // Cerramos el modal
+
+    // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
+    if (resultado === '1') {
+      cargaCentroNegocios();
+      console.log('actualizamos centro de negocios')
+    }
+    
+  };
 
 //   const handleLogout = async () => {
 //     await logoutSession();
@@ -65,7 +97,7 @@ export const AdminLayout: React.FC = () => {
                 <button
                   type="button"
                   onClick={()=> setShowModalAgregaCentroNegocio(true)}
-                  className="text-[15px] font-bold cursor-pointer py-1.5 px-3"
+                  className="text-[15px] font-bold cursor-pointer py-1.5 px-3.5"
                 >
                   +
                 </button>
@@ -73,14 +105,14 @@ export const AdminLayout: React.FC = () => {
             </div>
 
             <nav className="sidebar-menu-list">
-              {["Xolos", "Atlante", "América"].map((centro) => (
+              {cNegocio?.map((centro) => (
                 <button
                   type="button"
-                  key={centro}
-                  onClick={() => setCentroActivo(centro)}
-                  className={`sidebar-menu-item ${centroActivo === centro ? "active" : ""}`}
+                  key={centro.idCentroN}
+                  onClick={() => {setCentroActivo(centro.centroNegocio); setCentroId(centro.idCentroN)}}
+                  className={`sidebar-menu-item ${centroActivo === centro.centroNegocio ? "active" : ""}`}
                 >
-                  {centro}
+                  {centro.centroNegocio}
                 </button>
               ))}
             </nav>
@@ -97,12 +129,13 @@ export const AdminLayout: React.FC = () => {
       {/* 📊 PANEL OPERATIVO DINÁMICO */}
       <main className="main-content-panel">
 
-        <Outlet context={{ centroActivo, setCentroActivo }}/>
+        {/* <Outlet context={{ centroActivo, setCentroActivo }}/> */}
+        <Outlet context={{ centroActivo, setCentroActivo, centroId, setCentroId }}/>
       </main>
       <ModalAgregarCentroNegocios
         isOpen={showModalAgregaCentroNegocio}
         onCancel={()=> setShowModalAgregaCentroNegocio(false)}
-        onConfirm={()=> setShowModalAgregaCentroNegocio(false)}
+        onClose={handleCloseModal}
       />
     </div>
   );

@@ -55,6 +55,7 @@ interface DetalleGastos{
 
 interface AdminContextType {
   centroActivo: string;
+  centroId:number;
   setCentroActivo: React.Dispatch<React.SetStateAction<string>>;
 }
 // interface MiComponenteProps {
@@ -76,15 +77,14 @@ export const AdminDashboard: React.FC = () => {
     idTarjeta: 0,
     noTarjeta: 0,
   });
-  const [detallesCliente, setDetallesCliente] =
-    useState<RespuestaBackend | null>(null);
+  const [detallesCliente, setDetallesCliente] = useState<RespuestaBackend | null>(null);
   const [montoTotalCargos, setMontoTotalCargos] = useState(0);
-  const [idCentroN, setidCentroN] = useState(1);
+  // const [idCentroN, setidCentroN] = useState(1);
   const [paginaActual, setPaginaActual] = useState(1);
   const [totalRegistros, setTotalRegistros] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
-  const { centroActivo } = useOutletContext<AdminContextType>();
+  const { centroActivo, centroId } = useOutletContext<AdminContextType>();
   const [btnTarjetahabientes, setBtnTarjetahabientes] = useState(true);
   const [btnGuardarTarjetahabientes, setbtnGuardarTarjetahabientes] =
     useState(true);
@@ -276,6 +276,11 @@ export const AdminDashboard: React.FC = () => {
     }
   }, [detallesCliente]);
 
+// para regresar siempre a la pagina 1 cuando cambie el centro de negocio
+  useEffect(() => {
+    setPaginaActual(1)
+  }, [centroActivo]);
+
   // Manejador dinámico para actualizar cualquier input del formulario
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -287,18 +292,19 @@ export const AdminDashboard: React.FC = () => {
 
   // 🔄 EFFECT: Se ejecuta al cargar la página y cada vez que cambia 'paginaActual'
   useEffect(() => {
+    
     const cargarDatosPaginados = async () => {
       setIsLoadingTable(true);
       try {
         // Hacemos la consulta parametrizada al Backend pasando la página actual
         const response = await api.get(
-          `/admin/targetahabientes?idCentroN=${idCentroN}&page=${paginaActual}&limit=${limitePorPagina}`,
+          `/admin/targetahabientes?idCentroN=${centroId}&page=${paginaActual}&limit=${limitePorPagina}`,
         );
 
         if (response.data.status === 200) {
           const { tarjetahabientes, paginacion, MontoTotalCargos } =
             response.data.data;
-          console.log(paginacion);
+          // console.log(paginacion);
 
           setTarjetahabientes(tarjetahabientes);
           setTotalPaginas(paginacion.totalPaginas);
@@ -316,7 +322,7 @@ export const AdminDashboard: React.FC = () => {
             setSelectedClient(tarjetahabientes);
           }
 
-          console.log(selectedClient);
+          // console.log(selectedClient);
           // console.log(selectedClient)
           return;
         }
@@ -330,7 +336,7 @@ export const AdminDashboard: React.FC = () => {
     };
 
     cargarDatosPaginados();
-  }, [paginaActual]); // 👈 Escucha los cambios de página
+  }, [paginaActual, centroActivo]); // 👈 Escucha los cambios de página
 
   // =============================================================================================
   // PAGINACION INTELIGENTE
@@ -989,7 +995,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               {/* Historial de Movimientos de Compras del Cliente */}
-              <div className="flex-1 flex flex-col min-h-[300px] justify-between">
+              <div className="flex-1 flex flex-col min-h-[465px] justify-between">
                 {/* Título de la Sección de Movimientos */}
                 <div className="flex items-center justify-between pb-0">
                   <h4 className="input-condensed text-[25px] font-bold text-white flex items-center gap-2">
@@ -997,12 +1003,12 @@ export const AdminDashboard: React.FC = () => {
                   </h4>
                   {/* <span className="text-[10px] bg-[#155A6F] border border-[#1e6f8a] text-[#00E5FF] px-2 py-0.5 rounded-md font-bold font-mono">
                 {mockCompras.reduce((acc, curr) => acc + curr.items.length, 0)} Movs
-              </span> */}
+                </span> */}
                 </div>
 
                 {/* Contenedor con Scroll Interno para prevenir desbordamientos */}
                 {/* ===============CONTINUAR DESDE AQUI================ */}
-                <div className="purchase-history-box pr-1 overflow-y-auto max-h-[395px] scrollbar-thin scrollbar-thumb-[#155A6F] scrollbar-track-transparent">
+                <div className="purchase-history-box pr-1 overflow-y-auto scrollbar-thin scrollbar-thumb-[#155A6F] scrollbar-track-transparent">
                   {detallesCliente?.historico.length === 0 ? (
                     <div className="flex-1 flex items-center justify-center text-slate-400 text-xs font-medium">
                       Sin Historico a mostrar.

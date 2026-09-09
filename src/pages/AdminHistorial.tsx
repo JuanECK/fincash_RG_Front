@@ -35,10 +35,11 @@ const mockHistorialGeneral = [
 
 interface AdminContextType {
   centroActivo: string;
+  centroId:number;
 }
 
 export const AdminHistorial: React.FC = () => {
-  const { centroActivo } = useOutletContext<AdminContextType>();
+  const { centroActivo, centroId } = useOutletContext<AdminContextType>();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -61,7 +62,7 @@ export const AdminHistorial: React.FC = () => {
       <div className="flex flex-col w-full pt-8">
         <div className="top-bar-user-historial">
           {/* <span className="w-2 h-2 rounded-full bg-emerald-400"></span> */}
-            <div className="flex items-center">
+            <div className="top-bar-user">
                 <span>
                     <svg
                     width="21"

@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { api } from "../services/api";
+import ModalAvisoPopUp from "./ModalAviso";
+// import { ModalAviso } from './ModalAviso'
 
 interface ModalProps {
   isOpen: boolean;
@@ -17,6 +20,7 @@ interface ModalAvisoProps {
   textConfirm?: string;
   onConfirm: () => void;
 }
+
 interface ModalContrasenaProps {
   isOpen: boolean;
   title?: string;
@@ -30,6 +34,7 @@ interface ModalContrasenaProps {
   onCancel: () => void;
   icono?: React.ReactNode;
 }
+
 interface ModalTarjetahabienteProps {
   isOpen: boolean;
   title?: string;
@@ -39,6 +44,27 @@ interface ModalTarjetahabienteProps {
   onConfirm: () => void;
   onCancel: () => void;
   icono?: React.ReactNode;
+}
+
+interface ModalAgregarProps {
+  isOpen: boolean;
+  onCancel: () => void;
+  onConfirm?: (data: any) => void;
+  onClose?: (resultado: '1' | '0') => void;
+  centroNegocio?: string;
+}
+
+interface DetalleGastoProps {
+  isOpen: boolean;
+  // id:number;
+  monto?: string;
+  nomComercio?: string;
+  concepto?: string;
+  fechaCargo?: string;
+  noOperacion?: string;
+  comprobante?: string;
+  onEdit?: () => void;
+  onCancel?: () => void;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -125,6 +151,7 @@ export const ModalAviso: React.FC<ModalAvisoProps> = ({
     </div>
   );
 };
+
 export const ModalContraseña: React.FC<ModalContrasenaProps> = ({
   isOpen,
   title,
@@ -222,6 +249,7 @@ export const ModalContraseña: React.FC<ModalContrasenaProps> = ({
     </div>
   );
 };
+
 export const ModalAbono: React.FC<ModalContrasenaProps> = ({
   isOpen,
   title,
@@ -350,6 +378,7 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
     </div>
   );
 };
+
 export const ModalGasto: React.FC<ModalContrasenaProps> = ({
   isOpen,
   title,
@@ -514,13 +543,6 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
   );
 };
 
-interface ModalAgregarProps {
-  isOpen: boolean;
-  onCancel: () => void;
-  onConfirm: (data: any) => void;
-  centroNegocio?: string;
-}
-
 export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
   isOpen,
   onCancel,
@@ -534,14 +556,18 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
 
   // Estados del Formulario (Titular)
   const [titularForm, setTitularForm] = useState({
-    nombre: "",
-    primerApellido: "",
-    segundoApellido: "",
-    telefono: "",
-    correo: "",
-    contrasena: "",
-    noTarjeta: "",
-    saldo: "",
+
+    nombreCliente: "",  
+    apellidoP: "",   
+    apellidoM: "",      
+    correo: "",           
+    telefono: "",         
+    contrasenia: "",    
+    noTarjeta: "",       
+    saldo: "",           
+    fechaVencimiento: "", 
+    idCentroN: ""
+
   });
 
   // Estados del Formulario (Tarjeta Adicional)
@@ -551,6 +577,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
     saldo: "",
     fechaVencimiento: "",
   });
+
 
   useEffect(() => {
     if (tipoUsuario === "titular") {
@@ -562,14 +589,16 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
       });
     } else {
       setTitularForm({
-        nombre: "",
-        primerApellido: "",
-        segundoApellido: "",
-        telefono: "",
-        correo: "",
-        contrasena: "",
-        noTarjeta: "",
-        saldo: "",
+        nombreCliente: "",  
+        apellidoP: "",   
+        apellidoM: "",      
+        correo: "",           
+        telefono: "",         
+        contrasenia: "",    
+        noTarjeta: "",       
+        saldo: "",           
+        fechaVencimiento: "", 
+        idCentroN: ""
       });
     }
   }, [tipoUsuario]);
@@ -585,19 +614,21 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
     setAdicionalForm({ ...adicionalForm, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     const dataFinal =
       tipoUsuario === "titular"
         ? { tipo: "titular", ...titularForm }
         : { tipo: "adicional", ...adicionalForm };
-    onConfirm(dataFinal);
+
+  // const response = await api.post("/admin/agregaCentroNegocios", { data });
+    // onConfirm!(dataFinal);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
       {/* Contenedor del Modal */}
-      <div className="w-full max-w-4xl my-auto rounded-2xl bg-[#0d5c75] p-11 shadow-2xl border border-[#146f8c] text-white relative">
+      <div className="w-full max-w-4xl min-w-md my-auto rounded-2xl bg-[#0d5c75] p-11 shadow-2xl border border-[#146f8c] text-white relative">
         {/* Botón Cerrar (X) */}
         <button
           onClick={onCancel}
@@ -690,9 +721,12 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <input
                 type="text"
-                name="nombre"
+                name="nombreCliente"
                 placeholder="*Nombre (s)"
-                value={titularForm.nombre}
+                autoComplete={"off"}
+                value={titularForm.nombreCliente}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                 onChange={handleTitularChange}
                 disabled={tipoUsuario !== "titular"}
                 required={tipoUsuario === "titular"}
@@ -700,9 +734,12 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
               />
               <input
                 type="text"
-                name="primerApellido"
+                name="apellidoP"
                 placeholder="*Primer apellido"
-                value={titularForm.primerApellido}
+                autoComplete={"off"}
+                value={titularForm.apellidoP}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                 onChange={handleTitularChange}
                 disabled={tipoUsuario !== "titular"}
                 required={tipoUsuario === "titular"}
@@ -710,9 +747,12 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
               />
               <input
                 type="text"
-                name="segundoApellido"
+                name="apellidoM"
+                autoComplete={"off"}
                 placeholder="Segundo apellido"
-                value={titularForm.segundoApellido}
+                value={titularForm.apellidoM}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                 onChange={handleTitularChange}
                 disabled={tipoUsuario !== "titular"}
                 className="input-style"
@@ -724,7 +764,10 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 type="tel"
                 name="telefono"
                 placeholder="*Teléfono"
+                autoComplete={"off"}
                 value={titularForm.telefono}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                 onChange={handleTitularChange}
                 disabled={tipoUsuario !== "titular"}
                 required={tipoUsuario === "titular"}
@@ -734,7 +777,10 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 type="email"
                 name="correo"
                 placeholder="*Correo"
+                autoComplete={"off"}
                 value={titularForm.correo}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                 onChange={handleTitularChange}
                 disabled={tipoUsuario !== "titular"}
                 required={tipoUsuario === "titular"}
@@ -742,9 +788,12 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
               />
               <input
                 type="password"
-                name="contrasena"
+                name="contrasenia"
                 placeholder="*Contraseña"
-                value={titularForm.contrasena}
+                autoComplete={"off"}
+                value={titularForm.contrasenia}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                 onChange={handleTitularChange}
                 disabled={tipoUsuario !== "titular"}
                 required={tipoUsuario === "titular"}
@@ -758,7 +807,10 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                   type="text"
                   name="noTarjeta"
                   placeholder="*No. de Tarjeta (16 dígitos)"
+                  autoComplete={"off"}
                   value={titularForm.noTarjeta}
+                  onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                  onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                   onChange={handleTitularChange}
                   disabled={tipoUsuario !== "titular"}
                   required={tipoUsuario === "titular"}
@@ -771,6 +823,9 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 name="saldo"
                 placeholder="*Saldo"
                 value={titularForm.saldo}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                autoComplete={"off"}
                 onChange={handleTitularChange}
                 disabled={tipoUsuario !== "titular"}
                 required={tipoUsuario === "titular"}
@@ -902,18 +957,21 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
     </div>
   );
 };
+
 export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
   isOpen,
-  onCancel,
+  onClose,
   onConfirm,
 }) => {
   const [titularForm, setTitularForm] = useState({
-    nombre: "",
-    telefono: "",
-    correo: "",
-    DCN: "",
+    nombreCentro: "",
+    nombreTitular: "" , 
+    correoTitular: "",
+    telefonoTitular: "", 
     porcentaje: "",
   });
+
+  const [ errorMessage, setErrorMessage] = useState<string | null>(null)
 
   if (!isOpen) return null;
 
@@ -922,136 +980,187 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
     setTitularForm({ ...titularForm, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // console.log(titularForm)
+    const data = titularForm
+    // const {nombreCentro, nombreTitular, correoTitular, telefonoTitular, porcentaje1} = titularForm
+    // const porcentaje = Number.parseFloat(porcentaje1 as string)
+     const response = await api.post("/admin/agregaCentroNegocios", { data });
+    //  const response = await api.post("/admin/agregaCentroNegocios", { nombreCentro, nombreTitular, correoTitular, telefonoTitular, porcentaje });
+     console.log(response)
+     
+     if( response.data.status === 200 ){
+      // console.log('respuesta exitosa')
+       console.log(response)
+      onClose!('1')
+     } else {
+      setErrorMessage(response.data.error.message)
+      // return (
+
+      //   <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+      //       <div className="w-full max-w-md rounded-2xl bg-(--TextoInactivo) p-8 shadow-2xl text-center border border-[#146f8c]">
+      //           <h2 className="text-2xl font-semibold text-white mb-4">{response.data.error.message}</h2>
+
+      //       </div>
+      //   </div>
+      // )
+      }
+// <ModalAvisoPopUp
+// isOpen={modeal}
+// mensaje={response.data.error.message}
+// />
+
   };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
       {/* Contenedor del Modal */}
-      <div className="w-full max-w-4xl my-auto rounded-2xl bg-[#0d5c75] p-11 shadow-2xl border border-[#146f8c] text-white relative">
-        {/* Botón Cerrar (X) */}
-        <button
-          onClick={onCancel}
-          className="absolute top-6 right-6 text-cyan-200 hover:text-white transition-colors"
-        >
-          <svg
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
+        <div className="w-full max-w-4xl min-w-md my-auto rounded-2xl bg-[#0d5c75] p-11 shadow-2xl border border-[#146f8c] text-white relative">
+          {/* Botón Cerrar (X) */}
+          <button
+            onClick={()=> onClose!('0')}
+            className="absolute top-6 right-6 text-cyan-200 hover:text-white transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-
-        {/* Encabezado */}
-        <div className="flex items-center gap-3 mb-10">
-          <div className="text-emerald-400">
             <svg
-              width="23"
-              height="28"
-              viewBox="0 0 23 28"
+              className="h-6 w-6"
               fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
             >
               <path
-                d="M13.9336 27.4219L14.9531 25.6289H20.3789C20.5977 25.6289 20.7578 25.5781 20.8594 25.4766C20.9688 25.375 21.0234 25.2148 21.0234 24.9961V8.05078C21.0234 7.83203 20.9688 7.67188 20.8594 7.57031C20.7578 7.46094 20.5977 7.40625 20.3789 7.40625H15.9375V5.625H20.9648C21.5273 5.625 21.9727 5.80859 22.3008 6.17578C22.6367 6.54297 22.8047 7.03516 22.8047 7.65234V25.4062C22.8047 26.0156 22.6367 26.5039 22.3008 26.8711C21.9727 27.2383 21.5273 27.4219 20.9648 27.4219H13.9336ZM15.9375 13.0312V10.5352H18.5742C18.832 10.5352 18.9609 10.6602 18.9609 10.9102V12.6562C18.9609 12.9062 18.832 13.0312 18.5742 13.0312H15.9375ZM15.9375 17.2852V14.7891H18.5742C18.832 14.7891 18.9609 14.9141 18.9609 15.1641V16.9102C18.9609 17.1602 18.832 17.2852 18.5742 17.2852H15.9375ZM15.9375 21.5273V19.043H18.5742C18.832 19.043 18.9609 19.168 18.9609 19.418V21.1641C18.9609 21.4062 18.832 21.5273 18.5742 21.5273H15.9375ZM1.83984 27.4219C1.27734 27.4219 0.828125 27.2383 0.492188 26.8711C0.164062 26.5039 0 26.0156 0 25.4062V2.01562C0 1.39844 0.164062 0.910156 0.492188 0.550781C0.828125 0.183594 1.27734 0 1.83984 0H15.0234C15.5938 0 16.043 0.183594 16.3711 0.550781C16.6992 0.910156 16.8633 1.39844 16.8633 2.01562V25.4062C16.8633 26.0156 16.6992 26.5039 16.3711 26.8711C16.043 27.2383 15.5938 27.4219 15.0234 27.4219H1.83984ZM2.42578 25.6289H14.4375C14.6562 25.6289 14.8164 25.5781 14.918 25.4766C15.0273 25.375 15.082 25.2148 15.082 24.9961V2.42578C15.082 2.20703 15.0273 2.04688 14.918 1.94531C14.8164 1.83594 14.6562 1.78125 14.4375 1.78125H2.42578C2.21484 1.78125 2.05469 1.83594 1.94531 1.94531C1.83594 2.04688 1.78125 2.20703 1.78125 2.42578V24.9961C1.78125 25.2148 1.83594 25.375 1.94531 25.4766C2.05469 25.5781 2.21484 25.6289 2.42578 25.6289ZM4.78125 8.23828C4.46875 8.23828 4.3125 8.07812 4.3125 7.75781V5.54297C4.3125 5.22266 4.46875 5.0625 4.78125 5.0625H7.05469C7.375 5.0625 7.53516 5.22266 7.53516 5.54297V7.75781C7.53516 8.07812 7.375 8.23828 7.05469 8.23828H4.78125ZM9.79688 8.23828C9.48438 8.23828 9.32812 8.07812 9.32812 7.75781V5.54297C9.32812 5.22266 9.48438 5.0625 9.79688 5.0625H12.0703C12.3906 5.0625 12.5508 5.22266 12.5508 5.54297V7.75781C12.5508 8.07812 12.3906 8.23828 12.0703 8.23828H9.79688ZM4.78125 12.8789C4.46875 12.8789 4.3125 12.7188 4.3125 12.3984V10.1836C4.3125 9.86328 4.46875 9.70312 4.78125 9.70312H7.05469C7.375 9.70312 7.53516 9.86328 7.53516 10.1836V12.3984C7.53516 12.7188 7.375 12.8789 7.05469 12.8789H4.78125ZM9.79688 12.8789C9.48438 12.8789 9.32812 12.7188 9.32812 12.3984V10.1836C9.32812 9.86328 9.48438 9.70312 9.79688 9.70312H12.0703C12.3906 9.70312 12.5508 9.86328 12.5508 10.1836V12.3984C12.5508 12.7188 12.3906 12.8789 12.0703 12.8789H9.79688ZM4.78125 17.5195C4.46875 17.5195 4.3125 17.3594 4.3125 17.0391V14.8242C4.3125 14.5039 4.46875 14.3438 4.78125 14.3438H7.05469C7.375 14.3438 7.53516 14.5039 7.53516 14.8242V17.0391C7.53516 17.3594 7.375 17.5195 7.05469 17.5195H4.78125ZM9.79688 17.5195C9.48438 17.5195 9.32812 17.3594 9.32812 17.0391V14.8242C9.32812 14.5039 9.48438 14.3438 9.79688 14.3438H12.0703C12.3906 14.3438 12.5508 14.5039 12.5508 14.8242V17.0391C12.5508 17.3594 12.3906 17.5195 12.0703 17.5195H9.79688ZM4.99219 26.4844V22.3359C4.99219 21.8594 5.09766 21.5078 5.30859 21.2812C5.52734 21.0469 5.86719 20.9297 6.32812 20.9297H10.5469C11.0078 20.9297 11.3438 21.0469 11.5547 21.2812C11.7734 21.5078 11.8828 21.8594 11.8828 22.3359V26.4844H10.4297V22.7461C10.4297 22.5117 10.3086 22.3945 10.0664 22.3945H6.80859C6.56641 22.3945 6.44531 22.5117 6.44531 22.7461V26.4844H4.99219Z"
-                fill="#02FFA2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
               />
             </svg>
+          </button>
+
+          {/* Encabezado */}
+          <div className="flex items-center gap-3 mb-10">
+            <div className="text-emerald-400">
+              <svg
+                width="23"
+                height="28"
+                viewBox="0 0 23 28"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13.9336 27.4219L14.9531 25.6289H20.3789C20.5977 25.6289 20.7578 25.5781 20.8594 25.4766C20.9688 25.375 21.0234 25.2148 21.0234 24.9961V8.05078C21.0234 7.83203 20.9688 7.67188 20.8594 7.57031C20.7578 7.46094 20.5977 7.40625 20.3789 7.40625H15.9375V5.625H20.9648C21.5273 5.625 21.9727 5.80859 22.3008 6.17578C22.6367 6.54297 22.8047 7.03516 22.8047 7.65234V25.4062C22.8047 26.0156 22.6367 26.5039 22.3008 26.8711C21.9727 27.2383 21.5273 27.4219 20.9648 27.4219H13.9336ZM15.9375 13.0312V10.5352H18.5742C18.832 10.5352 18.9609 10.6602 18.9609 10.9102V12.6562C18.9609 12.9062 18.832 13.0312 18.5742 13.0312H15.9375ZM15.9375 17.2852V14.7891H18.5742C18.832 14.7891 18.9609 14.9141 18.9609 15.1641V16.9102C18.9609 17.1602 18.832 17.2852 18.5742 17.2852H15.9375ZM15.9375 21.5273V19.043H18.5742C18.832 19.043 18.9609 19.168 18.9609 19.418V21.1641C18.9609 21.4062 18.832 21.5273 18.5742 21.5273H15.9375ZM1.83984 27.4219C1.27734 27.4219 0.828125 27.2383 0.492188 26.8711C0.164062 26.5039 0 26.0156 0 25.4062V2.01562C0 1.39844 0.164062 0.910156 0.492188 0.550781C0.828125 0.183594 1.27734 0 1.83984 0H15.0234C15.5938 0 16.043 0.183594 16.3711 0.550781C16.6992 0.910156 16.8633 1.39844 16.8633 2.01562V25.4062C16.8633 26.0156 16.6992 26.5039 16.3711 26.8711C16.043 27.2383 15.5938 27.4219 15.0234 27.4219H1.83984ZM2.42578 25.6289H14.4375C14.6562 25.6289 14.8164 25.5781 14.918 25.4766C15.0273 25.375 15.082 25.2148 15.082 24.9961V2.42578C15.082 2.20703 15.0273 2.04688 14.918 1.94531C14.8164 1.83594 14.6562 1.78125 14.4375 1.78125H2.42578C2.21484 1.78125 2.05469 1.83594 1.94531 1.94531C1.83594 2.04688 1.78125 2.20703 1.78125 2.42578V24.9961C1.78125 25.2148 1.83594 25.375 1.94531 25.4766C2.05469 25.5781 2.21484 25.6289 2.42578 25.6289ZM4.78125 8.23828C4.46875 8.23828 4.3125 8.07812 4.3125 7.75781V5.54297C4.3125 5.22266 4.46875 5.0625 4.78125 5.0625H7.05469C7.375 5.0625 7.53516 5.22266 7.53516 5.54297V7.75781C7.53516 8.07812 7.375 8.23828 7.05469 8.23828H4.78125ZM9.79688 8.23828C9.48438 8.23828 9.32812 8.07812 9.32812 7.75781V5.54297C9.32812 5.22266 9.48438 5.0625 9.79688 5.0625H12.0703C12.3906 5.0625 12.5508 5.22266 12.5508 5.54297V7.75781C12.5508 8.07812 12.3906 8.23828 12.0703 8.23828H9.79688ZM4.78125 12.8789C4.46875 12.8789 4.3125 12.7188 4.3125 12.3984V10.1836C4.3125 9.86328 4.46875 9.70312 4.78125 9.70312H7.05469C7.375 9.70312 7.53516 9.86328 7.53516 10.1836V12.3984C7.53516 12.7188 7.375 12.8789 7.05469 12.8789H4.78125ZM9.79688 12.8789C9.48438 12.8789 9.32812 12.7188 9.32812 12.3984V10.1836C9.32812 9.86328 9.48438 9.70312 9.79688 9.70312H12.0703C12.3906 9.70312 12.5508 9.86328 12.5508 10.1836V12.3984C12.5508 12.7188 12.3906 12.8789 12.0703 12.8789H9.79688ZM4.78125 17.5195C4.46875 17.5195 4.3125 17.3594 4.3125 17.0391V14.8242C4.3125 14.5039 4.46875 14.3438 4.78125 14.3438H7.05469C7.375 14.3438 7.53516 14.5039 7.53516 14.8242V17.0391C7.53516 17.3594 7.375 17.5195 7.05469 17.5195H4.78125ZM9.79688 17.5195C9.48438 17.5195 9.32812 17.3594 9.32812 17.0391V14.8242C9.32812 14.5039 9.48438 14.3438 9.79688 14.3438H12.0703C12.3906 14.3438 12.5508 14.5039 12.5508 14.8242V17.0391C12.5508 17.3594 12.3906 17.5195 12.0703 17.5195H9.79688ZM4.99219 26.4844V22.3359C4.99219 21.8594 5.09766 21.5078 5.30859 21.2812C5.52734 21.0469 5.86719 20.9297 6.32812 20.9297H10.5469C11.0078 20.9297 11.3438 21.0469 11.5547 21.2812C11.7734 21.5078 11.8828 21.8594 11.8828 22.3359V26.4844H10.4297V22.7461C10.4297 22.5117 10.3086 22.3945 10.0664 22.3945H6.80859C6.56641 22.3945 6.44531 22.5117 6.44531 22.7461V26.4844H4.99219Z"
+                  fill="#02FFA2"
+                />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-semibold text-(--VerdeNeon)">
+              Agregar Centro de Negocios
+            </h2>
           </div>
-          <h2 className="text-2xl font-semibold text-(--VerdeNeon)">
-            Agregar Centro de Negocios
-          </h2>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* ================= PRINCIPAL ================= */}
+            <div className="mb-3 ml-3">
+              <span className="text-base font-bold">Titular</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                type="text"
+                name="nombreTitular"
+                autoComplete={"off"}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                required
+                placeholder="*Nombre (s)"
+                onChange={handleTitularChange}
+                className="input-style"
+              />
+              <input
+                type="text"
+                name="correoTitular"
+                placeholder="*Correo"
+                autoComplete={"off"}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                required
+                onChange={handleTitularChange}
+                className="input-style"
+              />
+              <input
+                type="tel"
+                name="telefonoTitular"
+                autoComplete={"off"}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                required
+                placeholder="*No. de Teléfono del titular"
+                onChange={handleTitularChange}
+                className="input-style"
+              />
+            </div>
+
+            <div className="mb-3 ml-3">
+              <span className="text-base font-bold">Centro de negocios</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2  gap-4">
+              <input
+                type="text"
+                name="nombreCentro"
+                autoComplete={"off"}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                required
+                placeholder="*Denominación del Centro de Negocios "
+                onChange={handleTitularChange}
+                className="input-style"
+              />
+              <input
+                type="text"
+                name="porcentaje"
+                autoComplete={"off"}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                required
+                placeholder="*Porcentaje de referencia"
+                onChange={handleTitularChange}
+                className="input-style"
+              />
+            </div>
+            {/* Botones de acción inferiores */}
+            <div className="flex justify-end gap-3 mt-7">
+              <button
+                type="submit"
+                className="px-8 py-2.5 rounded-full bg-[#083543] text-emerald-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
+              >
+                Agregar
+              </button>
+              <button
+                type="button"
+                onClick={()=> onClose!('0')}
+                className="px-8 py-2.5 rounded-full bg-[#083543] text-red-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* ================= PRINCIPAL ================= */}
-          <div className="mb-3 ml-3">
-            <span className="text-base font-bold">Titular</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="text"
-              name="nombre"
-              placeholder="*Nombre (s)"
-              onChange={handleTitularChange}
-              className="input-style"
-            />
-            <input
-              type="text"
-              name="correo"
-              placeholder="*Correo"
-              onChange={handleTitularChange}
-              className="input-style"
-            />
-            <input
-              type="tel"
-              name="telefono"
-              placeholder="*No. de Teléfono del titular"
-              onChange={handleTitularChange}
-              className="input-style"
-            />
-          </div>
-
-          <div className="mb-3 ml-3">
-            <span className="text-base font-bold">Centro de negocios</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2  gap-4">
-            <input
-              type="text"
-              name="DCN"
-              placeholder="*Denominación del Centro de Negocios "
-              onChange={handleTitularChange}
-              className="input-style"
-            />
-            <input
-              type="text"
-              name="porcentaje"
-              placeholder="*Porcentaje de referencia"
-              onChange={handleTitularChange}
-              className="input-style"
-            />
-          </div>
-          {/* Botones de acción inferiores */}
-          <div className="flex justify-end gap-3 mt-7">
-            <button
-              type="submit"
+        {errorMessage && (
+               <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+            <div className="w-full max-w-md rounded-2xl bg-(--TextoInactivo) p-8 shadow-2xl text-center border border-[#146f8c]">
+                <h2 className="text-2xl font-[500] text-white mb-4">{errorMessage}</h2>
+                            <button 
               className="px-8 py-2.5 rounded-full bg-[#083543] text-emerald-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
+              onClick={() => setErrorMessage(null)}
             >
-              Agregar
+              Entendido
             </button>
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-8 py-2.5 rounded-full bg-[#083543] text-red-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
-      </div>
+            </div>
+        </div>
+        )}
+
+
     </div>
   );
 };
-
-interface DetalleGastoProps {
-  isOpen: boolean;
-  // id:number;
-  monto?: string;
-  nomComercio?: string;
-  concepto?: string;
-  fechaCargo?: string;
-  noOperacion?: string;
-  comprobante?: string;
-  onEdit?: () => void;
-  onCancel?: () => void;
-}
 
 export const ModalDetalleGasto: React.FC<DetalleGastoProps> = ({
   isOpen,
