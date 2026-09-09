@@ -553,6 +553,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
   const [tipoUsuario, setTipoUsuario] = useState<"titular" | "adicional">(
     "titular",
   );
+  const [ errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // Estados del Formulario (Titular)
   const [titularForm, setTitularForm] = useState({
@@ -566,26 +567,28 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
     noTarjeta: "",       
     saldo: "",           
     fechaVencimiento: "", 
-    idCentroN: ""
+    idCentroN: "",
 
   });
 
   // Estados del Formulario (Tarjeta Adicional)
   const [adicionalForm, setAdicionalForm] = useState({
-    noCliente: "",
-    noTarjeta: "",
-    saldo: "",
-    fechaVencimiento: "",
+    noTarjeta: "", 
+    saldo: "", 
+    fechaVencimiento: "", 
+    idCliente: "", 
+    idCentroN: "",
   });
 
 
   useEffect(() => {
     if (tipoUsuario === "titular") {
       setAdicionalForm({
-        noCliente: "",
-        noTarjeta: "",
-        saldo: "",
-        fechaVencimiento: "",
+        noTarjeta: "", 
+        saldo: "", 
+        fechaVencimiento: "", 
+        idCliente: "", 
+        idCentroN: "",
       });
     } else {
       setTitularForm({
@@ -598,7 +601,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
         noTarjeta: "",       
         saldo: "",           
         fechaVencimiento: "", 
-        idCentroN: ""
+        idCentroN: "",
       });
     }
   }, [tipoUsuario]);
@@ -615,13 +618,39 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
   };
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const dataFinal =
-      tipoUsuario === "titular"
-        ? { tipo: "titular", ...titularForm }
-        : { tipo: "adicional", ...adicionalForm };
 
-  // const response = await api.post("/admin/agregaCentroNegocios", { data });
+    try {
+      e.preventDefault();
+      const data =
+        tipoUsuario === "titular"
+          ? { tipo: "titular", ...titularForm }
+          : { tipo: "adicional", ...adicionalForm };
+  
+      console.log("Datos a enviar:", data);
+      if(data.tipo === 'titular'){
+
+        const response = await api.post("/admin/agregatarjetahabiente", { data });
+        
+        if(response.data.status === 200){
+          console.log(response);
+          return
+        }
+        setErrorMessage(response.data.error.message);
+      } else {
+        const response = await api.post("/admin/agregaTarjetahabienteAdicional",{ data });
+        if( response.data.status === 200 ){
+          console.log(response);
+          return
+        }
+        setErrorMessage(response.data.error.message);
+      }
+
+
+    } catch (error) {
+      console.log('Error del servidor', error)
+    }
+
+
     // onConfirm!(dataFinal);
   };
 
@@ -674,7 +703,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
           <span className="text-white font-bold">{centroNegocio}</span>
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" autoComplete={"off"}>
           {/* ================= SECCIÓN TITULAR ================= */}
           <div
             className={`space-y-4 transition-opacity duration-300 ${tipoUsuario !== "titular" ? "opacity-40" : "opacity-100"}`}
@@ -787,7 +816,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 className="input-style"
               />
               <input
-                type="password"
+                type="text"
                 name="contrasenia"
                 placeholder="*Contraseña"
                 autoComplete={"off"}
@@ -876,12 +905,12 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
             <div className="relative max-w-xs">
               <input
                 type="text"
-                name="noCliente"
+                // name="noCliente"
                 placeholder="No. de Cliente"
-                value={adicionalForm.noCliente}
-                onChange={handleAdicionalChange}
+                // value={adicionalForm.}
+                // onChange={handleAdicionalChange}
                 disabled={tipoUsuario !== "adicional"}
-                required={tipoUsuario === "adicional"}
+                // required={tipoUsuario === "adicional"}
                 className="input-style pr-10"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-200/50">
@@ -908,6 +937,8 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 placeholder="*No. de Tarjeta (16 dígitos)"
                 value={adicionalForm.noTarjeta}
                 onChange={handleAdicionalChange}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                 disabled={tipoUsuario !== "adicional"}
                 required={tipoUsuario === "adicional"}
                 maxLength={16}
@@ -919,16 +950,21 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 placeholder="*Saldo"
                 value={adicionalForm.saldo}
                 onChange={handleAdicionalChange}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                 disabled={tipoUsuario !== "adicional"}
                 required={tipoUsuario === "adicional"}
                 className="input-style"
               />
+
               <input
                 type="text"
                 name="fechaVencimiento"
                 placeholder="*Fecha de vencimiento (MM/AA)"
                 value={adicionalForm.fechaVencimiento}
                 onChange={handleAdicionalChange}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                 disabled={tipoUsuario !== "adicional"}
                 required={tipoUsuario === "adicional"}
                 className="input-style"
@@ -954,6 +990,17 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
           </div>
         </form>
       </div>
+      {errorMessage && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+            <div className="w-full max-w-md rounded-2xl bg-(--TextoInactivo) p-8 shadow-2xl text-center border border-[#146f8c]">
+                <h2 className="text-2xl font-[200] text-white mb-4">{errorMessage}</h2>
+                <button 
+                  className="px-8 py-2.5 rounded-full bg-[#083543] text-emerald-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
+                  onClick={() => setErrorMessage(null)}
+                >Entendido</button>
+            </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1146,7 +1193,7 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
         {errorMessage && (
                <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
             <div className="w-full max-w-md rounded-2xl bg-(--TextoInactivo) p-8 shadow-2xl text-center border border-[#146f8c]">
-                <h2 className="text-2xl font-[500] text-white mb-4">{errorMessage}</h2>
+                <h2 className="text-2xl font-[200] text-white mb-4">{errorMessage}</h2>
                             <button 
               className="px-8 py-2.5 rounded-full bg-[#083543] text-emerald-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
               onClick={() => setErrorMessage(null)}
