@@ -228,7 +228,7 @@ export const AdminDashboard: React.FC = () => {
   const selecionaClienteTarjetabiente = async (
     idTarjeta: number,
     item: any,
-    idCliente: number,
+    idCliente:number,
   ) => {
     // idTarjeta = 200
     setLoading(true);
@@ -245,7 +245,7 @@ export const AdminDashboard: React.FC = () => {
         getDataInput(response.data.data.usuario);
         setbtnGuardarTarjetahabientes(true);
         setVarRandom(idCliente);
-        console.log({targetaSelecionada:response.data});
+        // console.log({targetaSelecionada:response.data});
 
         return;
       }
@@ -290,53 +290,63 @@ export const AdminDashboard: React.FC = () => {
     }));
   };
 
-  // 🔄 EFFECT: Se ejecuta al cargar la página y cada vez que cambia 'paginaActual'
   useEffect(() => {
-    
-    const cargarDatosPaginados = async () => {
-      setIsLoadingTable(true);
-      try {
-        // Hacemos la consulta parametrizada al Backend pasando la página actual
-        const response = await api.get(
-          `/admin/targetahabientes?idCentroN=${centroId}&page=${paginaActual}&limit=${limitePorPagina}`,
-        );
-
-        if (response.data.status === 200) {
-          const { tarjetahabientes, paginacion, MontoTotalCargos } =
-            response.data.data;
-          // console.log(paginacion);
-
-          setTarjetahabientes(tarjetahabientes);
-          setTotalPaginas(paginacion.totalPaginas);
-          setTotalRegistros(paginacion.totalRegistros);
-          setMontoTotalCargos(MontoTotalCargos);
-          // console.log(tarjetahabientes)
-          // if (tarjetahabientes && tarjetahabientes.length > 0) {
-          //   setSelectedClient(tarjetahabientes[0]); // 👈 Asegúrate de que tenga el [0]
-          // } else {
-          //   setSelectedClient(null);
-          // }
-
-          // Seleccionamos automáticamente el primer cliente de la nueva página por estética
-          if (tarjetahabientes.length > 0) {
-            setSelectedClient(tarjetahabientes);
-          }
-
-          // console.log(selectedClient);
-          // console.log(selectedClient)
-          return;
-        }
-        console.log("sesion caducada: ", response.data.status);
-        endSessionCockie();
-      } catch (error) {
-        console.error("Error cargando la tabla paginada de red:", error);
-      } finally {
-        setIsLoadingTable(false);
-      }
-    };
-
     cargarDatosPaginados();
   }, [paginaActual, centroActivo]); // 👈 Escucha los cambios de página
+
+  // 🔄 EFFECT: Se ejecuta al cargar la página y cada vez que cambia 'paginaActual'
+  const cargarDatosPaginados = async () => {
+    setIsLoadingTable(true);
+    try {
+      // Hacemos la consulta parametrizada al Backend pasando la página actual
+      const response = await api.get(
+        `/admin/targetahabientes?idCentroN=${centroId}&page=${paginaActual}&limit=${limitePorPagina}`,
+      );
+
+      if (response.data.status === 200) {
+        const { tarjetahabientes, paginacion, MontoTotalCargos } =
+          response.data.data;
+        // console.log(paginacion);
+
+        setTarjetahabientes(tarjetahabientes);
+        setTotalPaginas(paginacion.totalPaginas);
+        setTotalRegistros(paginacion.totalRegistros);
+        setMontoTotalCargos(MontoTotalCargos);
+        // console.log(tarjetahabientes)
+        // if (tarjetahabientes && tarjetahabientes.length > 0) {
+        //   setSelectedClient(tarjetahabientes[0]); // 👈 Asegúrate de que tenga el [0]
+        // } else {
+        //   setSelectedClient(null);
+        // }
+
+        // Seleccionamos automáticamente el primer cliente de la nueva página por estética
+        if (tarjetahabientes.length > 0) {
+          setSelectedClient(tarjetahabientes);
+        }
+
+        // console.log(selectedClient);
+        // console.log(selectedClient)
+        return;
+      }
+      console.log("sesion caducada: ", response.data.status);
+      endSessionCockie();
+    } catch (error) {
+      console.error("Error cargando la tabla paginada de red:", error);
+    } finally {
+      setIsLoadingTable(false);
+    }
+  };
+
+  const handleCloseModalAgregaTarjetahabiente = (resultado: '1' | '0') => {
+    // setShowModalTargetahabiente(false); // Cerramos el modal
+
+    // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
+    if (resultado === '1') {
+      cargarDatosPaginados();
+      console.log('actualizamos centro de negocios')
+    }
+    
+  };
 
   // =============================================================================================
   // PAGINACION INTELIGENTE
@@ -1178,9 +1188,10 @@ export const AdminDashboard: React.FC = () => {
 
       <ModalAgregarTarjetahabiente 
         isOpen={showModalTargetahabiente}
-        centroNegocio="Xolos Rg"
-        onCancel={() => setShowModalTargetahabiente(false)}
-        onConfirm={() =>setShowModalTargetahabiente(false)}
+        CentroN={centroId}
+        centroNegocio={centroActivo}
+        onCancel={() => {setShowModalTargetahabiente(false)}}
+        onClose={handleCloseModalAgregaTarjetahabiente}
       />
 
       <ModalDetalleGasto 
