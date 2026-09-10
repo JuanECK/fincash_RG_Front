@@ -338,7 +338,7 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleCloseModalAgregaTarjetahabiente = (resultado: '1' | '0') => {
-    // setShowModalTargetahabiente(false); // Cerramos el modal
+    setShowModalTargetahabiente(false); // Cerramos el modal
 
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
@@ -1186,13 +1186,24 @@ export const AdminDashboard: React.FC = () => {
           onCancel={() => {setShowModalGasto(false); setIdMovimientoEdicion('')}} 
         />
 
-      <ModalAgregarTarjetahabiente 
+{/* BUENA PRACTICA ES MANEJAR LA VIDA DEL MODULO CONDICIONANDOLO PORQUE ASI DESTRUIMOS EL COMPONENTE POR COMPLETO */}
+        {showModalTargetahabiente && (
+          <ModalAgregarTarjetahabiente 
+            isOpen={showModalTargetahabiente}
+            CentroN={centroId}
+            centroNegocio={centroActivo}
+            onCancel={() => setShowModalTargetahabiente(false)}
+            onClose={handleCloseModalAgregaTarjetahabiente}
+          />
+        )}
+
+      {/* <ModalAgregarTarjetahabiente 
         isOpen={showModalTargetahabiente}
         CentroN={centroId}
         centroNegocio={centroActivo}
         onCancel={() => {setShowModalTargetahabiente(false)}}
         onClose={handleCloseModalAgregaTarjetahabiente}
-      />
+      /> */}
 
       <ModalDetalleGasto 
         isOpen={showModalDetalleGasto}

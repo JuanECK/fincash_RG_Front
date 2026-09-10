@@ -548,7 +548,6 @@ interface busquedaCliente {
   nombreCompleto:string;
 }
 export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
-  isOpen,
   CentroN,
   onClose,
   centroNegocio,
@@ -561,7 +560,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
   const [ ClienteN, setClienteN ] = useState<number | null>(null)
   const [ resultBusqueda, setResultBusqueda ] = useState<busquedaCliente>({noCliente:0, nombreCompleto:""});
 
-  const [busquedaInput, setBusquedaInput] = useState({valor: "", tipo:"NoCliente"})
+  const [busquedaInput, setBusquedaInput] = useState({IdCliente: "" , tipo:"NoCliente"})
 
   // Estados del Formulario (Titular)
   const [titularForm, setTitularForm] = useState({
@@ -606,33 +605,19 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
     }
   }, [tipoUsuario]);
 
-  if (!isOpen) return null;
-
-  const reset = () =>{
-      setTitularForm({
-        nombreCliente: "",  
-        apellidoP: "",   
-        apellidoM: "",      
-        correo: "",           
-        telefono: "",         
-        contrasenia: "",    
-        noTarjeta: "",       
-        saldo: "",
-        fechaVencimiento:""           
-      });
-      setAdicionalForm({
-        noTarjeta: "", 
-        saldo: "", 
-        fechaVencimiento: "", 
-      });
-      setBusquedaInput({valor:"",tipo:"NoCliente"})
-      setResultBusqueda({nombreCompleto:"",noCliente:0})
-  }
+  // if (!isOpen) return null;
 
   const busqueda = async() => {
-    console.log('busqueda: ',busquedaInput)
-    const data = busquedaInput
-    const response = await api.post("/admin/busqueda", { data });
+    // 1. Creamos el objeto con los datos actualizados al momento
+    const datosActualizados = {
+      ...busquedaInput, 
+      IdCentroN: CentroN!
+    };
+
+    // console.log('busqueda: ',busquedaInput)
+
+    // const data = busquedaInput
+    const response = await api.post("/admin/busqueda", { data:datosActualizados });
     console.log(response)
     if(response.data.status === 200){
       console.log(response.data)
@@ -641,10 +626,10 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
     }else{
       console.log('error')
       setResultBusqueda({nombreCompleto:response.data.error.message, noCliente:0})
-      // setErrorMessage(response.data.error.message);
     }
 
   }
+
   // Manejadores de cambios
   const handleBusquedaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setBusquedaInput({...busquedaInput, [e.target.name]: e.target.value});
@@ -665,7 +650,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
       const data =
         tipoUsuario === "titular"
           ? { tipo: "titular", idCentroN:CentroN, ...titularForm }
-          : { tipo: "adicional", idCentroN:resultBusqueda.noCliente, idCliente:ClienteN, ...adicionalForm };
+          : { tipo: "adicional", idCentroN:CentroN, idCliente:busquedaInput.IdCliente, ...adicionalForm };
   
       console.log("Datos a enviar:", data);
       if(data.tipo === 'titular'){
@@ -675,19 +660,17 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
         if(response.data.status === 200){
           console.log(response);
           console.log('respuesta exitosa')
-          setTipoUsuario('titular');
-          reset()
           onClose!('1')
           return
         }else{
           setErrorMessage(response.data.error.message);
         }
-      } else {
+      } else if(!busquedaInput.IdCliente || busquedaInput.IdCliente.trim() === "") {
+        setErrorMessage("No se puede registrar una tarjeta adicional sin un Cliente.");
+      }else{
         const response = await api.post("/admin/agregaTarjetahabienteAdicional",{ data });
         if( response.data.status === 200 ){
           console.log(response);
-          setTipoUsuario('titular');
-          reset()
           onClose!('1')
         }else{
           setErrorMessage(response.data.error.message);
@@ -699,13 +682,9 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
       console.log('Error del servidor', error)
     }
 
-
-    // onConfirm!(dat);
   };
 
-  const handledClosed = () =>{
-    setTipoUsuario('titular');
-    reset()
+  const handledClosed = () =>{ 
     onClose!('0');
   } 
 
@@ -973,7 +952,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
             <div className="relative max-w-xs">
               <input
                 type="text"
-                name="valor"
+                name="IdCliente"
                 placeholder="No. de Cliente"
                 // value={adicionalForm.}
                 // onChange={handleAdicionalChange}
