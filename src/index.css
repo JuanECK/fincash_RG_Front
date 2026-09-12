@@ -194,7 +194,7 @@
 }
 
 .data-table td {
-  @apply py-1 px-3 text-(--GrisLight) text-xs font-medium transition-colors ;
+  @apply py-1 px-3 text-xs font-medium transition-colors ;
   /* @apply py-3.5 px-3 border-b border-[#114E60] text-slate-200 text-xs font-medium transition-colors; */
 }
 .data-table td:first-child {
@@ -211,17 +211,22 @@
 }
 
 /* 🕹️ ICONOS DE ACCIONES */
-.action-icon-btn {
+.action-icon-btn,
+.action-icon-btn-trash {
   @apply p-1.5 text-white hover:text-(--DeepBlue) transition-all ;
 }
 
-.action-icon-btn span svg {
+.action-icon-btn span svg,
+.action-icon-btn-trash {
   @apply text-white transition-all cursor-pointer;
   fill: currentColor; 
 }
 
 .action-icon-btn:hover span svg {
   @apply text-(--VerdeNeon);
+}
+.action-icon-btn-trash:hover span svg {
+  @apply text-[#FF3B30];
 }
 
 /* 💳 BARRA DE DETALLES LATERAL DERECHA (TARJETAHABIENTE COMPRAS) */

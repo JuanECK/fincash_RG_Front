@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { api, logoutSession } from "../services/api";
-import { Modal, ModalAbono, ModalAgregarTarjetahabiente, ModalAviso, ModalContraseña, ModalDetalleGasto, ModalGasto} from "../modals/ModalGeneral";
+import { Modal, ModalAbono, ModalAgregarTarjetahabiente, ModalAviso, ModalContraseña, ModalDetalleGasto, ModalEditaTarjetahabiente, ModalGasto} from "../modals/ModalGeneral";
 import { useOutletContext } from 'react-router-dom';
 
 
@@ -28,12 +28,16 @@ interface RespuestaBackend {
 }
 
 interface InputTarjetahabiente {
-  Cliente: string;
+  apellidoP: string;
+  apellidoM: string;
   correo: string;
-  idTarjeta: number;
-  noCliente: string;
+  fechaVencimiento: string;
+  idCentroN: number | null;
+  idTarjeta: number | null;
   noTarjeta: string;
+  nombreCliente: string;
   telefono: string;
+  noCliente: string;
 }
 interface selectCliente {
   Cliente: string;
@@ -86,24 +90,38 @@ export const AdminDashboard: React.FC = () => {
   const [isLoadingTable, setIsLoadingTable] = useState(false);
   const { centroActivo, centroId } = useOutletContext<AdminContextType>();
   const [btnTarjetahabientes, setBtnTarjetahabientes] = useState(true);
-  const [btnGuardarTarjetahabientes, setbtnGuardarTarjetahabientes] =
-    useState(true);
+  // const [btnGuardarTarjetahabientes, setbtnGuardarTarjetahabientes] = useState(true);
   const [dataInputs, getDataInput] = useState<InputTarjetahabiente>({
-    Cliente: "",
-    correo: "",
-    idTarjeta: 0,
-    noCliente: "",
-    noTarjeta: "",
+
+    apellidoP: "",   
+    apellidoM: "",      
+    correo: "",           
+    fechaVencimiento:"",
+    idCentroN: null,
+    idTarjeta:null,          
+    noTarjeta: "",       
+    nombreCliente: "",  
     telefono: "",
+    noCliente:""
+    
+    
+    // Cliente: "",
+    // correo: "",
+    // idTarjeta: 0,
+    // noCliente: "",
+    // noTarjeta: "",
+    // telefono: "",
   });
   const [showModalElimina, setShowModalElimina] = useState(false);
-  const [varRandom, setVarRandom] = useState<number | string>("");
+  const [showModalEliminaTarjeta, setShowModalEliminaTarjeta] = useState(false);
+  const [varRandom, setVarRandom] = useState<number | string | null>("");
   const [showModalAviso, setShowModalAviso] = useState(false);
   const [showModalGuardado, setShowModalGuardado] = useState(false);
   const [showModalContraseña, setShowModalContraseña] = useState(false);
   const [showModalAbono, setShowModalAbono] = useState(false);
   const [showModalGasto, setShowModalGasto] = useState(false);
   const [showModalTargetahabiente, setShowModalTargetahabiente] = useState(false);
+  const [showModalEditaTarjetahadiente, setShowModalEditaTarjetahadiente] = useState(false);
   const [showModalDetalleGasto, setShowModalDetalleGasto] = useState(false);
 
   const [loading, setLoading] = useState<boolean>(false);
@@ -120,8 +138,11 @@ export const AdminDashboard: React.FC = () => {
   const limitePorPagina = 15; // Cantidad de filas exactas por pantalla según tu diseño
 
   const BtnsTatrjetahabientes = () => {
-    setbtnGuardarTarjetahabientes(false);
-    setBtnTarjetahabientes(true);
+    // setbtnGuardarTarjetahabientes(false);
+    // setBtnTarjetahabientes(true);
+
+    setShowModalEditaTarjetahadiente(true)
+    // setShowModalTargetahabiente(true)
   };
 
   const handleDetalleMovimiento = async ( id:number ) => {
@@ -151,7 +172,7 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const cancelaEdicion = () => {
-    setbtnGuardarTarjetahabientes(true);
+    // setbtnGuardarTarjetahabientes(true);
     setSelectedClient({
       Cliente: "",
       fechaVencimiento: "",
@@ -190,6 +211,7 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const eliminaTargetahabiente = () => {
+    console.log("Elemento eliminado de la base de datos");
     // ===========================================================================================================================================
     // aqui va la api para guardar los datos modificados del Tarjetahabiente asi como tambien los errores que se pudieran producir en el backend
     // y cuando sea exitoso refrescar la lista
@@ -198,24 +220,31 @@ export const AdminDashboard: React.FC = () => {
     setShowModalElimina(false);
   };
   const guardaEdicion = async () => {
-    console.log("Elemento eliminado de la base de datos");
+    console.log({'Datos enviados':dataInputs})
+    // console.log("Elemento Guardado en la base de datos");
     // ===========================================================================================================================================
     // aqui va la api para guardar los datos modificados del Tarjetahabiente asi como tambien los errores que se pudieran producir en el backend
     // y cuando sea exitoso refrescar la lista
     // ===========================================================================================================================================
-    setbtnGuardarTarjetahabientes(true);
-    setSelectedClient({
-      Cliente: "",
-      fechaVencimiento: "",
-      idCentroN: 0,
-      idCliente: 0,
-      idTarjeta: 0,
-      noTarjeta: 0,
-    });
-    setDetallesCliente(null);
-    setShowModalGuardado(true); // Abrimos el modal para avisar de los datos actualizados correctemante
-    // console.log(dataInputs)
-    // setbtnGuardarTarjetahabientes(true)
+    try {
+      const response = await api.post("/admin/editaTarjetahabiente", { data:dataInputs });
+      console.log(response)
+      // setbtnGuardarTarjetahabientes(true);
+      setSelectedClient({
+        Cliente: "",
+        fechaVencimiento: "",
+        idCentroN: 0,
+        idCliente: 0,
+        idTarjeta: 0,
+        noTarjeta: 0,
+      });
+      setDetallesCliente(null);
+      setShowModalGuardado(true); // Abrimos el modal para avisar de los datos actualizados correctemante
+      // console.log(dataInputs)
+      // setbtnGuardarTarjetahabientes(true)
+    } catch (error) {
+      
+    }
   };
 
   const formatearAPesos = (numero: number) => {
@@ -226,52 +255,64 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const selecionaClienteTarjetabiente = async (
-    idTarjeta: number,
+    idTarjeta: number | null,
     item: any,
-    idCliente:number,
+    idCliente:number | null,
+    estatus:boolean
   ) => {
     // idTarjeta = 200
-    setLoading(true);
-    setSelectedClient(item);
-    try {
-      const response = await api.post("/admin/detalleCliente", { idTarjeta });
-      // console.log(response.data.status)
+    if( estatus === true ){
 
-      if (response.data.status === 200) {
-        response.data.data.usuario.length === 0
-          ? setBtnTarjetahabientes(true)
-          : setBtnTarjetahabientes(false);
-        setDetallesCliente(response.data.data);
-        getDataInput(response.data.data.usuario);
-        setbtnGuardarTarjetahabientes(true);
-        setVarRandom(idCliente);
-        // console.log({targetaSelecionada:response.data});
-
-        return;
+      try {
+        const response = await api.post("/admin/detalleCliente", { idTarjeta });
+        // console.log(response.data.data)
+  
+        if (response.data.status === 200) {
+          response.data.data.usuario.length === 0
+            ? setBtnTarjetahabientes(true)
+            : setBtnTarjetahabientes(false);
+          setDetallesCliente(response.data.data);
+          getDataInput(response.data.data.usuario);
+          // setbtnGuardarTarjetahabientes(true);
+          setVarRandom(idCliente);
+          // console.log({targetaSelecionada:response.data});
+  
+          return;
+        }
+  
+        console.log("sesion caducada: ", response.data.status);
+        endSessionCockie();
+      } catch (error) {
+        console.error("Error cargando los detalles del tarjetahabiente:", error);
+      } finally {
+        setLoading(false);
       }
 
-      console.log("sesion caducada: ", response.data.status);
-      endSessionCockie();
-    } catch (error) {
-      console.error("Error cargando los detalles del tarjetahabiente:", error);
-    } finally {
-      setLoading(false);
+      setLoading(true);
+      setSelectedClient(item);
+      return
     }
+    setDetallesCliente(null);
+    setBtnTarjetahabientes(true)
   };
 
   // Sincronizar el estado cuando la lista de selección (API) cambie
   useEffect(() => {
     if (detallesCliente?.usuario) {
-      getDataInput(detallesCliente.usuario);
+      // getDataInput({nombreCliente:detallesCliente.usuario.Cliente});
     } else {
       // Limpiar el formulario si no hay selección
       getDataInput({
-        Cliente: "",
-        correo: "",
-        idTarjeta: 0,
-        noCliente: "",
-        noTarjeta: "",
-        telefono: "",
+      apellidoP: "",   
+      apellidoM: "",      
+      correo: "",           
+      fechaVencimiento:"",
+      idCentroN: null,
+      idTarjeta:null,          
+      noTarjeta: "",       
+      nombreCliente: "",  
+      telefono: "",
+      noCliente:""
       });
     }
   }, [detallesCliente]);
@@ -279,6 +320,7 @@ export const AdminDashboard: React.FC = () => {
 // para regresar siempre a la pagina 1 cuando cambie el centro de negocio
   useEffect(() => {
     setPaginaActual(1)
+    setBtnTarjetahabientes(true)
   }, [centroActivo]);
 
   // Manejador dinámico para actualizar cualquier input del formulario
@@ -312,7 +354,8 @@ export const AdminDashboard: React.FC = () => {
         setTotalPaginas(paginacion.totalPaginas);
         setTotalRegistros(paginacion.totalRegistros);
         setMontoTotalCargos(MontoTotalCargos);
-        // console.log(tarjetahabientes)
+
+        console.log(tarjetahabientes)
         // if (tarjetahabientes && tarjetahabientes.length > 0) {
         //   setSelectedClient(tarjetahabientes[0]); // 👈 Asegúrate de que tenga el [0]
         // } else {
@@ -342,11 +385,56 @@ export const AdminDashboard: React.FC = () => {
 
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
+      setBtnTarjetahabientes(true)
       cargarDatosPaginados();
       console.log('actualizamos centro de negocios')
     }
     
   };
+
+  const handleEditaTarjetahabiente = (resultado: '1' | '0') => {
+    setShowModalEditaTarjetahadiente(false); // Cerramos el modal
+
+    // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
+    if (resultado === '1') {
+      console.log('Tarjeta editada correctamente' )
+      setBtnTarjetahabientes(true)
+      cargarDatosPaginados();
+    }
+    
+  };
+  const handleCambioContraseña = (resultado: '1' | '0') => {
+    setShowModalContraseña(false); // Cerramos el modal
+
+    // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
+    if (resultado === '1') {
+      console.log('Se cambio la contraseña correctamente' )
+    }
+    
+  };
+  const handleEliminaTarjetahabiente = (resultado: '1' | '0') => {
+    setShowModalElimina(false); // Cerramos el modal
+
+    // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
+    if (resultado === '1') {
+      console.log('Se elimino el tarjetahabiente correctamente' )
+      setBtnTarjetahabientes(true)
+      cargarDatosPaginados();
+    }
+    
+  };
+  const handleEliminaTarjeta = (resultado: '1' | '0') => {
+    setShowModalEliminaTarjeta(false); // Cerramos el modal
+
+    // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
+    if (resultado === '1') {
+      console.log('Se Elimino la tarjeta correctamente' )
+      setBtnTarjetahabientes(true)
+      cargarDatosPaginados();
+    }
+    
+  };
+
 
   // =============================================================================================
   // PAGINACION INTELIGENTE
@@ -477,17 +565,28 @@ export const AdminDashboard: React.FC = () => {
   //     </div>
   //   );
 
+  // const handleSelecionaClienteTarjetabiente = (idTarjeta:any, item:any, idCliente:any, estatus:any) => {
+  //   console.log(idTarjeta,' ', item,' ', idCliente,' ', estatus)
+  //   if(estatus === true){
+  //     selecionaClienteTarjetabiente(idTarjeta, item, idCliente);
+  //     setBtnTarjetahabientes(false);
+  //   }else{
+  //     selecionaClienteTarjetabiente(idTarjeta, item, idCliente);
+  //     setBtnTarjetahabientes(true)
+  //   }
+  // }
+
   return (
     <>
       <div className="dashboard-layout-Admin">
-        {!btnGuardarTarjetahabientes && (
+        {/* {!btnGuardarTarjetahabientes && (
           <div
             className="absolute inset-0 z-40 bg-[#0a1f26]/40 backdrop-blur-xs cursor-pointer transition-all duration-300"
             onClick={() => {
               setShowModalAviso(true);
             }}
           />
-        )}
+        )} */}
 
         {/* 📊 PANEL CENTRAL OPERATIVO */}
         <main className="main-content-panel">
@@ -675,27 +774,35 @@ export const AdminDashboard: React.FC = () => {
                   {tarjetahabientes.map((item) => (
                     <tr
                       key={item.idTarjeta}
-                      onClick={() =>
-                        selecionaClienteTarjetabiente(
-                          item.idTarjeta,
-                          item,
-                          item.idCliente,
-                        )
-                      }
+                      onClick={()=>selecionaClienteTarjetabiente(item.idTarjeta, item, item.idCliente, item.estatus)}
+                      // onClick={()=>handleSelecionaClienteTarjetabiente(item.idTarjeta, item, item.idCliente, item.estatus)}
+                        
+                        // (()=>{
+                        // setBtnTarjetahabientes(false);
+                        // selecionaClienteTarjetabiente(
+                        //   item.idTarjeta,
+                        //   item,
+                        //   item.idCliente,
+                        // )})
+                         
+                        // :
+                        // (setBtnTarjetahabientes(true))
+
+                      
                       // onClick={() => {setSelectedClient(item); console.log({idTarjeta:item.idTarjeta, cleinteSelec:selectedClient})}}
                       className={
-                        selectedClient.idTarjeta === item.idTarjeta
-                          ? "selected "
+                        selectedClient.idTarjeta === item.idTarjeta && item.estatus === true
+                          ? "selected"
                           : ""
                       }
                     >
-                      <td className="font-bold text-white rounded-tl-full rounded-bl-full">
+                      <td className={`font-bold rounded-tl-full rounded-bl-full ${item.estatus === true ? "text-(--GrisLight)":"text-(--DeepBlue)"} `}>
                         {item.Cliente}
                       </td>
-                      <td className="font-mono text-slate-300 tracking-wider">
+                      <td className={`font-mono tracking-wider ${item.estatus === true ? "text-(--GrisLight)":"text-(--DeepBlue)"}`}>
                         {formatDigitoBancarios(item.noTarjeta)}
                       </td>
-                      <td className="rounded-tr-full rounded-br-full text-center">
+                      <td className={`"rounded-tr-full rounded-br-full text-center ${item.estatus === true ? "text-(--GrisLight)":"text-(--DeepBlue)"}`}>
                         {item.fechaVencimiento}
                       </td>
 
@@ -742,6 +849,20 @@ export const AdminDashboard: React.FC = () => {
                                 xmlns="http://www.w3.org/2000/svg"
                               >
                                 <path d="M1.83984 10.7871C1.23047 10.7871 0.771484 10.6348 0.462891 10.3301C0.154297 10.0293 0 9.57617 0 8.9707V1.81641C0 1.21094 0.154297 0.757812 0.462891 0.457031C0.771484 0.152344 1.23047 0 1.83984 0H9.84375C10.457 0 10.916 0.152344 11.2207 0.457031C11.5293 0.757812 11.6836 1.21094 11.6836 1.81641V2.49609C11.4805 2.44141 11.2793 2.41406 11.0801 2.41406C10.8926 2.41406 10.709 2.43945 10.5293 2.49023C10.3535 2.53711 10.1855 2.60742 10.0254 2.70117C9.98633 2.69336 9.94531 2.6875 9.90234 2.68359C9.86328 2.67969 9.82031 2.67773 9.77344 2.67773H1.75781C1.49609 2.67773 1.29492 2.74805 1.1543 2.88867C1.01367 3.02539 0.943359 3.22852 0.943359 3.49805V9.02344C0.943359 9.29297 1.01367 9.49609 1.1543 9.63281C1.29492 9.77344 1.49609 9.84375 1.75781 9.84375H6.79102C6.75977 9.99609 6.74609 10.1504 6.75 10.3066C6.75391 10.4668 6.78906 10.627 6.85547 10.7871H1.83984ZM4.69336 4.78125C4.5918 4.78125 4.52148 4.76367 4.48242 4.72852C4.44336 4.68945 4.42383 4.61914 4.42383 4.51758V4.17188C4.42383 4.07031 4.44336 4 4.48242 3.96094C4.52148 3.92188 4.5918 3.90234 4.69336 3.90234H5.03906C5.14453 3.90234 5.2168 3.92188 5.25586 3.96094C5.29492 4 5.31445 4.07031 5.31445 4.17188V4.51758C5.31445 4.61914 5.29492 4.68945 5.25586 4.72852C5.2168 4.76367 5.14453 4.78125 5.03906 4.78125H4.69336ZM6.64453 4.78125C6.53906 4.78125 6.4668 4.76367 6.42773 4.72852C6.38867 4.68945 6.36914 4.61914 6.36914 4.51758V4.17188C6.36914 4.07031 6.38867 4 6.42773 3.96094C6.4668 3.92188 6.53906 3.90234 6.64453 3.90234H6.98438C7.08984 3.90234 7.16211 3.92188 7.20117 3.96094C7.24023 4 7.25977 4.07031 7.25977 4.17188V4.51758C7.25977 4.61914 7.24023 4.68945 7.20117 4.72852C7.16211 4.76367 7.08984 4.78125 6.98438 4.78125H6.64453ZM2.74805 6.69727C2.64648 6.69727 2.57422 6.67969 2.53125 6.64453C2.49219 6.60547 2.47266 6.53516 2.47266 6.43359V6.08789C2.47266 5.98633 2.49219 5.91797 2.53125 5.88281C2.57422 5.84375 2.64648 5.82422 2.74805 5.82422H3.09375C3.19531 5.82422 3.26562 5.84375 3.30469 5.88281C3.34766 5.91797 3.36914 5.98633 3.36914 6.08789V6.43359C3.36914 6.53516 3.34766 6.60547 3.30469 6.64453C3.26562 6.67969 3.19531 6.69727 3.09375 6.69727H2.74805ZM4.69336 6.69727C4.5918 6.69727 4.52148 6.67969 4.48242 6.64453C4.44336 6.60547 4.42383 6.53516 4.42383 6.43359V6.08789C4.42383 5.98633 4.44336 5.91797 4.48242 5.88281C4.52148 5.84375 4.5918 5.82422 4.69336 5.82422H5.03906C5.14453 5.82422 5.2168 5.84375 5.25586 5.88281C5.29492 5.91797 5.31445 5.98633 5.31445 6.08789V6.43359C5.31445 6.53516 5.29492 6.60547 5.25586 6.64453C5.2168 6.67969 5.14453 6.69727 5.03906 6.69727H4.69336ZM6.64453 6.69727C6.53906 6.69727 6.4668 6.67969 6.42773 6.64453C6.38867 6.60547 6.36914 6.53516 6.36914 6.43359V6.08789C6.36914 5.98633 6.38867 5.91797 6.42773 5.88281C6.4668 5.84375 6.53906 5.82422 6.64453 5.82422H6.98438C7.08984 5.82422 7.16211 5.84375 7.20117 5.88281C7.24023 5.91797 7.25977 5.98633 7.25977 6.08789V6.43359C7.25977 6.53516 7.24023 6.60547 7.20117 6.64453C7.16211 6.67969 7.08984 6.69727 6.98438 6.69727H6.64453ZM2.74805 8.61914C2.64648 8.61914 2.57422 8.59961 2.53125 8.56055C2.49219 8.52148 2.47266 8.45117 2.47266 8.34961V8.00391C2.47266 7.90234 2.49219 7.83398 2.53125 7.79883C2.57422 7.75977 2.64648 7.74023 2.74805 7.74023H3.09375C3.19531 7.74023 3.26562 7.75977 3.30469 7.79883C3.34766 7.83398 3.36914 7.90234 3.36914 8.00391V8.34961C3.36914 8.45117 3.34766 8.52148 3.30469 8.56055C3.26562 8.59961 3.19531 8.61914 3.09375 8.61914H2.74805ZM4.69336 8.61914C4.5918 8.61914 4.52148 8.59961 4.48242 8.56055C4.44336 8.52148 4.42383 8.45117 4.42383 8.34961V8.00391C4.42383 7.90234 4.44336 7.83398 4.48242 7.79883C4.52148 7.75977 4.5918 7.74023 4.69336 7.74023H5.03906C5.14453 7.74023 5.2168 7.75977 5.25586 7.79883C5.29492 7.83398 5.31445 7.90234 5.31445 8.00391V8.34961C5.31445 8.45117 5.29492 8.52148 5.25586 8.56055C5.2168 8.59961 5.14453 8.61914 5.03906 8.61914H4.69336ZM6.64453 8.61914C6.53906 8.61914 6.4668 8.59961 6.42773 8.56055C6.38867 8.52148 6.36914 8.45117 6.36914 8.34961V8.00391C6.36914 7.90234 6.38867 7.83398 6.42773 7.79883C6.4668 7.75977 6.53906 7.74023 6.64453 7.74023H6.98438C7.08984 7.74023 7.16211 7.75977 7.20117 7.79883C7.24023 7.83398 7.25977 7.90234 7.25977 8.00391V8.34961C7.25977 8.45117 7.24023 8.52148 7.20117 8.56055C7.16211 8.59961 7.08984 8.61914 6.98438 8.61914H6.64453ZM8.58984 4.78125C8.48828 4.78125 8.41602 4.76367 8.37305 4.72852C8.33398 4.68945 8.31445 4.61914 8.31445 4.51758V4.17188C8.31445 4.07031 8.33398 4 8.37305 3.96094C8.41602 3.92188 8.48828 3.90234 8.58984 3.90234H8.8418C8.71289 4.17188 8.63477 4.46484 8.60742 4.78125H8.58984ZM8.58984 6.69727C8.48828 6.69727 8.41602 6.67969 8.37305 6.64453C8.33398 6.60547 8.31445 6.53516 8.31445 6.43359V6.08789C8.31445 5.98633 8.33398 5.91797 8.37305 5.88281C8.41602 5.84375 8.48828 5.82422 8.58984 5.82422H8.72461C8.75977 5.97656 8.80859 6.12305 8.87109 6.26367C8.9375 6.40039 9.01172 6.5293 9.09375 6.65039C9.07812 6.66992 9.05664 6.68359 9.0293 6.69141C9.00586 6.69531 8.97461 6.69727 8.93555 6.69727H8.58984ZM8.25 10.7812C8.02734 10.7812 7.85156 10.7324 7.72266 10.6348C7.59766 10.5371 7.53516 10.4004 7.53516 10.2246C7.53516 9.95117 7.61523 9.66602 7.77539 9.36914C7.93945 9.06836 8.17578 8.78711 8.48438 8.52539C8.79297 8.25977 9.16602 8.04492 9.60352 7.88086C10.041 7.7168 10.5332 7.63477 11.0801 7.63477C11.627 7.63477 12.1172 7.7168 12.5508 7.88086C12.9883 8.04492 13.3594 8.25977 13.6641 8.52539C13.9727 8.78711 14.209 9.06836 14.373 9.36914C14.5371 9.66602 14.6191 9.95117 14.6191 10.2246C14.6191 10.4004 14.5547 10.5371 14.4258 10.6348C14.3008 10.7324 14.127 10.7812 13.9043 10.7812H8.25ZM11.0801 6.88477C10.7793 6.88477 10.5 6.80273 10.2422 6.63867C9.98828 6.47461 9.7832 6.25391 9.62695 5.97656C9.4707 5.69531 9.39258 5.38086 9.39258 5.0332C9.39258 4.68945 9.4707 4.38086 9.62695 4.10742C9.7832 3.83008 9.98828 3.61328 10.2422 3.45703C10.5 3.29688 10.7793 3.2168 11.0801 3.2168C11.377 3.2168 11.6523 3.29492 11.9062 3.45117C12.1641 3.60742 12.3711 3.82227 12.5273 4.0957C12.6836 4.36914 12.7617 4.67773 12.7617 5.02148C12.7617 5.37305 12.6836 5.68945 12.5273 5.9707C12.375 6.25195 12.1699 6.47461 11.9121 6.63867C11.6582 6.80273 11.3809 6.88477 11.0801 6.88477Z" />
+                              </svg>
+                            </span>
+                          </button>
+                          {/* Historial Tarjeta */}
+                          <button type="button" 
+                          className="action-icon-btn-trash" 
+                          title="Historial"
+                          onClick={()=> setShowModalEliminaTarjeta(true)}
+                          >
+                            <span>
+                              <svg width="14" height="16" viewBox="0 0 14 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M4.64844 13.3096C4.79427 13.3096 4.91276 13.2663 5.00391 13.1797C5.09505 13.0931 5.13835 12.9792 5.13379 12.8379L4.91504 5.40039C4.91504 5.25911 4.86719 5.14746 4.77148 5.06543C4.68034 4.97884 4.56413 4.93555 4.42285 4.93555C4.27246 4.93555 4.15169 4.97884 4.06055 5.06543C3.97396 5.15202 3.93294 5.26595 3.9375 5.40723L4.14258 12.8379C4.15169 12.9837 4.19954 13.0999 4.28613 13.1865C4.37728 13.2686 4.49805 13.3096 4.64844 13.3096ZM6.74023 13.3096C6.89062 13.3096 7.01139 13.2686 7.10254 13.1865C7.19824 13.0999 7.24609 12.986 7.24609 12.8447V5.40723C7.24609 5.26595 7.19824 5.15202 7.10254 5.06543C7.01139 4.97884 6.89062 4.93555 6.74023 4.93555C6.5944 4.93555 6.47363 4.97884 6.37793 5.06543C6.28678 5.15202 6.24121 5.26595 6.24121 5.40723V12.8447C6.24121 12.986 6.28678 13.0999 6.37793 13.1865C6.47363 13.2686 6.5944 13.3096 6.74023 13.3096ZM8.83887 13.3096C8.98926 13.3096 9.10775 13.2686 9.19434 13.1865C9.28548 13.1045 9.33333 12.9883 9.33789 12.8379L9.54297 5.40723C9.54753 5.26595 9.50423 5.15202 9.41309 5.06543C9.3265 4.97884 9.20801 4.93555 9.05762 4.93555C8.9209 4.93555 8.80469 4.97884 8.70898 5.06543C8.61784 5.14746 8.56999 5.26139 8.56543 5.40723L8.35352 12.8379C8.34896 12.9837 8.38997 13.0999 8.47656 13.1865C8.56771 13.2686 8.68848 13.3096 8.83887 13.3096ZM3.63672 3.14453V1.66797C3.63672 1.14388 3.79395 0.736003 4.1084 0.444336C4.42741 0.148112 4.86947 0 5.43457 0H8.03223C8.59733 0 9.03939 0.148112 9.3584 0.444336C9.67741 0.736003 9.83691 1.14388 9.83691 1.66797V3.14453H8.57227V1.72949C8.57227 1.55632 8.5153 1.41732 8.40137 1.3125C8.28743 1.20312 8.13477 1.14844 7.94336 1.14844H5.52344C5.33659 1.14844 5.1862 1.20312 5.07227 1.3125C4.95833 1.41732 4.90137 1.55632 4.90137 1.72949V3.14453H3.63672ZM0.608398 3.89648C0.439779 3.89648 0.296224 3.83724 0.177734 3.71875C0.0592448 3.60026 0 3.45671 0 3.28809C0 3.12402 0.0592448 2.98503 0.177734 2.87109C0.296224 2.7526 0.439779 2.69336 0.608398 2.69336H12.8789C13.0475 2.69336 13.1888 2.75033 13.3027 2.86426C13.4212 2.97819 13.4805 3.11947 13.4805 3.28809C13.4805 3.45671 13.4212 3.60026 13.3027 3.71875C13.1888 3.83724 13.0475 3.89648 12.8789 3.89648H0.608398ZM3.60254 15.4287C3.07389 15.4287 2.65007 15.2806 2.33105 14.9844C2.0166 14.6882 1.84798 14.2757 1.8252 13.7471L1.34668 3.75293H12.1338L11.6621 13.7402C11.6393 14.2689 11.4684 14.6813 11.1494 14.9775C10.8304 15.2783 10.4089 15.4287 9.88477 15.4287H3.60254Z" 
+                                // fill="#FF3B30"
+                                />
                               </svg>
                             </span>
                           </button>
@@ -818,6 +939,124 @@ export const AdminDashboard: React.FC = () => {
 
         {/* 💳 BARRA DE DETALLES DERECHA (Información del Tarjetahabiente Seleccionado) */}
         <aside className="details-panel z-50">
+
+          <div>
+            <div className="flex">
+              <span className="">
+                <svg
+                  width="50"
+                  height="50"
+                  viewBox="0 0 50 50"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M24.9023 49.8047C21.4681 49.8047 18.2454 49.1536 15.2344 47.8516C12.2233 46.5658 9.57845 44.7835 7.2998 42.5049C5.02116 40.2262 3.23079 37.5814 1.92871 34.5703C0.642904 31.5592 0 28.3366 0 24.9023C0 21.4681 0.642904 18.2454 1.92871 15.2344C3.23079 12.2233 5.02116 9.57845 7.2998 7.2998C9.57845 5.00488 12.2233 3.21452 15.2344 1.92871C18.2454 0.642904 21.4681 0 24.9023 0C28.3366 0 31.5592 0.642904 34.5703 1.92871C37.5814 3.21452 40.2262 5.00488 42.5049 7.2998C44.7835 9.57845 46.5658 12.2233 47.8516 15.2344C49.1536 18.2454 49.8047 21.4681 49.8047 24.9023C49.8047 28.3366 49.1536 31.5592 47.8516 34.5703C46.5658 37.5814 44.7835 40.2262 42.5049 42.5049C40.2262 44.7835 37.5814 46.5658 34.5703 47.8516C31.5592 49.1536 28.3366 49.8047 24.9023 49.8047ZM24.9023 45.6543C27.7669 45.6543 30.4525 45.1172 32.959 44.043C35.4655 42.9688 37.6709 41.4795 39.5752 39.5752C41.4795 37.6709 42.9688 35.4655 44.043 32.959C45.1172 30.4525 45.6543 27.7669 45.6543 24.9023C45.6543 22.0378 45.1172 19.3522 44.043 16.8457C42.9688 14.3229 41.4795 12.1175 39.5752 10.2295C37.6709 8.3252 35.4655 6.83594 32.959 5.76172C30.4525 4.6875 27.7669 4.15039 24.9023 4.15039C22.0378 4.15039 19.3522 4.6875 16.8457 5.76172C14.3392 6.83594 12.1338 8.3252 10.2295 10.2295C8.3252 12.1175 6.83594 14.3229 5.76172 16.8457C4.6875 19.3522 4.15039 22.0378 4.15039 24.9023C4.15039 27.7669 4.6875 30.4525 5.76172 32.959C6.83594 35.4655 8.3252 37.6709 10.2295 39.5752C12.1338 41.4795 14.3392 42.9688 16.8457 44.043C19.3522 45.1172 22.0378 45.6543 24.9023 45.6543ZM13.7207 37.2559C13.2324 37.2559 12.8662 37.1175 12.6221 36.8408C12.3942 36.5479 12.2803 36.1735 12.2803 35.7178C12.2803 35.0505 12.5326 34.1878 13.0371 33.1299C13.5579 32.0557 14.3311 30.9896 15.3564 29.9316C16.3981 28.8574 17.7083 27.9541 19.2871 27.2217C20.8659 26.4893 22.7295 26.123 24.8779 26.123C27.0264 26.123 28.89 26.4893 30.4688 27.2217C32.0475 27.9541 33.3496 28.8574 34.375 29.9316C35.4167 30.9896 36.1898 32.0557 36.6943 33.1299C37.2152 34.1878 37.4756 35.0505 37.4756 35.7178C37.4756 36.1735 37.3535 36.5479 37.1094 36.8408C36.8815 37.1175 36.5234 37.2559 36.0352 37.2559H13.7207ZM24.8779 24.1211C23.7223 24.1211 22.6644 23.82 21.7041 23.2178C20.7601 22.6156 20.0033 21.8018 19.4336 20.7764C18.8802 19.751 18.6035 18.5872 18.6035 17.2852C18.6035 16.0645 18.8802 14.9495 19.4336 13.9404C20.0033 12.915 20.7601 12.1012 21.7041 11.499C22.6644 10.8805 23.7223 10.5713 24.8779 10.5713C26.0335 10.5713 27.0833 10.8805 28.0273 11.499C28.9876 12.1012 29.7445 12.915 30.2979 13.9404C30.8675 14.9495 31.1523 16.0645 31.1523 17.2852C31.1523 18.5872 30.8675 19.7591 30.2979 20.8008C29.7445 21.8262 28.9876 22.64 28.0273 23.2422C27.0833 23.8444 26.0335 24.1374 24.8779 24.1211Z"
+                    fill="white"
+                  />
+                </svg>
+              </span>
+              <h3 className="ml-2 input-condensed text-[36px] font-bold text-white tracking-tight">
+                Tarjetahabiente
+              </h3>
+            </div>
+            <div className="ml-15 flex ">
+              <div className="flex items-center justify-center inline-flex rounded-full px-4 pb-2 pt-2 mt-2 bg-(--DeepBlue) text-(--fondo)">
+                {/* Edicion */}
+                <button
+                  type="button"
+                  disabled={btnTarjetahabientes}
+                  onClick={() => {
+                    BtnsTatrjetahabientes();
+                  }}
+                  // className={`mx-3.5 cursor-pointer text-(--VerdeNeon)`}
+                  className={`mx-3.5 ${btnTarjetahabientes ? "cursor-not-allowed" : "cursor-pointer text-(--VerdeNeon)"}`}
+                >
+                  <svg
+                    width="15"
+                    height="12"
+                    viewBox="0 0 15 12"
+                    fill="currentColor"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M2.97363 11.6689L4.49805 10.1514H13.2822C13.4919 10.1514 13.6696 10.2266 13.8154 10.377C13.9658 10.5273 14.041 10.7051 14.041 10.9102C14.041 11.1198 13.9658 11.2975 13.8154 11.4434C13.6696 11.5938 13.4919 11.6689 13.2822 11.6689H2.97363ZM2.14648 11.0264L0.4375 11.6758C0.328125 11.7214 0.227865 11.6963 0.136719 11.6006C0.0455729 11.5094 0.0227865 11.4069 0.0683594 11.293L0.745117 9.625L8.59961 1.77051L10.001 3.17871L2.14648 11.0264ZM10.6914 2.49512L9.2832 1.08691L10.0557 0.321289C10.2471 0.13444 10.4453 0.0341797 10.6504 0.0205078C10.86 0.00683594 11.0514 0.0888672 11.2246 0.266602L11.5186 0.560547C11.6963 0.738281 11.7806 0.929688 11.7715 1.13477C11.7624 1.33529 11.6621 1.53353 11.4707 1.72949L10.6914 2.49512Z"
+                      // fill="#02FFA2"
+                    />
+                  </svg>
+                </button>
+                {/* Contraseña */}
+                <button
+                  type="button"
+                  disabled={btnTarjetahabientes}
+                  onClick={() => {
+                    setShowModalContraseña(true);
+                  }}
+                  // className={`mx-3.5 cursor-pointer text-(--VerdeNeon)`}
+                  className={`mx-3.5 ${btnTarjetahabientes ? "cursor-not-allowed" : "cursor-pointer text-(--VerdeNeon)"}`}
+                >
+                  <svg
+                    width="16"
+                    height="13"
+                    viewBox="0 0 16 13"
+                    fill="currentColor"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12.5439 4.84668C12.0609 4.84668 11.8193 4.63932 11.8193 4.22461C11.8193 4.21094 11.8193 4.19954 11.8193 4.19043C11.8193 4.18132 11.8193 4.1722 11.8193 4.16309C11.8193 3.86686 11.8968 3.62533 12.0518 3.43848C12.2067 3.24707 12.4049 3.06706 12.6465 2.89844C12.929 2.70247 13.141 2.53841 13.2822 2.40625C13.4281 2.26953 13.501 2.09863 13.501 1.89355C13.501 1.68392 13.4212 1.51074 13.2617 1.37402C13.1068 1.2373 12.904 1.16895 12.6533 1.16895C12.5257 1.16895 12.4072 1.18945 12.2979 1.23047C12.193 1.26693 12.0928 1.32617 11.9971 1.4082C11.9059 1.48568 11.8239 1.58138 11.751 1.69531L11.6553 1.8252C11.5824 1.91634 11.498 1.98926 11.4023 2.04395C11.3112 2.09408 11.1995 2.11914 11.0674 2.11914C10.9079 2.11914 10.7689 2.06673 10.6504 1.96191C10.5365 1.85254 10.4795 1.71126 10.4795 1.53809C10.4795 1.47428 10.4863 1.41276 10.5 1.35352C10.5137 1.28971 10.5319 1.22591 10.5547 1.16211C10.6641 0.843099 10.9124 0.569661 11.2998 0.341797C11.6872 0.113932 12.1748 0 12.7627 0C13.1774 0 13.5579 0.0729167 13.9043 0.21875C14.2507 0.360026 14.5264 0.567383 14.7314 0.84082C14.9411 1.1097 15.0459 1.43327 15.0459 1.81152C15.0459 2.20345 14.9479 2.51562 14.752 2.74805C14.5605 2.97591 14.2939 3.2015 13.9521 3.4248C13.7425 3.56152 13.5739 3.69368 13.4463 3.82129C13.3232 3.94434 13.2549 4.09017 13.2412 4.25879C13.2412 4.27246 13.2389 4.28841 13.2344 4.30664C13.2344 4.32031 13.2344 4.33171 13.2344 4.34082C13.2161 4.4821 13.1455 4.60286 13.0225 4.70312C12.904 4.79883 12.7445 4.84668 12.5439 4.84668ZM12.5371 6.98633C12.3001 6.98633 12.0996 6.91341 11.9355 6.76758C11.7715 6.61719 11.6895 6.43034 11.6895 6.20703C11.6895 5.97917 11.7715 5.79232 11.9355 5.64648C12.0996 5.49609 12.3001 5.4209 12.5371 5.4209C12.7741 5.4209 12.9746 5.49382 13.1387 5.63965C13.3027 5.78548 13.3848 5.97461 13.3848 6.20703C13.3848 6.4349 13.3005 6.62174 13.1318 6.76758C12.9678 6.91341 12.7695 6.98633 12.5371 6.98633ZM1.27148 12.9062C0.875 12.9062 0.562826 12.8151 0.334961 12.6328C0.111654 12.4551 0 12.209 0 11.8945C0 11.457 0.13444 10.9967 0.40332 10.5137C0.672201 10.0306 1.05957 9.57943 1.56543 9.16016C2.07129 8.73633 2.67969 8.39225 3.39062 8.12793C4.10612 7.86361 4.90592 7.73145 5.79004 7.73145C6.67871 7.73145 7.47852 7.86361 8.18945 8.12793C8.90495 8.39225 9.51335 8.73633 10.0146 9.16016C10.5205 9.57943 10.9079 10.0306 11.1768 10.5137C11.4502 10.9967 11.5869 11.457 11.5869 11.8945C11.5869 12.209 11.473 12.4551 11.2451 12.6328C11.0218 12.8151 10.7119 12.9062 10.3154 12.9062H1.27148ZM5.79688 6.52832C5.29102 6.52832 4.82845 6.39388 4.40918 6.125C3.98991 5.85156 3.65267 5.48698 3.39746 5.03125C3.14681 4.57096 3.02148 4.05599 3.02148 3.48633C3.02148 2.9349 3.14681 2.43359 3.39746 1.98242C3.65267 1.52669 3.98991 1.16667 4.40918 0.902344C4.83301 0.633464 5.29557 0.499023 5.79688 0.499023C6.29818 0.499023 6.75846 0.631185 7.17773 0.895508C7.59701 1.15983 7.93424 1.51758 8.18945 1.96875C8.44466 2.41536 8.57227 2.91895 8.57227 3.47949C8.57227 4.04915 8.44466 4.56413 8.18945 5.02441C7.9388 5.4847 7.60156 5.85156 7.17773 6.125C6.75846 6.39388 6.29818 6.52832 5.79688 6.52832Z"
+                      // fill="#02FFA2"
+                    />
+                  </svg>
+                </button>
+                {/* Eliminar */}
+                <button
+                  type="button"
+                  disabled={btnTarjetahabientes}
+                  onClick={() => {
+                    setShowModalElimina(true);
+                  }}
+                  // className={`mx-3.5 cursor-pointer text-(--rojo)`}
+                  className={`mx-3.5 ${btnTarjetahabientes ? "cursor-not-allowed" : "cursor-pointer text-(--rojo)"}`}
+                >
+                  <svg
+                    width="14"
+                    height="16"
+                    viewBox="0 0 14 16"
+                    fill="currentColor"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M4.82617 13.1797C4.67578 13.1797 4.55501 13.1364 4.46387 13.0498C4.37272 12.9587 4.32487 12.8402 4.32031 12.6943L4.11523 5.63965C4.11068 5.49382 4.15397 5.3776 4.24512 5.29102C4.33626 5.19987 4.45703 5.1543 4.60742 5.1543C4.75781 5.1543 4.87858 5.19987 4.96973 5.29102C5.06543 5.3776 5.11556 5.49154 5.12012 5.63281L5.3252 12.6875C5.3252 12.8333 5.27962 12.9518 5.18848 13.043C5.09733 13.1341 4.97656 13.1797 4.82617 13.1797ZM6.8291 13.1797C6.67871 13.1797 6.55566 13.1364 6.45996 13.0498C6.36882 12.9587 6.32324 12.8402 6.32324 12.6943V5.63965C6.32324 5.49382 6.36882 5.3776 6.45996 5.29102C6.55566 5.19987 6.67871 5.1543 6.8291 5.1543C6.98405 5.1543 7.1071 5.19987 7.19824 5.29102C7.29395 5.3776 7.3418 5.49382 7.3418 5.63965V12.6943C7.3418 12.8402 7.29395 12.9587 7.19824 13.0498C7.1071 13.1364 6.98405 13.1797 6.8291 13.1797ZM8.83887 13.1797C8.68392 13.1797 8.56087 13.1341 8.46973 13.043C8.37858 12.9518 8.33529 12.8333 8.33984 12.6875L8.54492 5.63965C8.54948 5.49382 8.59733 5.3776 8.68848 5.29102C8.77962 5.19987 8.90039 5.1543 9.05078 5.1543C9.20573 5.1543 9.3265 5.19987 9.41309 5.29102C9.50423 5.3776 9.54753 5.49382 9.54297 5.63965L9.34473 12.6943C9.34017 12.8402 9.29004 12.9587 9.19434 13.0498C9.10319 13.1364 8.9847 13.1797 8.83887 13.1797ZM3.64355 3.1582V1.70898C3.64355 1.17122 3.80762 0.751953 4.13574 0.451172C4.46842 0.150391 4.93099 0 5.52344 0H8.12793C8.72038 0 9.18066 0.150391 9.50879 0.451172C9.84147 0.751953 10.0078 1.17122 10.0078 1.70898V3.1582H8.61328V1.77051C8.61328 1.611 8.55859 1.4834 8.44922 1.3877C8.3444 1.28743 8.20312 1.2373 8.02539 1.2373H5.62598C5.44824 1.2373 5.30469 1.28743 5.19531 1.3877C5.09049 1.4834 5.03809 1.611 5.03809 1.77051V3.1582H3.64355ZM0.676758 4.05371C0.489909 4.05371 0.330404 3.98991 0.198242 3.8623C0.0660807 3.7347 0 3.5752 0 3.38379C0 3.19694 0.0660807 3.03971 0.198242 2.91211C0.330404 2.78451 0.489909 2.7207 0.676758 2.7207H12.9883C13.1751 2.7207 13.3324 2.78451 13.46 2.91211C13.5921 3.03516 13.6582 3.19238 13.6582 3.38379C13.6582 3.5752 13.5944 3.7347 13.4668 3.8623C13.3392 3.98991 13.1797 4.05371 12.9883 4.05371H0.676758ZM3.68457 15.5791C3.13314 15.5791 2.69336 15.4264 2.36523 15.1211C2.03711 14.8158 1.86165 14.3874 1.83887 13.8359L1.37402 3.91699H2.74805L3.20605 13.5625C3.21517 13.763 3.27669 13.9248 3.39062 14.0479C3.50911 14.1709 3.66178 14.2324 3.84863 14.2324H9.80273C9.99414 14.2324 10.1468 14.1709 10.2607 14.0479C10.3792 13.9294 10.443 13.7676 10.4521 13.5625L10.8965 3.91699H12.291L11.8262 13.8291C11.8034 14.3851 11.6257 14.8158 11.293 15.1211C10.9648 15.4264 10.5273 15.5791 9.98047 15.5791H3.68457Z"
+                      // fill="#02FFA2"
+                    />
+                  </svg>
+                </button>
+                {/* Guardar */}
+                {/* <button
+                  type="button"
+                  disabled={btnGuardarTarjetahabientes}
+                  onClick={() => {
+                    guardaEdicion();
+                  }}
+                  className={`mx-3.5 pt-1 ${btnGuardarTarjetahabientes ? "cursor-not-allowed" : "cursor-pointer text-(--VerdeNeon)"}`}
+                >
+                  <svg
+                    width="19"
+                    height="14"
+                    viewBox="0 0 19 14"
+                    fill="currentColor"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M7.36914 11.9629C7.60156 11.612 7.78158 11.2292 7.90918 10.8145C8.03678 10.3997 8.10059 9.96908 8.10059 9.52246C8.10059 8.87533 7.9707 8.26921 7.71094 7.7041C7.45573 7.139 7.10938 6.64909 6.67188 6.23438H15.8594C16.429 6.23438 16.9303 6.35514 17.3633 6.59668C17.8008 6.83822 18.1403 7.17546 18.3818 7.6084C18.6234 8.03678 18.7441 8.53353 18.7441 9.09863C18.7441 9.66374 18.6234 10.1628 18.3818 10.5957C18.1403 11.0241 17.8008 11.359 17.3633 11.6006C16.9303 11.8421 16.429 11.9629 15.8594 11.9629H7.36914ZM17.7871 5.63965C17.2083 5.33887 16.5658 5.18848 15.8594 5.18848H5.46191C5.37533 5.18848 5.28874 5.19303 5.20215 5.20215C5.11556 5.21126 5.03581 5.22493 4.96289 5.24316C4.78516 5.1748 4.60286 5.12012 4.41602 5.0791C4.22917 5.03809 4.0332 5.00846 3.82812 4.99023L5.26367 1.68848C5.49609 1.14616 5.83789 0.729167 6.28906 0.4375C6.74023 0.145833 7.28027 0 7.90918 0H13.4189C14.0479 0 14.5879 0.145833 15.0391 0.4375C15.4948 0.729167 15.8389 1.14616 16.0713 1.68848L17.7871 5.63965ZM14.916 9.09863C14.916 9.3584 15.0072 9.57943 15.1895 9.76172C15.3763 9.94401 15.5973 10.0329 15.8525 10.0283C16.1032 10.0238 16.3197 9.93262 16.502 9.75488C16.6842 9.57715 16.7754 9.3584 16.7754 9.09863C16.7754 8.85254 16.6842 8.63835 16.502 8.45605C16.3197 8.26921 16.1032 8.17578 15.8525 8.17578C15.5973 8.17578 15.3763 8.26921 15.1895 8.45605C15.0072 8.63835 14.916 8.85254 14.916 9.09863ZM3.55469 13.084C3.06706 13.084 2.60905 12.9906 2.18066 12.8037C1.75228 12.6169 1.37402 12.3594 1.0459 12.0312C0.722331 11.7077 0.467122 11.3317 0.280273 10.9033C0.0934245 10.4749 0 10.0169 0 9.5293C0 9.03711 0.0934245 8.5791 0.280273 8.15527C0.467122 7.72689 0.722331 7.34863 1.0459 7.02051C1.37402 6.69238 1.75228 6.43717 2.18066 6.25488C2.60905 6.06803 3.06706 5.97461 3.55469 5.97461C4.04232 5.97461 4.50033 6.06803 4.92871 6.25488C5.3571 6.43717 5.73535 6.69238 6.06348 7.02051C6.3916 7.34408 6.64681 7.72005 6.8291 8.14844C7.01139 8.57682 7.10254 9.03711 7.10254 9.5293C7.10254 10.0124 7.00911 10.4681 6.82227 10.8965C6.63997 11.3249 6.38477 11.7031 6.05664 12.0312C5.72852 12.3594 5.35026 12.6169 4.92188 12.8037C4.49349 12.9906 4.03776 13.084 3.55469 13.084ZM3.12402 11.4639C3.31543 11.4639 3.45898 11.3955 3.55469 11.2588L5.53027 8.56543C5.56673 8.5153 5.5918 8.46289 5.60547 8.4082C5.6237 8.35352 5.63281 8.30339 5.63281 8.25781C5.63281 8.10742 5.5804 7.9821 5.47559 7.88184C5.37077 7.78158 5.24544 7.73145 5.09961 7.73145C4.91732 7.73145 4.76921 7.8112 4.65527 7.9707L3.08301 10.1445L2.32422 9.30371C2.27865 9.24902 2.22168 9.20801 2.15332 9.18066C2.08952 9.15332 2.0166 9.13965 1.93457 9.13965C1.79329 9.13965 1.66797 9.1875 1.55859 9.2832C1.45378 9.37891 1.40137 9.50879 1.40137 9.67285C1.40137 9.73665 1.41504 9.80273 1.44238 9.87109C1.46973 9.9349 1.50846 9.99414 1.55859 10.0488L2.69336 11.2861C2.74805 11.3499 2.81413 11.3955 2.8916 11.4229C2.96908 11.4502 3.04655 11.4639 3.12402 11.4639Z"
+                      // fill="#02FFA2"
+                    />
+                  </svg>
+                </button> */}
+              </div>
+            </div>
+          </div>
+
           {loading ? (
             <div className="flex-1 flex items-center justify-center text-slate-400 text-xs font-medium">
               <div className="flex-1 flex items-center justify-center">
@@ -826,137 +1065,34 @@ export const AdminDashboard: React.FC = () => {
             </div>
           ) : (
             <>
-              <div>
-                <div className="flex">
-                  <span className="">
-                    <svg
-                      width="50"
-                      height="50"
-                      viewBox="0 0 50 50"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M24.9023 49.8047C21.4681 49.8047 18.2454 49.1536 15.2344 47.8516C12.2233 46.5658 9.57845 44.7835 7.2998 42.5049C5.02116 40.2262 3.23079 37.5814 1.92871 34.5703C0.642904 31.5592 0 28.3366 0 24.9023C0 21.4681 0.642904 18.2454 1.92871 15.2344C3.23079 12.2233 5.02116 9.57845 7.2998 7.2998C9.57845 5.00488 12.2233 3.21452 15.2344 1.92871C18.2454 0.642904 21.4681 0 24.9023 0C28.3366 0 31.5592 0.642904 34.5703 1.92871C37.5814 3.21452 40.2262 5.00488 42.5049 7.2998C44.7835 9.57845 46.5658 12.2233 47.8516 15.2344C49.1536 18.2454 49.8047 21.4681 49.8047 24.9023C49.8047 28.3366 49.1536 31.5592 47.8516 34.5703C46.5658 37.5814 44.7835 40.2262 42.5049 42.5049C40.2262 44.7835 37.5814 46.5658 34.5703 47.8516C31.5592 49.1536 28.3366 49.8047 24.9023 49.8047ZM24.9023 45.6543C27.7669 45.6543 30.4525 45.1172 32.959 44.043C35.4655 42.9688 37.6709 41.4795 39.5752 39.5752C41.4795 37.6709 42.9688 35.4655 44.043 32.959C45.1172 30.4525 45.6543 27.7669 45.6543 24.9023C45.6543 22.0378 45.1172 19.3522 44.043 16.8457C42.9688 14.3229 41.4795 12.1175 39.5752 10.2295C37.6709 8.3252 35.4655 6.83594 32.959 5.76172C30.4525 4.6875 27.7669 4.15039 24.9023 4.15039C22.0378 4.15039 19.3522 4.6875 16.8457 5.76172C14.3392 6.83594 12.1338 8.3252 10.2295 10.2295C8.3252 12.1175 6.83594 14.3229 5.76172 16.8457C4.6875 19.3522 4.15039 22.0378 4.15039 24.9023C4.15039 27.7669 4.6875 30.4525 5.76172 32.959C6.83594 35.4655 8.3252 37.6709 10.2295 39.5752C12.1338 41.4795 14.3392 42.9688 16.8457 44.043C19.3522 45.1172 22.0378 45.6543 24.9023 45.6543ZM13.7207 37.2559C13.2324 37.2559 12.8662 37.1175 12.6221 36.8408C12.3942 36.5479 12.2803 36.1735 12.2803 35.7178C12.2803 35.0505 12.5326 34.1878 13.0371 33.1299C13.5579 32.0557 14.3311 30.9896 15.3564 29.9316C16.3981 28.8574 17.7083 27.9541 19.2871 27.2217C20.8659 26.4893 22.7295 26.123 24.8779 26.123C27.0264 26.123 28.89 26.4893 30.4688 27.2217C32.0475 27.9541 33.3496 28.8574 34.375 29.9316C35.4167 30.9896 36.1898 32.0557 36.6943 33.1299C37.2152 34.1878 37.4756 35.0505 37.4756 35.7178C37.4756 36.1735 37.3535 36.5479 37.1094 36.8408C36.8815 37.1175 36.5234 37.2559 36.0352 37.2559H13.7207ZM24.8779 24.1211C23.7223 24.1211 22.6644 23.82 21.7041 23.2178C20.7601 22.6156 20.0033 21.8018 19.4336 20.7764C18.8802 19.751 18.6035 18.5872 18.6035 17.2852C18.6035 16.0645 18.8802 14.9495 19.4336 13.9404C20.0033 12.915 20.7601 12.1012 21.7041 11.499C22.6644 10.8805 23.7223 10.5713 24.8779 10.5713C26.0335 10.5713 27.0833 10.8805 28.0273 11.499C28.9876 12.1012 29.7445 12.915 30.2979 13.9404C30.8675 14.9495 31.1523 16.0645 31.1523 17.2852C31.1523 18.5872 30.8675 19.7591 30.2979 20.8008C29.7445 21.8262 28.9876 22.64 28.0273 23.2422C27.0833 23.8444 26.0335 24.1374 24.8779 24.1211Z"
-                        fill="white"
-                      />
-                    </svg>
-                  </span>
-                  <h3 className="ml-2 input-condensed text-[36px] font-bold text-white tracking-tight">
-                    Tarjetahabiente
-                  </h3>
-                </div>
-                <div className="ml-15 flex ">
-                  <div className="flex items-center justify-center inline-flex rounded-full px-4 pb-2 pt-2 mt-2 bg-(--DeepBlue) text-(--fondo)">
-                    <button
-                      type="button"
-                      disabled={btnTarjetahabientes}
-                      onClick={() => {
-                        BtnsTatrjetahabientes();
-                      }}
-                      className={`mx-3.5 ${btnTarjetahabientes ? "cursor-not-allowed" : "cursor-pointer text-(--VerdeNeon)"}`}
-                    >
-                      <svg
-                        width="15"
-                        height="12"
-                        viewBox="0 0 15 12"
-                        fill="currentColor"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M2.97363 11.6689L4.49805 10.1514H13.2822C13.4919 10.1514 13.6696 10.2266 13.8154 10.377C13.9658 10.5273 14.041 10.7051 14.041 10.9102C14.041 11.1198 13.9658 11.2975 13.8154 11.4434C13.6696 11.5938 13.4919 11.6689 13.2822 11.6689H2.97363ZM2.14648 11.0264L0.4375 11.6758C0.328125 11.7214 0.227865 11.6963 0.136719 11.6006C0.0455729 11.5094 0.0227865 11.4069 0.0683594 11.293L0.745117 9.625L8.59961 1.77051L10.001 3.17871L2.14648 11.0264ZM10.6914 2.49512L9.2832 1.08691L10.0557 0.321289C10.2471 0.13444 10.4453 0.0341797 10.6504 0.0205078C10.86 0.00683594 11.0514 0.0888672 11.2246 0.266602L11.5186 0.560547C11.6963 0.738281 11.7806 0.929688 11.7715 1.13477C11.7624 1.33529 11.6621 1.53353 11.4707 1.72949L10.6914 2.49512Z"
-                          // fill="#02FFA2"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={btnTarjetahabientes}
-                      onClick={() => {
-                        setShowModalContraseña(true);
-                      }}
-                      className={`mx-3.5 ${btnTarjetahabientes ? "cursor-not-allowed" : "cursor-pointer text-(--VerdeNeon)"}`}
-                    >
-                      <svg
-                        width="16"
-                        height="13"
-                        viewBox="0 0 16 13"
-                        fill="currentColor"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M12.5439 4.84668C12.0609 4.84668 11.8193 4.63932 11.8193 4.22461C11.8193 4.21094 11.8193 4.19954 11.8193 4.19043C11.8193 4.18132 11.8193 4.1722 11.8193 4.16309C11.8193 3.86686 11.8968 3.62533 12.0518 3.43848C12.2067 3.24707 12.4049 3.06706 12.6465 2.89844C12.929 2.70247 13.141 2.53841 13.2822 2.40625C13.4281 2.26953 13.501 2.09863 13.501 1.89355C13.501 1.68392 13.4212 1.51074 13.2617 1.37402C13.1068 1.2373 12.904 1.16895 12.6533 1.16895C12.5257 1.16895 12.4072 1.18945 12.2979 1.23047C12.193 1.26693 12.0928 1.32617 11.9971 1.4082C11.9059 1.48568 11.8239 1.58138 11.751 1.69531L11.6553 1.8252C11.5824 1.91634 11.498 1.98926 11.4023 2.04395C11.3112 2.09408 11.1995 2.11914 11.0674 2.11914C10.9079 2.11914 10.7689 2.06673 10.6504 1.96191C10.5365 1.85254 10.4795 1.71126 10.4795 1.53809C10.4795 1.47428 10.4863 1.41276 10.5 1.35352C10.5137 1.28971 10.5319 1.22591 10.5547 1.16211C10.6641 0.843099 10.9124 0.569661 11.2998 0.341797C11.6872 0.113932 12.1748 0 12.7627 0C13.1774 0 13.5579 0.0729167 13.9043 0.21875C14.2507 0.360026 14.5264 0.567383 14.7314 0.84082C14.9411 1.1097 15.0459 1.43327 15.0459 1.81152C15.0459 2.20345 14.9479 2.51562 14.752 2.74805C14.5605 2.97591 14.2939 3.2015 13.9521 3.4248C13.7425 3.56152 13.5739 3.69368 13.4463 3.82129C13.3232 3.94434 13.2549 4.09017 13.2412 4.25879C13.2412 4.27246 13.2389 4.28841 13.2344 4.30664C13.2344 4.32031 13.2344 4.33171 13.2344 4.34082C13.2161 4.4821 13.1455 4.60286 13.0225 4.70312C12.904 4.79883 12.7445 4.84668 12.5439 4.84668ZM12.5371 6.98633C12.3001 6.98633 12.0996 6.91341 11.9355 6.76758C11.7715 6.61719 11.6895 6.43034 11.6895 6.20703C11.6895 5.97917 11.7715 5.79232 11.9355 5.64648C12.0996 5.49609 12.3001 5.4209 12.5371 5.4209C12.7741 5.4209 12.9746 5.49382 13.1387 5.63965C13.3027 5.78548 13.3848 5.97461 13.3848 6.20703C13.3848 6.4349 13.3005 6.62174 13.1318 6.76758C12.9678 6.91341 12.7695 6.98633 12.5371 6.98633ZM1.27148 12.9062C0.875 12.9062 0.562826 12.8151 0.334961 12.6328C0.111654 12.4551 0 12.209 0 11.8945C0 11.457 0.13444 10.9967 0.40332 10.5137C0.672201 10.0306 1.05957 9.57943 1.56543 9.16016C2.07129 8.73633 2.67969 8.39225 3.39062 8.12793C4.10612 7.86361 4.90592 7.73145 5.79004 7.73145C6.67871 7.73145 7.47852 7.86361 8.18945 8.12793C8.90495 8.39225 9.51335 8.73633 10.0146 9.16016C10.5205 9.57943 10.9079 10.0306 11.1768 10.5137C11.4502 10.9967 11.5869 11.457 11.5869 11.8945C11.5869 12.209 11.473 12.4551 11.2451 12.6328C11.0218 12.8151 10.7119 12.9062 10.3154 12.9062H1.27148ZM5.79688 6.52832C5.29102 6.52832 4.82845 6.39388 4.40918 6.125C3.98991 5.85156 3.65267 5.48698 3.39746 5.03125C3.14681 4.57096 3.02148 4.05599 3.02148 3.48633C3.02148 2.9349 3.14681 2.43359 3.39746 1.98242C3.65267 1.52669 3.98991 1.16667 4.40918 0.902344C4.83301 0.633464 5.29557 0.499023 5.79688 0.499023C6.29818 0.499023 6.75846 0.631185 7.17773 0.895508C7.59701 1.15983 7.93424 1.51758 8.18945 1.96875C8.44466 2.41536 8.57227 2.91895 8.57227 3.47949C8.57227 4.04915 8.44466 4.56413 8.18945 5.02441C7.9388 5.4847 7.60156 5.85156 7.17773 6.125C6.75846 6.39388 6.29818 6.52832 5.79688 6.52832Z"
-                          // fill="#02FFA2"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={btnTarjetahabientes}
-                      onClick={() => {
-                        setShowModalElimina(true);
-                      }}
-                      className={`mx-3.5 ${btnTarjetahabientes ? "cursor-not-allowed" : "cursor-pointer text-(--rojo)"}`}
-                    >
-                      <svg
-                        width="14"
-                        height="16"
-                        viewBox="0 0 14 16"
-                        fill="currentColor"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M4.82617 13.1797C4.67578 13.1797 4.55501 13.1364 4.46387 13.0498C4.37272 12.9587 4.32487 12.8402 4.32031 12.6943L4.11523 5.63965C4.11068 5.49382 4.15397 5.3776 4.24512 5.29102C4.33626 5.19987 4.45703 5.1543 4.60742 5.1543C4.75781 5.1543 4.87858 5.19987 4.96973 5.29102C5.06543 5.3776 5.11556 5.49154 5.12012 5.63281L5.3252 12.6875C5.3252 12.8333 5.27962 12.9518 5.18848 13.043C5.09733 13.1341 4.97656 13.1797 4.82617 13.1797ZM6.8291 13.1797C6.67871 13.1797 6.55566 13.1364 6.45996 13.0498C6.36882 12.9587 6.32324 12.8402 6.32324 12.6943V5.63965C6.32324 5.49382 6.36882 5.3776 6.45996 5.29102C6.55566 5.19987 6.67871 5.1543 6.8291 5.1543C6.98405 5.1543 7.1071 5.19987 7.19824 5.29102C7.29395 5.3776 7.3418 5.49382 7.3418 5.63965V12.6943C7.3418 12.8402 7.29395 12.9587 7.19824 13.0498C7.1071 13.1364 6.98405 13.1797 6.8291 13.1797ZM8.83887 13.1797C8.68392 13.1797 8.56087 13.1341 8.46973 13.043C8.37858 12.9518 8.33529 12.8333 8.33984 12.6875L8.54492 5.63965C8.54948 5.49382 8.59733 5.3776 8.68848 5.29102C8.77962 5.19987 8.90039 5.1543 9.05078 5.1543C9.20573 5.1543 9.3265 5.19987 9.41309 5.29102C9.50423 5.3776 9.54753 5.49382 9.54297 5.63965L9.34473 12.6943C9.34017 12.8402 9.29004 12.9587 9.19434 13.0498C9.10319 13.1364 8.9847 13.1797 8.83887 13.1797ZM3.64355 3.1582V1.70898C3.64355 1.17122 3.80762 0.751953 4.13574 0.451172C4.46842 0.150391 4.93099 0 5.52344 0H8.12793C8.72038 0 9.18066 0.150391 9.50879 0.451172C9.84147 0.751953 10.0078 1.17122 10.0078 1.70898V3.1582H8.61328V1.77051C8.61328 1.611 8.55859 1.4834 8.44922 1.3877C8.3444 1.28743 8.20312 1.2373 8.02539 1.2373H5.62598C5.44824 1.2373 5.30469 1.28743 5.19531 1.3877C5.09049 1.4834 5.03809 1.611 5.03809 1.77051V3.1582H3.64355ZM0.676758 4.05371C0.489909 4.05371 0.330404 3.98991 0.198242 3.8623C0.0660807 3.7347 0 3.5752 0 3.38379C0 3.19694 0.0660807 3.03971 0.198242 2.91211C0.330404 2.78451 0.489909 2.7207 0.676758 2.7207H12.9883C13.1751 2.7207 13.3324 2.78451 13.46 2.91211C13.5921 3.03516 13.6582 3.19238 13.6582 3.38379C13.6582 3.5752 13.5944 3.7347 13.4668 3.8623C13.3392 3.98991 13.1797 4.05371 12.9883 4.05371H0.676758ZM3.68457 15.5791C3.13314 15.5791 2.69336 15.4264 2.36523 15.1211C2.03711 14.8158 1.86165 14.3874 1.83887 13.8359L1.37402 3.91699H2.74805L3.20605 13.5625C3.21517 13.763 3.27669 13.9248 3.39062 14.0479C3.50911 14.1709 3.66178 14.2324 3.84863 14.2324H9.80273C9.99414 14.2324 10.1468 14.1709 10.2607 14.0479C10.3792 13.9294 10.443 13.7676 10.4521 13.5625L10.8965 3.91699H12.291L11.8262 13.8291C11.8034 14.3851 11.6257 14.8158 11.293 15.1211C10.9648 15.4264 10.5273 15.5791 9.98047 15.5791H3.68457Z"
-                          // fill="#02FFA2"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={btnGuardarTarjetahabientes}
-                      onClick={() => {
-                        guardaEdicion();
-                      }}
-                      className={`mx-3.5 pt-1 ${btnGuardarTarjetahabientes ? "cursor-not-allowed" : "cursor-pointer text-(--VerdeNeon)"}`}
-                    >
-                      <svg
-                        width="19"
-                        height="14"
-                        viewBox="0 0 19 14"
-                        fill="currentColor"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M7.36914 11.9629C7.60156 11.612 7.78158 11.2292 7.90918 10.8145C8.03678 10.3997 8.10059 9.96908 8.10059 9.52246C8.10059 8.87533 7.9707 8.26921 7.71094 7.7041C7.45573 7.139 7.10938 6.64909 6.67188 6.23438H15.8594C16.429 6.23438 16.9303 6.35514 17.3633 6.59668C17.8008 6.83822 18.1403 7.17546 18.3818 7.6084C18.6234 8.03678 18.7441 8.53353 18.7441 9.09863C18.7441 9.66374 18.6234 10.1628 18.3818 10.5957C18.1403 11.0241 17.8008 11.359 17.3633 11.6006C16.9303 11.8421 16.429 11.9629 15.8594 11.9629H7.36914ZM17.7871 5.63965C17.2083 5.33887 16.5658 5.18848 15.8594 5.18848H5.46191C5.37533 5.18848 5.28874 5.19303 5.20215 5.20215C5.11556 5.21126 5.03581 5.22493 4.96289 5.24316C4.78516 5.1748 4.60286 5.12012 4.41602 5.0791C4.22917 5.03809 4.0332 5.00846 3.82812 4.99023L5.26367 1.68848C5.49609 1.14616 5.83789 0.729167 6.28906 0.4375C6.74023 0.145833 7.28027 0 7.90918 0H13.4189C14.0479 0 14.5879 0.145833 15.0391 0.4375C15.4948 0.729167 15.8389 1.14616 16.0713 1.68848L17.7871 5.63965ZM14.916 9.09863C14.916 9.3584 15.0072 9.57943 15.1895 9.76172C15.3763 9.94401 15.5973 10.0329 15.8525 10.0283C16.1032 10.0238 16.3197 9.93262 16.502 9.75488C16.6842 9.57715 16.7754 9.3584 16.7754 9.09863C16.7754 8.85254 16.6842 8.63835 16.502 8.45605C16.3197 8.26921 16.1032 8.17578 15.8525 8.17578C15.5973 8.17578 15.3763 8.26921 15.1895 8.45605C15.0072 8.63835 14.916 8.85254 14.916 9.09863ZM3.55469 13.084C3.06706 13.084 2.60905 12.9906 2.18066 12.8037C1.75228 12.6169 1.37402 12.3594 1.0459 12.0312C0.722331 11.7077 0.467122 11.3317 0.280273 10.9033C0.0934245 10.4749 0 10.0169 0 9.5293C0 9.03711 0.0934245 8.5791 0.280273 8.15527C0.467122 7.72689 0.722331 7.34863 1.0459 7.02051C1.37402 6.69238 1.75228 6.43717 2.18066 6.25488C2.60905 6.06803 3.06706 5.97461 3.55469 5.97461C4.04232 5.97461 4.50033 6.06803 4.92871 6.25488C5.3571 6.43717 5.73535 6.69238 6.06348 7.02051C6.3916 7.34408 6.64681 7.72005 6.8291 8.14844C7.01139 8.57682 7.10254 9.03711 7.10254 9.5293C7.10254 10.0124 7.00911 10.4681 6.82227 10.8965C6.63997 11.3249 6.38477 11.7031 6.05664 12.0312C5.72852 12.3594 5.35026 12.6169 4.92188 12.8037C4.49349 12.9906 4.03776 13.084 3.55469 13.084ZM3.12402 11.4639C3.31543 11.4639 3.45898 11.3955 3.55469 11.2588L5.53027 8.56543C5.56673 8.5153 5.5918 8.46289 5.60547 8.4082C5.6237 8.35352 5.63281 8.30339 5.63281 8.25781C5.63281 8.10742 5.5804 7.9821 5.47559 7.88184C5.37077 7.78158 5.24544 7.73145 5.09961 7.73145C4.91732 7.73145 4.76921 7.8112 4.65527 7.9707L3.08301 10.1445L2.32422 9.30371C2.27865 9.24902 2.22168 9.20801 2.15332 9.18066C2.08952 9.15332 2.0166 9.13965 1.93457 9.13965C1.79329 9.13965 1.66797 9.1875 1.55859 9.2832C1.45378 9.37891 1.40137 9.50879 1.40137 9.67285C1.40137 9.73665 1.41504 9.80273 1.44238 9.87109C1.46973 9.9349 1.50846 9.99414 1.55859 10.0488L2.69336 11.2861C2.74805 11.3499 2.81413 11.3955 2.8916 11.4229C2.96908 11.4502 3.04655 11.4639 3.12402 11.4639Z"
-                          // fill="#02FFA2"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
               {/* Ficha técnica del Cliente seleccionado en la tabla */}
               <div className="space-y-4 border-b border-[#1a5f74] pb-3 text-xs">
                 <div className="mb-1">
                   <p className="text-[14px] text-(--TextoInactivo) font-normal mb-0.5">
                     Nombre
                   </p>
-                  <input
+                  <p 
+                    className="text-[14px] text-white font-normal w-full h-[14px]" 
+                  >
+                    {`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}</p>
+                  {/* <input
                     type="text"
-                    name="Cliente"
+                    name="nombreCliente"
                     autoComplete={"off"}
                     disabled={btnGuardarTarjetahabientes}
                     className={`text-[14px] text-white font-normal w-full ${btnGuardarTarjetahabientes ? "" : "border-b-1 border-(--GrisLight) focus:outline-none"}`}
-                    value={dataInputs?.Cliente || ""}
+                    value={dataInputs?.nombreCliente || ""}
                     onChange={handleInputChange}
-                  />
+                  /> */}
                 </div>
                 <div className="mb-1">
                   <p className="text-[14px] text-(--TextoInactivo) font-normal mb-0.5">
                     Correo
                   </p>
-                  <input
+                  <p
+                    className="text-[14px] text-white font-normal w-full h-[14px]" 
+                  >{dataInputs?.correo}</p>
+                  {/* <input
                     type="text"
                     name="correo"
                     autoComplete={"off"}
@@ -964,21 +1100,27 @@ export const AdminDashboard: React.FC = () => {
                     className={`text-[14px] text-white font-normal w-full ${btnGuardarTarjetahabientes ? "" : "border-b-1 border-(--GrisLight) focus:outline-none"}`}
                     value={dataInputs?.correo || ""}
                     onChange={handleInputChange}
-                  />
+                  /> */}
                 </div>
                 <div className="mb-1">
                   <p className="text-[14px] text-(--TextoInactivo) font-normal mb-0.5">
                     No. de cliente
                   </p>
-                  <p className="text-[14px] text-white font-normal">
+                  <p
+                    className="text-[14px] text-white font-normal w-full h-[14px]" 
+                  >{detallesCliente?.usuario.noCliente}</p>
+                  {/* <p className="text-[14px] text-white font-normal">
                     {!detallesCliente ? "" : detallesCliente.usuario.noCliente}
-                  </p>
+                  </p> */}
                 </div>
                 <div className="mb-1">
                   <p className="text-[14px] text-(--TextoInactivo) font-normal mb-0.5">
                     No. de tarjeta asignada
                   </p>
-                  <input
+                  <p 
+                    className="text-[14px] text-white font-normal w-full h-[14px]" 
+                  >{formatDigitoBancarios(dataInputs?.noTarjeta)}</p>
+                  {/* <input
                     type="text"
                     name="noTarjeta"
                     autoComplete={"off"}
@@ -986,13 +1128,16 @@ export const AdminDashboard: React.FC = () => {
                     className={`text-[14px] text-white font-normal w-full ${btnGuardarTarjetahabientes ? "" : "border-b-1 border-(--GrisLight) focus:outline-none"}`}
                     value={formatDigitoBancarios(dataInputs?.noTarjeta) || ""}
                     onChange={handleInputChange}
-                  />
+                  /> */}
                 </div>
                 <div>
                   <p className="text-[14px] text-(--TextoInactivo) font-normal mb-0.5">
                     Teléfono
                   </p>
-                  <input
+                  <p 
+                    className="text-[14px] text-white font-normal w-full h-[14px]" 
+                  >{formatPhoneNumberMX(dataInputs?.telefono)}</p>
+                  {/* <input
                     type="text"
                     name="telefono"
                     autoComplete={"off"}
@@ -1000,7 +1145,7 @@ export const AdminDashboard: React.FC = () => {
                     className={`text-[14px] text-white font-normal w-full ${btnGuardarTarjetahabientes ? "" : "border-b-1 border-(--GrisLight) focus:outline-none"}`}
                     value={formatPhoneNumberMX(dataInputs?.telefono) || ""}
                     onChange={handleInputChange}
-                  />
+                  /> */}
                 </div>
               </div>
 
@@ -1087,7 +1232,7 @@ export const AdminDashboard: React.FC = () => {
                   )}
                 </div>
 
-                <button
+                {/* <button
                   type="button"
                   disabled={btnGuardarTarjetahabientes}
                   onClick={() => {
@@ -1096,34 +1241,61 @@ export const AdminDashboard: React.FC = () => {
                   className={`relative top-1 ${btnGuardarTarjetahabientes ? "cursor-not-allowed text-(--TextoInactivo)" : "cursor-pointer text-(--blanco)"}`}
                 >
                   Cancelar
-                </button>
+                </button> */}
               </div>
             </>
           )}
         </aside>
       </div>
-
+      {/* MODALES */}
       <div className="flex flex-col items-center justify-center text-white">
         {/* Llamada al componentes con propiedades dinámicas */}
-        <Modal
-          isOpen={showModalElimina}
-          title="Eliminar tarjetahabiente"
-          description="Eliminar un tarjetahabiente afecta el balance general del Centro de Negocios al que pertenece, porque todas las operaciones (abonos y cargos) también serán eliminadas."
-          textCancel="No eliminar"
-          textConfirm="Eliminar"
-          onCancel={() => setShowModalElimina(false)}
-          onConfirm={eliminaTargetahabiente}
-        />
 
-        <Modal
-          isOpen={showModalAviso}
-          title="¡Aun no has guardado!"
-          description="Estás saliendo del modo de edición sin haber guardado, los cambios se perderán"
-          textCancel="No salir"
-          textConfirm="Salir de cualquier forma"
-          onCancel={() => setShowModalAviso(false)}
-          onConfirm={cancelaEdicion}
-        />
+        {showModalEditaTarjetahadiente && (
+          <ModalEditaTarjetahabiente 
+            usuarioData={dataInputs}
+            centroNegocio={centroActivo}
+            onClose={handleEditaTarjetahabiente}
+          />
+        )}
+
+        { showModalElimina && (
+          <Modal
+            tipo={1}
+            title="Eliminar tarjetahabiente"
+            description="Eliminar un tarjetahabiente afecta el balance general del Centro de Negocios al que pertenece, porque todas las operaciones (abonos y cargos) también serán eliminadas."
+            textCancel="No eliminar"
+            textConfirm="Eliminar"
+            noCliente={dataInputs?.noCliente}
+            // onCancel={() => setShowModalElimina(false)}
+            onClose={handleEliminaTarjetahabiente}
+          />
+        ) }
+
+        { showModalEliminaTarjeta && (
+          <Modal
+            tipo={2}
+            title="Eliminar tarjeta"
+            description="Eliminar una tarjeta afecta el balance general del Centro de Negocios al que pertenece, porque todas las operaciones (abonos y cargos) también serán eliminadas."
+            textCancel="No eliminar"
+            textConfirm="Eliminar"
+            idTarjeta={dataInputs?.idTarjeta}
+            // onCancel={() => setShowModalElimina(false)}
+            onClose={handleEliminaTarjeta}
+          />
+        ) }
+
+        { showModalAviso && (
+          <Modal
+            tipo={3}
+            title="¡Aun no has guardado!"
+            description="Estás saliendo del modo de edición sin haber guardado, los cambios se perderán"
+            textCancel="No salir"
+            textConfirm="Salir de cualquier forma"
+            // onCancel={() => setShowModalAviso(false)}
+            onClose={cancelaEdicion}
+          />
+        ) }
 
         <ModalAviso
           isOpen={showModalGuardado}
@@ -1131,68 +1303,58 @@ export const AdminDashboard: React.FC = () => {
           textConfirm="Entendido"
           onConfirm={() => setShowModalGuardado(false)}
         />
+        {showModalContraseña && (
         <ModalContraseña
-          isOpen={showModalContraseña}
-          icono={
-            <svg
-              width="27"
-              height="24"
-              viewBox="0 0 27 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M22.3999 8.65479C21.5373 8.65479 21.106 8.28451 21.106 7.54395C21.106 7.51953 21.106 7.49919 21.106 7.48291C21.106 7.46663 21.106 7.45036 21.106 7.43408C21.106 6.90511 21.2443 6.4738 21.521 6.14014C21.7977 5.79834 22.1517 5.47689 22.583 5.17578C23.0876 4.82585 23.466 4.53288 23.7183 4.29688C23.9787 4.05273 24.1089 3.74756 24.1089 3.38135C24.1089 3.007 23.9665 2.69775 23.6816 2.45361C23.4049 2.20947 23.0428 2.0874 22.5952 2.0874C22.3674 2.0874 22.1558 2.12402 21.9604 2.19727C21.7733 2.26237 21.5942 2.36816 21.4233 2.51465C21.2606 2.65299 21.1141 2.82389 20.9839 3.02734L20.813 3.25928C20.6828 3.42204 20.5322 3.55225 20.3613 3.6499C20.1986 3.73942 19.9992 3.78418 19.7632 3.78418C19.4784 3.78418 19.2301 3.69059 19.0186 3.50342C18.8151 3.30811 18.7134 3.05583 18.7134 2.74658C18.7134 2.63265 18.7256 2.52279 18.75 2.41699C18.7744 2.30306 18.807 2.18913 18.8477 2.0752C19.043 1.50553 19.4865 1.01725 20.1782 0.610352C20.87 0.203451 21.7407 0 22.7905 0C23.5311 0 24.2106 0.130208 24.8291 0.390625C25.4476 0.642904 25.9399 1.01318 26.3062 1.50146C26.6805 1.98161 26.8677 2.55941 26.8677 3.23486C26.8677 3.93473 26.6927 4.49219 26.3428 4.90723C26.001 5.31413 25.5249 5.71696 24.9146 6.11572C24.5402 6.35986 24.2391 6.59587 24.0112 6.82373C23.7915 7.04346 23.6694 7.30387 23.645 7.60498C23.645 7.62939 23.641 7.65788 23.6328 7.69043C23.6328 7.71484 23.6328 7.73519 23.6328 7.75146C23.6003 8.00374 23.4741 8.2194 23.2544 8.39844C23.0428 8.56934 22.758 8.65479 22.3999 8.65479ZM22.3877 12.4756C21.9645 12.4756 21.6064 12.3454 21.3135 12.085C21.0205 11.8164 20.874 11.4827 20.874 11.084C20.874 10.6771 21.0205 10.3434 21.3135 10.083C21.6064 9.81445 21.9645 9.68018 22.3877 9.68018C22.8109 9.68018 23.1689 9.81038 23.4619 10.0708C23.7549 10.3312 23.9014 10.6689 23.9014 11.084C23.9014 11.4909 23.7508 11.8245 23.4497 12.085C23.1567 12.3454 22.8027 12.4756 22.3877 12.4756ZM2.27051 23.0469C1.5625 23.0469 1.00505 22.8841 0.598145 22.5586C0.199382 22.2412 0 21.8018 0 21.2402C0 20.459 0.240072 19.637 0.720215 18.7744C1.20036 17.9118 1.89209 17.1061 2.79541 16.3574C3.69873 15.6006 4.78516 14.9862 6.05469 14.5142C7.33236 14.0422 8.76058 13.8062 10.3394 13.8062C11.9263 13.8062 13.3545 14.0422 14.624 14.5142C15.9017 14.9862 16.9881 15.6006 17.8833 16.3574C18.7866 17.1061 19.4784 17.9118 19.9585 18.7744C20.4468 19.637 20.6909 20.459 20.6909 21.2402C20.6909 21.8018 20.4875 22.2412 20.0806 22.5586C19.6818 22.8841 19.1284 23.0469 18.4204 23.0469H2.27051ZM10.3516 11.6577C9.44824 11.6577 8.62223 11.4176 7.87354 10.9375C7.12484 10.4492 6.52262 9.79818 6.06689 8.98438C5.6193 8.16243 5.39551 7.24284 5.39551 6.22559C5.39551 5.24089 5.6193 4.3457 6.06689 3.54004C6.52262 2.72624 7.12484 2.08333 7.87354 1.61133C8.63037 1.13118 9.45638 0.891113 10.3516 0.891113C11.2467 0.891113 12.0687 1.12712 12.8174 1.59912C13.5661 2.07113 14.1683 2.70996 14.624 3.51562C15.0798 4.31315 15.3076 5.2124 15.3076 6.21338C15.3076 7.23063 15.0798 8.15023 14.624 8.97217C14.1764 9.79411 13.5742 10.4492 12.8174 10.9375C12.0687 11.4176 11.2467 11.6577 10.3516 11.6577Z"
-                fill="#02FFA2"
-              />
-            </svg>
-          }
+          // isOpen={showModalContraseña}
           title="Cambio de contraseña                                   "
-          tarjetahabiente={dataInputs?.Cliente}
+          tarjetahabiente={dataInputs?.nombreCliente}
           cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
           noCliente={dataInputs?.noCliente}
           textConfirm="Guardar"
           textCancel="Cancelar"
-          onConfirm={() => setShowModalContraseña(false)}
-          onCancel={() => setShowModalContraseña(false)}
+          onClose={handleCambioContraseña}
+          // onConfirm={() => setShowModalContraseña(false)}
+          // onCancel={() => setShowModalContraseña(false)}
         />
-        <ModalAbono
-          isOpen={showModalAbono}
+        )}
+        { showModalAbono && ( 
+          <ModalAbono
+          // isOpen={showModalAbono}
           icono={
             <svg width="33" height="21" viewBox="0 0 33 21" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M0 19.2017V0.964355C0 0.671387 0.0895182 0.439453 0.268555 0.268555C0.447591 0.0895182 0.683594 0 0.976562 0H31.2622C31.5552 0 31.7871 0.0895182 31.958 0.268555C32.137 0.439453 32.2266 0.671387 32.2266 0.964355V19.2017C32.2266 19.4946 32.137 19.7306 31.958 19.9097C31.7871 20.0887 31.5552 20.1782 31.2622 20.1782H0.976562C0.683594 20.1782 0.447591 20.0887 0.268555 19.9097C0.0895182 19.7306 0 19.4946 0 19.2017ZM2.23389 17.1997C2.23389 17.6961 2.47803 17.9443 2.96631 17.9443H29.2603C29.7485 17.9443 29.9927 17.6961 29.9927 17.1997V2.97852C29.9927 2.4821 29.7485 2.23389 29.2603 2.23389H2.96631C2.47803 2.23389 2.23389 2.4821 2.23389 2.97852V17.1997ZM3.50342 16.3818V3.79639C3.50342 3.60107 3.60107 3.50342 3.79639 3.50342H13.3179C12.6831 4.15446 12.1867 5.04557 11.8286 6.17676C11.4705 7.2998 11.2915 8.59782 11.2915 10.0708C11.2915 11.5438 11.4705 12.8499 11.8286 13.9893C12.1948 15.1204 12.6994 16.0156 13.3423 16.6748H3.79639C3.60107 16.6748 3.50342 16.5771 3.50342 16.3818ZM12.7563 10.0708C12.7563 8.80127 12.8906 7.69043 13.1592 6.73828C13.4359 5.78613 13.8224 5.04557 14.3188 4.5166C14.8234 3.98763 15.4053 3.72314 16.0645 3.72314C16.748 3.72314 17.3462 3.98763 17.8589 4.5166C18.3797 5.04557 18.7826 5.78613 19.0674 6.73828C19.3522 7.69043 19.4946 8.80127 19.4946 10.0708C19.4946 11.3403 19.3522 12.4512 19.0674 13.4033C18.7826 14.3555 18.3797 15.1001 17.8589 15.6372C17.3462 16.1662 16.748 16.4307 16.0645 16.4307C15.4053 16.4307 14.8234 16.1662 14.3188 15.6372C13.8224 15.1001 13.4359 14.3555 13.1592 13.4033C12.8906 12.4512 12.7563 11.3403 12.7563 10.0708ZM18.8599 16.6748C19.5109 16.0156 20.0195 15.1204 20.3857 13.9893C20.7601 12.8499 20.9473 11.5438 20.9473 10.0708C20.9473 8.59782 20.7642 7.2998 20.3979 6.17676C20.0317 5.04557 19.5231 4.15446 18.8721 3.50342H28.4302C28.6255 3.50342 28.7231 3.60107 28.7231 3.79639V16.3818C28.7231 16.5771 28.6255 16.6748 28.4302 16.6748H18.8599Z" fill="#02FFA2"/>
             </svg>
           }
           title="Abono"
-          tarjetahabiente={dataInputs?.Cliente}
+          // tarjetahabiente={dataInputs?.Cliente}
           cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
-          noCliente={dataInputs?.noCliente} 
+          // noCliente={dataInputs?.noCliente} 
           textConfirm="Agregar"
           textCancel="Cancelar"
-          onConfirm={() => setShowModalAbono(false)}
-          onCancel={() => setShowModalAbono(false)}
-        />
-
-        <ModalGasto
-          isOpen={showModalGasto}
-          title={!idMovimientoEdicion ? 'Agregar Gasto' : 'Edición de Gasto' }
-          tarjetahabiente={dataInputs?.Cliente}
-          cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
-          noCliente={dataInputs?.noCliente} 
-          noOperacion={idMovimientoEdicion}
-          textConfirm="Agregar"
-          textCancel="Cancelar"
-          onConfirm={() => setShowModalGasto(false)}
-          onCancel={() => {setShowModalGasto(false); setIdMovimientoEdicion('')}} 
-        />
+          // onConfirm={() => setShowModalAbono(false)}
+          onClose={() => setShowModalAbono(false)}
+        />)}
+       
+        { showModalGasto && (
+          <ModalGasto
+            // isOpen={showModalGasto}
+            title={!idMovimientoEdicion ? 'Agregar Gasto' : 'Edición de Gasto' }
+            // tarjetahabiente={dataInputs?.Cliente}
+            cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
+            // noCliente={dataInputs?.noCliente} 
+            noOperacion={idMovimientoEdicion}
+            textConfirm="Agregar"
+            textCancel="Cancelar"
+            // onConfirm={() => setShowModalGasto(false)}
+            onClose={() => {setShowModalGasto(false); setIdMovimientoEdicion('')}} 
+          />
+        )}
 
 {/* BUENA PRACTICA ES MANEJAR LA VIDA DEL MODULO CONDICIONANDOLO PORQUE ASI DESTRUIMOS EL COMPONENTE POR COMPLETO */}
         {showModalTargetahabiente && (
           <ModalAgregarTarjetahabiente 
-            isOpen={showModalTargetahabiente}
             CentroN={centroId}
             centroNegocio={centroActivo}
-            onCancel={() => setShowModalTargetahabiente(false)}
             onClose={handleCloseModalAgregaTarjetahabiente}
           />
         )}

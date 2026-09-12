@@ -1,16 +1,19 @@
 import React, { useEffect, useState, type HtmlHTMLAttributes } from "react";
 import { api } from "../services/api";
 import ModalAvisoPopUp from "./ModalAviso";
+import { formToJSON } from "axios";
 // import { ModalAviso } from './ModalAviso'
 
 interface ModalProps {
-  isOpen: boolean;
+  tipo: number | null;
   title?: string;
   description?: string;
   textCancel?: string;
   textConfirm?: string;
-  onCancel: () => void;
-  onConfirm: () => void;
+  noCliente?:string;
+  idTarjeta?:number | null;
+  // onCancel: () => void;
+  onClose?: (resultado: '1' | '0') => void;
 }
 
 interface ModalAvisoProps {
@@ -22,7 +25,7 @@ interface ModalAvisoProps {
 }
 
 interface ModalContrasenaProps {
-  isOpen: boolean;
+  // isOpen: boolean;
   title?: string;
   tarjetahabiente?: string;
   cta?: string;
@@ -30,8 +33,9 @@ interface ModalContrasenaProps {
   noOperacion?: string;
   textConfirm?: string;
   textCancel?: string;
-  onConfirm: () => void;
-  onCancel: () => void;
+    onClose?: (resultado: '1' | '0') => void;
+  // onConfirm: () => void;
+  // onCancel: () => void;
   icono?: React.ReactNode;
 }
 
@@ -47,13 +51,16 @@ interface ModalTarjetahabienteProps {
 }
 
 interface ModalAgregarProps {
-  isOpen: boolean;
+  isOpen?: boolean;
   CentroN?:number;
-  onCancel: () => void;
+  usuarioData?:any;
+  noCliente?:number;
+  onCancel?: () => void;
   onConfirm?: (data: any) => void;
   onClose?: (resultado: '1' | '0') => void;
   centroNegocio?: string;
 }
+
 
 interface DetalleGastoProps {
   isOpen: boolean;
@@ -68,17 +75,79 @@ interface DetalleGastoProps {
   onCancel?: () => void;
 }
 
+// Interfaces Internas
+interface busquedaCliente {
+  noCliente:number;
+  nombreCompleto:string;
+}
+interface EdicionTargetaCliente {
+  apellidoP: string;
+  apellidoM: string;
+  correo: string;
+  fechaVencimiento: string;
+  idCentroN: number | null;
+  idTarjeta: number | null;
+  idCliente: number | null;
+  noTarjeta: string;
+  nombreCliente: string;
+  telefono: string;
+}
+
 export const Modal: React.FC<ModalProps> = ({
-  isOpen,
+  tipo=null,
   title,
   description,
   textCancel,
   textConfirm,
-  onCancel,
-  onConfirm,
+  noCliente,
+  idTarjeta,
+  onClose,
 }) => {
-  // Si el modal no está activo, no renderiza nada
-  if (!isOpen) return null;
+
+  const [ errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const eliminarCerosIzquierda = (valor: string): number => {
+    // Reemplaza todos los ceros al inicio (^0+) por nada, excepto si el número es exactamente "0"
+    const num = valor.replace(/^0+/, '') || '0';
+    return Number.parseInt(num as string, 10)
+  };
+
+  const handleEliminar = () => {
+      switch (tipo) {
+        case 1:
+          handleSubmit("/admin/eliminarTarjetahabiente", {idCliente:eliminarCerosIzquierda(noCliente!)})
+          break;
+        case 2:
+          handleSubmit("/admin/eliminarTarjeta", {idTarjeta:idTarjeta})
+        break;
+        case 3:
+          
+        break;
+      }
+     
+
+  };
+
+  const handleSubmit = async (direccion?:string , tipoDato?:any) => {
+    console.log(direccion, ' ',tipoDato)
+    try {
+      // console.log({ data:eliminarCerosIzquierda(noCliente!)});
+      const response = await api.post(direccion!, { data:tipoDato });
+      console.log(response.data)
+      if(response.data.status === 200){
+        onClose!('1')
+        return
+      }else{
+        setErrorMessage(response.data.error.message);
+      }
+    } catch (error) {
+      console.log('Error del servidor', error)
+    }
+  }
+
+  const handledClosed = () =>{ 
+    onClose!('0');
+  } 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
@@ -97,8 +166,8 @@ export const Modal: React.FC<ModalProps> = ({
           {/* Botón Cancelar */}
           <button
             type="button"
-            onClick={onCancel}
-            className="w-full py-3 px-4 rounded-xl bg-(--DeepBlue) text-(--verdeSuccess) font-medium  focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+            onClick={() => handledClosed()}
+            className="w-full py-3 px-4 rounded-xl bg-(--DeepBlue) text-(--verdeSuccess) font-medium  cursor-pointer"
           >
             {textCancel}
           </button>
@@ -106,13 +175,24 @@ export const Modal: React.FC<ModalProps> = ({
           {/* Botón Confirmar */}
           <button
             type="button"
-            onClick={onConfirm}
-            className="w-full py-3 px-4 rounded-xl bg-(--DeepBlue) text-(--rojoCancelar) font-medium  focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+            onClick={()=>handleEliminar()}
+            className="w-full py-3 px-4 rounded-xl bg-(--DeepBlue) text-(--rojoCancelar) font-medium  cursor-pointer"
           >
             {textConfirm}
           </button>
         </div>
       </div>
+      {errorMessage && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl bg-(--TextoInactivo) p-8 shadow-2xl text-center border border-[#146f8c]">
+              <h2 className="text-2xl font-[200] text-white mb-4">{errorMessage}</h2>
+              <button 
+                className="px-8 py-2.5 rounded-full bg-[#083543] text-emerald-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
+                onClick={() => setErrorMessage(null)}
+              >Entendido</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -153,30 +233,374 @@ export const ModalAviso: React.FC<ModalAvisoProps> = ({
   );
 };
 
+export const ModalEditaTarjetahabiente: React.FC<ModalAgregarProps> = ({
+  usuarioData,
+  onClose,
+  centroNegocio,
+}) => {
+  // Lógica de exclusión mutua: 'titular' o 'adicional'
+  // const [tipoUsuario, setTipoUsuario] = useState<"titular" | "adicional">(
+  //   "titular",
+  // );
+  const [ errorMessage, setErrorMessage] = useState<string | null>(null)
+  
+  const eliminarCerosIzquierda = (valor: string): number => {
+  // Reemplaza todos los ceros al inicio (^0+) por nada, excepto si el número es exactamente "0"
+  const num = valor.replace(/^0+/, '') || '0';
+  return Number.parseInt(num as string, 10)
+};
+  const [titularForm, setTitularForm] = useState<EdicionTargetaCliente>({
+    apellidoP: usuarioData?.apellidoP || "",   
+    apellidoM: usuarioData?.apellidoM || "",      
+    correo: usuarioData?.correo || "",           
+    fechaVencimiento: usuarioData?.fechaVencimiento || "",
+    idCentroN: usuarioData?.idCentroN || null, 
+    idTarjeta: usuarioData?.idTarjeta || null,
+    idCliente: eliminarCerosIzquierda(usuarioData?.noCliente) || null,
+    noTarjeta: usuarioData?.noTarjeta || "",       
+    nombreCliente: usuarioData?.nombreCliente || "",  
+    telefono: usuarioData?.telefono || "",            
+  });
+
+
+  // setTitularForm(usuarioData)
+// console.log(usuarioData)
+  // Estados del Formulario (Tarjeta Adicional)
+  // const [adicionalForm, setAdicionalForm] = useState({
+  //   noTarjeta: "", 
+  //   saldo: "", 
+  //   fechaVencimiento: "", 
+  // });
+
+
+  // useEffect(() => {
+  //   if (tipoUsuario === "titular") {
+  //     setAdicionalForm({
+  //       noTarjeta: "", 
+  //       saldo: "", 
+  //       fechaVencimiento: "", 
+  //     });
+  //   } else {
+  //     setTitularForm({
+  //       nombreCliente: "",  
+  //       apellidoP: "",   
+  //       apellidoM: "",      
+  //       correo: "",           
+  //       telefono: "",         
+  //       contrasenia: "",    
+  //       noTarjeta: "",       
+  //       saldo: "",
+  //       fechaVencimiento:""           
+  //     });
+  //   }
+  // }, [tipoUsuario]);
+
+  // if (!isOpen) return null;
+
+  // Manejadores de cambios
+  const handleTitularChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitularForm({ ...titularForm, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+
+    try {
+      e.preventDefault();
+
+      // const data = { 
+      //   ...titularForm, 
+      //   idCliente:noCliente, 
+      // };
+  
+      console.log("Datos a enviar:", titularForm);
+      
+        const response = await api.post("/admin/editaTarjetahabiente", { data:titularForm });
+        console.log(response)
+        
+        if(response.data.status === 200){
+          // console.log(response);
+          // console.log('respuesta exitosa')
+          onClose!('1')
+          return
+        }else{
+          setErrorMessage(response.data.error.message);
+        }
+     
+
+    } catch (error) {
+      console.log('Error del servidor', error)
+    }
+
+  };
+
+  const handledClosed = () =>{ 
+    onClose!('0');
+  } 
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
+      {/* Contenedor del Modal */}
+      <div className="w-full max-w-4xl min-w-md my-auto rounded-2xl bg-[#0d5c75] p-11 shadow-2xl border border-[#146f8c] text-white relative">
+        {/* Botón Cerrar (X) */}
+        <button
+          onClick={()=> handledClosed()}
+          className="absolute top-6 right-6 text-cyan-200 hover:text-white transition-colors"
+        >
+          <svg
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+
+        {/* Encabezado */}
+        <div className="flex items-center gap-3 mb-1">
+          <div className="text-emerald-400">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M11.9531 23.9062C10.3047 23.9062 8.75781 23.5938 7.3125 22.9688C5.86719 22.3516 4.59766 21.4961 3.50391 20.4023C2.41016 19.3086 1.55078 18.0391 0.925781 16.5938C0.308594 15.1484 0 13.6016 0 11.9531C0 10.3047 0.308594 8.75781 0.925781 7.3125C1.55078 5.86719 2.41016 4.59766 3.50391 3.50391C4.59766 2.40234 5.86719 1.54297 7.3125 0.925781C8.75781 0.308594 10.3047 0 11.9531 0C13.6016 0 15.1484 0.308594 16.5938 0.925781C18.0391 1.54297 19.3086 2.40234 20.4023 3.50391C21.4961 4.59766 22.3516 5.86719 22.9688 7.3125C23.5938 8.75781 23.9062 10.3047 23.9062 11.9531C23.9062 13.6016 23.5938 15.1484 22.9688 16.5938C22.3516 18.0391 21.4961 19.3086 20.4023 20.4023C19.3086 21.4961 18.0391 22.3516 16.5938 22.9688C15.1484 23.5938 13.6016 23.9062 11.9531 23.9062ZM11.9531 21.9141C13.3281 21.9141 14.6172 21.6562 15.8203 21.1406C17.0234 20.625 18.082 19.9102 18.9961 18.9961C19.9102 18.082 20.625 17.0234 21.1406 15.8203C21.6562 14.6172 21.9141 13.3281 21.9141 11.9531C21.9141 10.5781 21.6562 9.28906 21.1406 8.08594C20.625 6.875 19.9102 5.81641 18.9961 4.91016C18.082 3.99609 17.0234 3.28125 15.8203 2.76562C14.6172 2.25 13.3281 1.99219 11.9531 1.99219C10.5781 1.99219 9.28906 2.25 8.08594 2.76562C6.88281 3.28125 5.82422 3.99609 4.91016 4.91016C3.99609 5.81641 3.28125 6.875 2.76562 8.08594C2.25 9.28906 1.99219 10.5781 1.99219 11.9531C1.99219 13.3281 2.25 14.6172 2.76562 15.8203C3.28125 17.0234 3.99609 18.082 4.91016 18.9961C5.82422 19.9102 6.88281 20.625 8.08594 21.1406C9.28906 21.6562 10.5781 21.9141 11.9531 21.9141ZM6.58594 17.8828C6.35156 17.8828 6.17578 17.8164 6.05859 17.6836C5.94922 17.543 5.89453 17.3633 5.89453 17.1445C5.89453 16.8242 6.01562 16.4102 6.25781 15.9023C6.50781 15.3867 6.87891 14.875 7.37109 14.3672C7.87109 13.8516 8.5 13.418 9.25781 13.0664C10.0156 12.7148 10.9102 12.5391 11.9414 12.5391C12.9727 12.5391 13.8672 12.7148 14.625 13.0664C15.3828 13.418 16.0078 13.8516 16.5 14.3672C17 14.875 17.3711 15.3867 17.6133 15.9023C17.8633 16.4102 17.9883 16.8242 17.9883 17.1445C17.9883 17.3633 17.9297 17.543 17.8125 17.6836C17.7031 17.8164 17.5312 17.8828 17.2969 17.8828H6.58594ZM11.9414 11.5781C11.3867 11.5781 10.8789 11.4336 10.418 11.1445C9.96484 10.8555 9.60156 10.4648 9.32812 9.97266C9.0625 9.48047 8.92969 8.92188 8.92969 8.29688C8.92969 7.71094 9.0625 7.17578 9.32812 6.69141C9.60156 6.19922 9.96484 5.80859 10.418 5.51953C10.8789 5.22266 11.3867 5.07422 11.9414 5.07422C12.4961 5.07422 13 5.22266 13.4531 5.51953C13.9141 5.80859 14.2773 6.19922 14.543 6.69141C14.8164 7.17578 14.9531 7.71094 14.9531 8.29688C14.9531 8.92188 14.8164 9.48438 14.543 9.98438C14.2773 10.4766 13.9141 10.8672 13.4531 11.1562C13 11.4453 12.4961 11.5859 11.9414 11.5781Z" fill="#02FFA2"/>
+            </svg>
+          </div>
+          <h2 className="text-2xl font-semibold text-(--VerdeNeon)">
+            Editar tarjetahabiente
+          </h2>
+        </div>
+        <p className="text-[16px] text-cyan-100/70 mb-6 font-light">
+          Centro de negocio:{" "}
+          <span className="text-white font-bold">{centroNegocio}</span>
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-6" autoComplete={"off"}>
+          {/* ================= SECCIÓN TITULAR ================= */}
+          <div
+            className={`space-y-4 transition-opacity duration-300`}
+          >
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <input
+                type="text"
+                name="nombreCliente"
+                placeholder="*Nombre (s)"
+                autoComplete={"off"}
+                value={titularForm.nombreCliente}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                onChange={handleTitularChange}
+                className="input-style"
+              />
+              <input
+                type="text"
+                name="apellidoP"
+                placeholder="*Primer apellido"
+                autoComplete={"off"}
+                value={titularForm.apellidoP}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                onChange={handleTitularChange}
+                className="input-style"
+              />
+              <input
+                type="text"
+                name="apellidoM"
+                autoComplete={"off"}
+                placeholder="Segundo apellido"
+                value={titularForm.apellidoM}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                onChange={handleTitularChange}
+                className="input-style"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <input
+                type="tel"
+                name="telefono"
+                placeholder="*Teléfono"
+                autoComplete={"off"}
+                value={titularForm.telefono}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                onChange={handleTitularChange}
+                className="input-style"
+                maxLength={10}
+              />
+              <div className="md:col-span-2">
+                <input
+                  type="email"
+                  name="correo"
+                  placeholder="*Correo"
+                  autoComplete={"off"}
+                  value={titularForm.correo}
+                  onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                  onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                  onChange={handleTitularChange}
+                  className="input-style"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* <div className="md:col-span-2">
+              </div> */}
+                <input
+                  type="text"
+                  name="noTarjeta"
+                  placeholder="*No. de Tarjeta (16 dígitos)"
+                  autoComplete={"off"}
+                  value={titularForm.noTarjeta}
+                  onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                  onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                  onChange={handleTitularChange}
+                  maxLength={16}
+                  className="input-style"
+                />
+              <input
+                type="text"
+                name="fechaVencimiento"
+                placeholder="*Fecha de vencimiento (MM/AA)"
+                value={titularForm.fechaVencimiento}
+                onChange={handleTitularChange}
+                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                className="input-style"
+                maxLength={5}
+              />
+            </div>
+          </div>
+
+          <hr className="border-cyan-800/60 my-6" />
+
+          {/* Botones de acción inferiores */}
+          <div className="flex justify-end gap-3 mt-7">
+            <button
+              type="submit"
+              className="px-8 py-2.5 rounded-full bg-[#083543] text-emerald-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
+            >
+              Guardar
+            </button>
+            <button
+              type="button"
+              onClick={()=> handledClosed()}
+              className="px-8 py-2.5 rounded-full bg-[#083543] text-red-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+      {errorMessage && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+            <div className="w-full max-w-md rounded-2xl bg-(--TextoInactivo) p-8 shadow-2xl text-center border border-[#146f8c]">
+                <h2 className="text-2xl font-[200] text-white mb-4">{errorMessage}</h2>
+                <button 
+                  className="px-8 py-2.5 rounded-full bg-[#083543] text-emerald-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
+                  onClick={() => setErrorMessage(null)}
+                >Entendido</button>
+            </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const ModalContraseña: React.FC<ModalContrasenaProps> = ({
-  isOpen,
+  // isOpen,
   title,
   tarjetahabiente,
   cta,
   noCliente,
   textConfirm,
   textCancel,
-  onConfirm,
-  onCancel,
+  onClose,
+  // onConfirm,
+  // onCancel,
   icono,
 }) => {
-  if (!isOpen) return null;
+
+  const [ errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [form, setForm] = useState({
+    idCliente:null, 
+    contrasenia:""
+  });
+
+  // Manejadores de cambios
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const eliminarCerosIzquierda = (valor: string): number => {
+    // Reemplaza todos los ceros al inicio (^0+) por nada, excepto si el número es exactamente "0"
+    const num = valor.replace(/^0+/, '') || '0';
+    return Number.parseInt(num as string, 10)
+  };
+  
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+    
+    const llenaDatosAsincronos = {
+      ...form, idCliente: eliminarCerosIzquierda(noCliente!) 
+    }
+
+    try {
+      e.preventDefault();
+
+      // const data = { 
+      //   ...titularForm, 
+      //   idCliente:noCliente, 
+      // };
+  
+      console.log({ data:llenaDatosAsincronos});
+      
+        const response = await api.post("/admin/cambioContrasena", { data:llenaDatosAsincronos });
+        console.log(response.data)
+        
+        if(response.data.status === 200){
+          onClose!('1')
+          return
+        }else{
+          setErrorMessage(response.data.error.message);
+        }
+     
+
+    } catch (error) {
+      console.log('Error del servidor', error)
+    }
+
+  };
+
+  const handledClosed = () =>{ 
+    onClose!('0');
+  } 
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
       <div className="w-full max-w-md rounded-2xl bg-(--TextoInactivo) p-8 shadow-2xl text-center border border-[#146f8c] min-w-sm">
         <div className="flex items-center justify-between">
           {/* Renderizado condicional del icono dinámico */}
           <div className="flex">
-            {icono && (
+           
               <div className="flex items-center justify-center mb-4">
-                {icono}
+                <svg
+                  width="27"
+                  height="24"
+                  viewBox="0 0 27 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M22.3999 8.65479C21.5373 8.65479 21.106 8.28451 21.106 7.54395C21.106 7.51953 21.106 7.49919 21.106 7.48291C21.106 7.46663 21.106 7.45036 21.106 7.43408C21.106 6.90511 21.2443 6.4738 21.521 6.14014C21.7977 5.79834 22.1517 5.47689 22.583 5.17578C23.0876 4.82585 23.466 4.53288 23.7183 4.29688C23.9787 4.05273 24.1089 3.74756 24.1089 3.38135C24.1089 3.007 23.9665 2.69775 23.6816 2.45361C23.4049 2.20947 23.0428 2.0874 22.5952 2.0874C22.3674 2.0874 22.1558 2.12402 21.9604 2.19727C21.7733 2.26237 21.5942 2.36816 21.4233 2.51465C21.2606 2.65299 21.1141 2.82389 20.9839 3.02734L20.813 3.25928C20.6828 3.42204 20.5322 3.55225 20.3613 3.6499C20.1986 3.73942 19.9992 3.78418 19.7632 3.78418C19.4784 3.78418 19.2301 3.69059 19.0186 3.50342C18.8151 3.30811 18.7134 3.05583 18.7134 2.74658C18.7134 2.63265 18.7256 2.52279 18.75 2.41699C18.7744 2.30306 18.807 2.18913 18.8477 2.0752C19.043 1.50553 19.4865 1.01725 20.1782 0.610352C20.87 0.203451 21.7407 0 22.7905 0C23.5311 0 24.2106 0.130208 24.8291 0.390625C25.4476 0.642904 25.9399 1.01318 26.3062 1.50146C26.6805 1.98161 26.8677 2.55941 26.8677 3.23486C26.8677 3.93473 26.6927 4.49219 26.3428 4.90723C26.001 5.31413 25.5249 5.71696 24.9146 6.11572C24.5402 6.35986 24.2391 6.59587 24.0112 6.82373C23.7915 7.04346 23.6694 7.30387 23.645 7.60498C23.645 7.62939 23.641 7.65788 23.6328 7.69043C23.6328 7.71484 23.6328 7.73519 23.6328 7.75146C23.6003 8.00374 23.4741 8.2194 23.2544 8.39844C23.0428 8.56934 22.758 8.65479 22.3999 8.65479ZM22.3877 12.4756C21.9645 12.4756 21.6064 12.3454 21.3135 12.085C21.0205 11.8164 20.874 11.4827 20.874 11.084C20.874 10.6771 21.0205 10.3434 21.3135 10.083C21.6064 9.81445 21.9645 9.68018 22.3877 9.68018C22.8109 9.68018 23.1689 9.81038 23.4619 10.0708C23.7549 10.3312 23.9014 10.6689 23.9014 11.084C23.9014 11.4909 23.7508 11.8245 23.4497 12.085C23.1567 12.3454 22.8027 12.4756 22.3877 12.4756ZM2.27051 23.0469C1.5625 23.0469 1.00505 22.8841 0.598145 22.5586C0.199382 22.2412 0 21.8018 0 21.2402C0 20.459 0.240072 19.637 0.720215 18.7744C1.20036 17.9118 1.89209 17.1061 2.79541 16.3574C3.69873 15.6006 4.78516 14.9862 6.05469 14.5142C7.33236 14.0422 8.76058 13.8062 10.3394 13.8062C11.9263 13.8062 13.3545 14.0422 14.624 14.5142C15.9017 14.9862 16.9881 15.6006 17.8833 16.3574C18.7866 17.1061 19.4784 17.9118 19.9585 18.7744C20.4468 19.637 20.6909 20.459 20.6909 21.2402C20.6909 21.8018 20.4875 22.2412 20.0806 22.5586C19.6818 22.8841 19.1284 23.0469 18.4204 23.0469H2.27051ZM10.3516 11.6577C9.44824 11.6577 8.62223 11.4176 7.87354 10.9375C7.12484 10.4492 6.52262 9.79818 6.06689 8.98438C5.6193 8.16243 5.39551 7.24284 5.39551 6.22559C5.39551 5.24089 5.6193 4.3457 6.06689 3.54004C6.52262 2.72624 7.12484 2.08333 7.87354 1.61133C8.63037 1.13118 9.45638 0.891113 10.3516 0.891113C11.2467 0.891113 12.0687 1.12712 12.8174 1.59912C13.5661 2.07113 14.1683 2.70996 14.624 3.51562C15.0798 4.31315 15.3076 5.2124 15.3076 6.21338C15.3076 7.23063 15.0798 8.15023 14.624 8.97217C14.1764 9.79411 13.5742 10.4492 12.8174 10.9375C12.0687 11.4176 11.2467 11.6577 10.3516 11.6577Z"
+                    fill="#02FFA2"
+                  />
+                </svg>
               </div>
-            )}
+            
             {/* Título Dinámico */}
             <h2 className="text-2xl font-semibold text-(--VerdeNeon) mb-4 ml-4">
               {title}
@@ -184,7 +608,7 @@ export const ModalContraseña: React.FC<ModalContrasenaProps> = ({
           </div>
           <button
             type="button"
-            onClick={onCancel}
+            onClick={() => onClose!('0')}
             className="mb-4 cursor-pointer"
           >
             <svg
@@ -219,40 +643,55 @@ export const ModalContraseña: React.FC<ModalContrasenaProps> = ({
             </p>
           </div>
         </div>
+        <form onSubmit={handleSubmit} className="space-y-6" autoComplete={"off"}>
         <div className="flex mt-5 ">
           <input
             type="text"
+            name="contrasenia"
+            required
+            autoComplete={"off"}
+            onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Campo obligatorio.')}
+            onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+            onChange={handleFormChange}
             placeholder="*Nueva contraseña"
             className="input-generico w-full"
           />
         </div>
 
-        <div className="flex flex-row gap-3 mt-5 justify-end">
-          {/* Botón Cancelar */}
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="w-[35%] py-2 px-2 rounded-full bg-(--DeepBlue) text-(--verdeSuccess) font-medium  focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-          >
-            {textConfirm}
-          </button>
-
-          {/* Botón Confirmar */}
-          <button
-            type="button"
-            onClick={onCancel}
-            className="w-[35%] py-2 px-2 rounded-full bg-(--DeepBlue) text-(--rojoCancelar) font-medium  focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
-          >
-            {textCancel}
-          </button>
-        </div>
+          <div className="flex justify-end gap-3 mt-7">
+            <button
+              type="submit"
+              className="px-8 py-2.5 rounded-full bg-[#083543] text-emerald-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
+            >
+              Guardar
+            </button>
+            <button
+              type="button"
+              onClick={()=> handledClosed()}
+              className="px-8 py-2.5 rounded-full bg-[#083543] text-red-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
       </div>
+            {errorMessage && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+            <div className="w-full max-w-md rounded-2xl bg-(--TextoInactivo) p-8 shadow-2xl text-center border border-[#146f8c]">
+                <h2 className="text-2xl font-[200] text-white mb-4">{errorMessage}</h2>
+                <button 
+                  className="px-8 py-2.5 rounded-full bg-[#083543] text-emerald-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
+                  onClick={() => setErrorMessage(null)}
+                >Entendido</button>
+            </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export const ModalAbono: React.FC<ModalContrasenaProps> = ({
-  isOpen,
+  // isOpen,
   title,
   tarjetahabiente,
   cta,
@@ -260,11 +699,14 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
   noOperacion,
   textConfirm,
   textCancel,
-  onConfirm,
-  onCancel,
+  onClose,
+  // onConfirm,
+  // onCancel,
   icono,
 }) => {
-  if (!isOpen) return null;
+  // if (!isOpen) return null;
+
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 ">
       <div className="w-full max-w-xl rounded-2xl bg-(--TextoInactivo) p-8 shadow-2xl text-center border border-[#146f8c] min-w-sm">
@@ -283,7 +725,7 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
           </div>
           <button
             type="button"
-            onClick={onCancel}
+            onClick={()=> onClose!('0')}
             className="mb-4 cursor-pointer"
           >
             <svg
@@ -360,7 +802,7 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
           {/* Botón Cancelar */}
           <button
             type="button"
-            onClick={onConfirm}
+            onClick={()=> onClose!('0')}
             className="w-[35%] py-2 px-2 rounded-full bg-(--DeepBlue) text-(--verdeSuccess) font-medium  focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
           >
             {textConfirm}
@@ -369,7 +811,7 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
           {/* Botón Confirmar */}
           <button
             type="button"
-            onClick={onCancel}
+            onClick={()=> onClose!('0')}
             className="w-[35%] py-2 px-2 rounded-full bg-(--DeepBlue) text-(--rojoCancelar) font-medium  focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
           >
             {textCancel}
@@ -381,7 +823,7 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
 };
 
 export const ModalGasto: React.FC<ModalContrasenaProps> = ({
-  isOpen,
+  // isOpen,
   title,
   tarjetahabiente,
   cta,
@@ -389,11 +831,12 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
   noOperacion,
   textConfirm,
   textCancel,
-  onConfirm,
-  onCancel,
+  onClose,
+  // onConfirm,
+  // onCancel,
   icono,
 }) => {
-  if (!isOpen) return null;
+  // if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 ">
       <div className="w-full max-w-4xl rounded-2xl bg-(--TextoInactivo) p-8 shadow-2xl text-center border border-[#146f8c] min-w-md">
@@ -412,7 +855,7 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
           </div>
           <button
             type="button"
-            onClick={onCancel}
+            onClick={()=> onClose!('0')}
             className="mb-4 cursor-pointer"
           >
             <svg
@@ -524,7 +967,7 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
           {/* Botón Cancelar */}
           <button
             type="button"
-            onClick={onConfirm}
+            onClick={()=> onClose!('0')}
             className="w-[35%] py-2 px-2 rounded-full bg-(--DeepBlue) text-(--verdeSuccess) font-medium  focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
           >
             {textConfirm}
@@ -533,7 +976,7 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
           {/* Botón Confirmar */}
           <button
             type="button"
-            onClick={onCancel}
+            onClick={()=> onClose!('0')}
             className="w-[35%] py-2 px-2 rounded-full bg-(--DeepBlue) text-(--rojoCancelar) font-medium  focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
           >
             {textCancel}
@@ -543,10 +986,7 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
     </div>
   );
 };
-interface busquedaCliente {
-  noCliente:number;
-  nombreCompleto:string;
-}
+
 export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
   CentroN,
   onClose,
@@ -557,7 +997,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
     "titular",
   );
   const [ errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [ ClienteN, setClienteN ] = useState<number | null>(null)
+  // const [ ClienteN, setClienteN ] = useState<number | null>(null)
   const [ resultBusqueda, setResultBusqueda ] = useState<busquedaCliente>({noCliente:0, nombreCompleto:""});
 
   const [busquedaInput, setBusquedaInput] = useState({IdCliente: "" , tipo:"NoCliente"})
