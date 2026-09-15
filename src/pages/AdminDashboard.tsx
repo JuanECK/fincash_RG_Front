@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api, logoutSession } from "../services/api";
 import { Modal, ModalAbono, ModalAgregarTarjetahabiente, ModalAviso, ModalContraseña, ModalDetalleGasto, ModalEditaTarjetahabiente, ModalGasto} from "../modals/ModalGeneral";
 import { useOutletContext } from 'react-router-dom';
 import { tr } from "zod/v4/locales/index.js";
+import { number } from "zod";
 
 
 interface TarjetaUsuario {
@@ -61,6 +62,7 @@ interface DetalleGastos{
 interface AdminContextType {
   centroActivo: string;
   centroId:number;
+  idUsuario: string;
   setCentroActivo: React.Dispatch<React.SetStateAction<string>>;
 }
 // interface MiComponenteProps {
@@ -72,6 +74,7 @@ interface AdminContextType {
 export const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [tarjetahabientes, setTarjetahabientes] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<selectCliente>({
@@ -89,7 +92,7 @@ export const AdminDashboard: React.FC = () => {
   const [totalRegistros, setTotalRegistros] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
-  const { centroActivo, centroId } = useOutletContext<AdminContextType>();
+  const { centroActivo, centroId, idUsuario } = useOutletContext<AdminContextType>();
   const [btnTarjetahabientes, setBtnTarjetahabientes] = useState(true);
   // const [btnGuardarTarjetahabientes, setbtnGuardarTarjetahabientes] = useState(true);
   const [dataInputs, getDataInput] = useState<InputTarjetahabiente>({
@@ -343,6 +346,7 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     setPaginaActual(1)
     setBtnTarjetahabientes(true)
+    console.log(idUsuario)
   }, [centroActivo]);
 
   // Manejador dinámico para actualizar cualquier input del formulario
@@ -564,8 +568,9 @@ export const AdminDashboard: React.FC = () => {
     logout();
 
     // 3. Redirigimos al Login borrando el historial de navegación
-    navigate("/", { replace: true });
+    navigate("/", { replace: false });
   };
+
   const endSessionCockie = () => {
     setIsLoggingOut(true);
     // 2. Limpiamos el estado global en el Frontend de React
@@ -816,7 +821,7 @@ export const AdminDashboard: React.FC = () => {
                       
                       // onClick={() => {setSelectedClient(item); console.log({idTarjeta:item.idTarjeta, cleinteSelec:selectedClient})}}
 
-                      className={`${selectedClient.idTarjeta === item.idTarjeta 
+                      className={`group ${selectedClient.idTarjeta === item.idTarjeta 
                           ? "selected"
                           : ""}`
                         
@@ -842,15 +847,16 @@ export const AdminDashboard: React.FC = () => {
 
 </tr> */}
 
+  
 
-
-                      {/* <td className={`font-bold rounded-tl-full rounded-bl-full ${item.estatus === true ? "text-(--GrisLight)": ${item.estatus === true ? "text-(--GrisLight) group-[.selected]:text-[white]" : "text-(--DeepBlue)"} `}> */}
-                        {/* {item.Cliente} */}
-                      {/* </td> */}
-                      <td className={`font-mono tracking-wider ${item.estatus === true ? "text-(--GrisLight)":"text-(--DeepBlue)"}`}>
+                      <td className={`font-bold rounded-tl-full rounded-bl-full ${item.estatus ? 'text-(--GrisLight)' : 'text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)'
+                      }`}>
+                        {item.Cliente}
+                      </td>
+                      <td className={`font-mono tracking-wider ${item.estatus === true ? "text-(--GrisLight)" : 'text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)'}`}>
                         {formatDigitoBancarios(item.noTarjeta)}
                       </td>
-                      <td className={`rounded-tr-full rounded-br-full text-center ${item.estatus === true ? "text-(--GrisLight)":"text-(--DeepBlue)"}`}>
+                      <td className={`rounded-tr-full rounded-br-full text-center ${item.estatus === true ? "text-(--GrisLight)" : 'text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)'}`}>
                         {item.fechaVencimiento}
                       </td>
 
@@ -1405,10 +1411,13 @@ export const AdminDashboard: React.FC = () => {
           <ModalGasto
             // isOpen={showModalGasto}
             title={!idMovimientoEdicion ? 'Agregar Gasto' : 'Edición de Gasto' }
-            // tarjetahabiente={dataInputs?.Cliente}
+            tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
             cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
-            // noCliente={dataInputs?.noCliente} 
+            noCliente={dataInputs?.noCliente} 
             noOperacion={idMovimientoEdicion}
+            idTarjeta1={dataInputs?.idTarjeta}
+            idUsuario1={Number.parseInt(idUsuario as string, 10) }
+            idMovimientoVinculado1={null}
             textConfirm="Agregar"
             textCancel="Cancelar"
             // onConfirm={() => setShowModalGasto(false)}

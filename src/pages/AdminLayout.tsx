@@ -11,6 +11,7 @@ export const AdminLayout: React.FC = () => {
     const [showModalAgregaCentroNegocio, setShowModalAgregaCentroNegocio] = useState(false);
     const [centroActivo, setCentroActivo] = useState('');
     const [centroId, setCentroId] = useState(1);
+    const [idUsuario, setIdUsuario] = useState<string | null>(null);
     const [cNegocio, setCNegocio] = useState<any[]>([]);
     const { user, logout } = useAuth();
 
@@ -20,7 +21,10 @@ export const AdminLayout: React.FC = () => {
     
     const cargaCentroNegocios = async () => {
       const { idUsuario } = user!
+      setIdUsuario(idUsuario)
       const response = await api.post("/admin/centroNegocios", { idUsuario });
+
+      // console.log(response.data)
 
       if( response.data.status === 200 ){
         setCNegocio(response.data.data.cNegocios)
@@ -130,7 +134,7 @@ export const AdminLayout: React.FC = () => {
       <main className="main-content-panel">
 
         {/* <Outlet context={{ centroActivo, setCentroActivo }}/> */}
-        <Outlet context={{ centroActivo, setCentroActivo, centroId, setCentroId }}/>
+        <Outlet context={{ centroActivo, setCentroActivo, centroId, setCentroId, idUsuario, setIdUsuario }}/>
       </main>
       <ModalAgregarCentroNegocios
         isOpen={showModalAgregaCentroNegocio}

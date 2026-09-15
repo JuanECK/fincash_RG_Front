@@ -140,6 +140,7 @@ export const LoginPage: React.FC = () => {
       }
 
       const { user } = response.data;
+      console.log({user:user})
       // const { user, redirectTo } = response.data;
 
       const perfilNumero = Number.parseInt(user.idPerfil, 10);
@@ -166,16 +167,17 @@ export const LoginPage: React.FC = () => {
       //   3:2,
       //   4:2
       // }
-
       login({ role: userRole, idPerfil:user.idPerfil, idUsuario: user.idUsuario, nombreCompleto:user.nombreCompleto });
-
+      
       const mapaRutas: Record<1 | 2, string> = {
         1: '/admin/dashboard',
         2: '/user/home'
       };
-
+      
       // Guardamos la sesión en el contexto global
-       setTimeout(() => {
+      setTimeout(() => {
+        
+        console.log({ idUsuario: user.idUsuario })
         navigate(mapaRutas[userRole], { replace: true });
       }, 0);
 
