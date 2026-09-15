@@ -121,12 +121,16 @@ export const Modal: React.FC<ModalProps> = ({
           handleSubmit("/admin/eliminarTarjeta", {idTarjeta:idTarjeta})
         break;
         case 3:
-          
+          handledCerrarAviso()
         break;
       }
      
 
   };
+
+  const handledCerrarAviso = () => {
+    onClose!('1')
+  }
 
   const handleSubmit = async (direccion?:string , tipoDato?:any) => {
     console.log(direccion, ' ',tipoDato)
