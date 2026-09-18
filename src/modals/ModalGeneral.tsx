@@ -794,6 +794,8 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
     idTarjeta: null,
     tipoMovimiento: "I", // -- 'I' (Abono) o 'E' (Cargo)
     monto: String(monto || '') || "",
+    nombreNegocio:  "OnceCapital",
+    concepto: `Abono - ${concepto}` || "",
     comprobante: comprobante || "",
     fechaMovimiento: fechaCargo || "",
     idUsuario: idUsuario1,
@@ -818,7 +820,7 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
   
       console.log({ data: data });
   
-      const response = await api.post("/admin/agregaGasto", { data:data});
+      const response = await api.post("/admin/agregaAbonoGasto", { data:data});
       console.log(response.data)
   
       if(response.data.status === 200){
@@ -899,8 +901,8 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
             </div>
           )}
         </div>
-
-          <div className=" grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit}>
+          <div className=" grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
             <input
               type="text"
               name="monto"
@@ -1010,8 +1012,7 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
         <div className="flex flex-row gap-3 mt-5 justify-end">
           {/* Botón Cancelar */}
           <button
-            type="button"
-            onClick={() => onClose!("0")}
+            type="submit"
             className="w-[35%] py-2 px-2 rounded-full bg-(--DeepBlue) text-(--verdeSuccess) font-medium  focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
           >
             {textConfirm}
@@ -1020,13 +1021,13 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
           {/* Botón Confirmar */}
           <button
             type="button"
-            onClick={() => onClose!("0")}
+            onClick={handledClosed}
             className="w-[35%] py-2 px-2 rounded-full bg-(--DeepBlue) text-(--rojoCancelar) font-medium  focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
           >
             {textCancel}
           </button>
         </div>
-
+      </form>
 
       </div>
       {errorMessage && (
@@ -1103,7 +1104,7 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
   
       console.log({ data: data });
   
-      const response = await api.post("/admin/agregaGasto", { data:data});
+      const response = await api.post("/admin/agregaAbonoGasto", { data:data});
       console.log(response.data)
   
       if(response.data.status === 200){
@@ -2272,6 +2273,121 @@ export const ModalDetalleGasto: React.FC<DetalleGastoProps> = ({
           <p className="text-sm font-[100]">Concepto</p>
           <h3 className="font-bold text-[17px] mb-2">{concepto}</h3>
           <p className="text-sm font-[100]">Fecha de cargo</p>
+          <h3 className="font-bold text-[17px] mb-2">{fechaCargo}</h3>
+          <p className="text-sm font-[100]">No. de operación</p>
+          <h3 className="font-bold text-[17px] mb-2">{noOperacion}</h3>
+          <p className="text-sm font-[100]">Comprobante</p>
+          <button
+            type="button"
+            onClick={() => handlevisualizarTiket()}
+            className={`px-8 py-2.5 ${comprobante ? "cursor-pointer text-(--blanco)" : " cursor-not-allowed text-(--disabled) opacity-40"}`}
+          >
+            <svg
+              width="19"
+              height="24"
+              viewBox="0 0 19 24"
+              fill="currentColor"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M9.2168 12.1494C8.96615 12.1494 8.7513 12.2318 8.57227 12.3965C8.40039 12.5612 8.31445 12.7617 8.31445 12.998V16.5537L8.40039 18.165L7.58398 17.3271L6.70312 16.4355C6.62435 16.3568 6.53125 16.2923 6.42383 16.2422C6.31641 16.1849 6.20898 16.1562 6.10156 16.1562C5.85807 16.1562 5.66113 16.2314 5.51074 16.3818C5.36035 16.5251 5.28516 16.7113 5.28516 16.9404C5.28516 17.0693 5.31022 17.1839 5.36035 17.2842C5.41048 17.3844 5.4821 17.4775 5.5752 17.5635L8.5293 20.2812C8.64388 20.3887 8.75488 20.4674 8.8623 20.5176C8.96973 20.5677 9.08789 20.5928 9.2168 20.5928C9.33854 20.5928 9.45312 20.5677 9.56055 20.5176C9.66797 20.4674 9.77897 20.3887 9.89355 20.2812L12.8584 17.5635C12.9515 17.4775 13.0231 17.3844 13.0732 17.2842C13.1234 17.1839 13.1484 17.0693 13.1484 16.9404C13.1484 16.7113 13.0697 16.5251 12.9121 16.3818C12.7546 16.2314 12.5612 16.1562 12.332 16.1562C12.2174 16.1562 12.1064 16.1849 11.999 16.2422C11.8988 16.2923 11.8057 16.3568 11.7197 16.4355L10.8389 17.3271L10.0225 18.165L10.1191 16.5537V12.998C10.1191 12.7617 10.0296 12.5612 9.85059 12.3965C9.67155 12.2318 9.46029 12.1494 9.2168 12.1494ZM3.49121 23.2568C2.33822 23.2568 1.4681 22.9596 0.880859 22.3652C0.29362 21.7708 0 20.8936 0 19.7334V3.52344C0 2.37044 0.29362 1.49674 0.880859 0.902344C1.4681 0.300781 2.33822 0 3.49121 0H8.38965V8.12109C8.38965 9.45312 9.05566 10.1191 10.3877 10.1191H18.4229V19.7334C18.4229 20.8864 18.1292 21.7601 17.542 22.3545C16.9548 22.9561 16.0846 23.2568 14.9316 23.2568H3.49121ZM10.5811 8.55078C10.1729 8.55078 9.96875 8.34668 9.96875 7.93848V0.107422C10.2122 0.136068 10.4557 0.236328 10.6992 0.408203C10.9499 0.580078 11.2077 0.802083 11.4727 1.07422L17.3379 7.02539C17.6172 7.31185 17.8392 7.57682 18.0039 7.82031C18.1758 8.0638 18.276 8.30729 18.3047 8.55078H10.5811Z"
+                // fill="white"
+              />
+            </svg>
+          </button>
+
+          {/* Botones de acción inferiores */}
+          <div className="flex justify-end gap-3 mt-7">
+            <button
+              type="button"
+              onClick={onEdit}
+              className="px-8 py-2.5 rounded-full bg-[#083543] text-emerald-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
+            >
+              Editar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+export const ModalDetalleAbono : React.FC<DetalleGastoProps> = ({
+  isOpen,
+  // id,
+  monto,
+  nomComercio,
+  concepto,
+  fechaCargo,
+  noOperacion,
+  comprobante,
+  onCancel,
+  onEdit,
+}) => {
+  // const [comprobanteEditar, setComprobanteEditar] = useState<string | undefined>('')
+  // const [idDetalle, setIdDetalle] = useState<number>(0)
+
+  if (!isOpen) return null;
+
+  // setIdDetalle(id)
+  // setComprobanteEditar(comprobante)
+
+  const handlevisualizarTiket = () => {
+    console.log("visualizando tiket");
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
+      {/* Contenedor del Modal */}
+      <div className="w-full max-w-96 my-auto rounded-2xl bg-(--fondo) p-11 shadow-2xl border border-[#146f8c] text-white relative">
+        {/* Botón Cerrar (X) */}
+        <button
+          onClick={onCancel}
+          className="absolute top-6 right-6 text-cyan-200 hover:text-white transition-colors"
+        >
+          <svg
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+
+        {/* ================= PRINCIPAL ================= */}
+        <div className="flex flex-col items-center jusrify-center gap-0">
+          {/* Encabezado */}
+          <div className="flex items-center gap-3 mb-2">
+            <div className="text-emerald-400">
+              <svg
+                width="25"
+                height="24"
+                viewBox="0 0 25 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M21.1406 3.83496C22.2578 3.83496 23.0993 4.11426 23.665 4.67285C24.2308 5.22428 24.5137 6.05501 24.5137 7.16504V18.2832C24.5137 19.3932 24.2451 20.224 23.708 20.7754C23.1709 21.334 22.4225 21.6133 21.4629 21.6133H11.4512C11.7448 21.1048 11.974 20.5605 12.1387 19.9805C12.3034 19.4004 12.3857 18.7988 12.3857 18.1758C12.3857 17.2233 12.2031 16.3317 11.8379 15.501C11.4798 14.6631 10.9821 13.9255 10.3447 13.2881C9.70736 12.6507 8.96973 12.153 8.13184 11.7949C7.29395 11.4297 6.39876 11.2471 5.44629 11.2471V7.16504C5.44629 6.05501 5.72559 5.22428 6.28418 4.67285C6.84993 4.11426 7.69499 3.83496 8.81934 3.83496H21.1406ZM10.7422 4.25391C10.7422 3.45898 10.9284 2.74284 11.3008 2.10547C11.6732 1.46094 12.1781 0.948893 12.8154 0.569336C13.4528 0.189779 14.1725 0 14.9746 0C15.7767 0 16.4964 0.189779 17.1338 0.569336C17.7783 0.948893 18.2868 1.46094 18.6592 2.10547C19.0316 2.74284 19.2178 3.45898 19.2178 4.25391L17.4883 4.26465C17.4883 3.74902 17.3809 3.29427 17.166 2.90039C16.9583 2.50651 16.6647 2.19857 16.2852 1.97656C15.9128 1.7474 15.4759 1.63281 14.9746 1.63281C14.4805 1.63281 14.0436 1.7474 13.6641 1.97656C13.2917 2.19857 12.998 2.50651 12.7832 2.90039C12.5755 3.29427 12.4717 3.74902 12.4717 4.26465L10.7422 4.25391ZM5.45703 23.6328C4.71224 23.6328 4.01042 23.4896 3.35156 23.2031C2.69271 22.9238 2.11263 22.5335 1.61133 22.0322C1.11003 21.5309 0.716146 20.9508 0.429688 20.292C0.143229 19.6331 0 18.9277 0 18.1758C0 17.4238 0.143229 16.722 0.429688 16.0703C0.716146 15.4115 1.11003 14.8314 1.61133 14.3301C2.11263 13.8216 2.69271 13.4277 3.35156 13.1484C4.01042 12.862 4.71224 12.7188 5.45703 12.7188C6.20898 12.7188 6.91439 12.862 7.57324 13.1484C8.2321 13.4277 8.81217 13.818 9.31348 14.3193C9.81478 14.8206 10.2051 15.4007 10.4844 16.0596C10.7708 16.7184 10.9141 17.4238 10.9141 18.1758C10.9141 18.9206 10.7708 19.6224 10.4844 20.2812C10.1979 20.9401 9.80046 21.5202 9.29199 22.0215C8.79069 22.5228 8.21061 22.9167 7.55176 23.2031C6.8929 23.4896 6.19466 23.6328 5.45703 23.6328ZM5.44629 21.5918C5.64681 21.5918 5.80436 21.5309 5.91895 21.4092C6.04069 21.2874 6.10156 21.1299 6.10156 20.9365V18.8311H8.20703C8.40039 18.8311 8.55794 18.7702 8.67969 18.6484C8.80143 18.5339 8.8623 18.3763 8.8623 18.1758C8.8623 17.9753 8.80143 17.8177 8.67969 17.7031C8.55794 17.5814 8.40039 17.5205 8.20703 17.5205H6.10156V15.415C6.10156 15.2217 6.04069 15.0641 5.91895 14.9424C5.80436 14.8206 5.64681 14.7598 5.44629 14.7598C5.24577 14.7598 5.08464 14.8206 4.96289 14.9424C4.84831 15.0641 4.79102 15.2217 4.79102 15.415V17.5205H2.68555C2.49219 17.5205 2.33464 17.5814 2.21289 17.7031C2.09115 17.8177 2.03027 17.9753 2.03027 18.1758C2.03027 18.3763 2.09115 18.5339 2.21289 18.6484C2.33464 18.7702 2.49219 18.8311 2.68555 18.8311H4.79102V20.9365C4.79102 21.1299 4.84831 21.2874 4.96289 21.4092C5.08464 21.5309 5.24577 21.5918 5.44629 21.5918Z"
+                  fill="#02FFA2"
+                />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-semibold text-(--VerdeNeon)">
+              Detalle de Abono
+            </h2>
+          </div>
+          <p className="text-sm font-[100]">Monto</p>
+          <h2 className="font-bold text-[30px] mb-2">{monto}</h2>
+          {/* <p className="text-sm font-[100]">Registro</p>
+          <h3 className="font-bold text-[17px] mb-2">{nomComercio}</h3> */}
+          <p className="text-sm font-[100]">Registro</p>
+          <h3 className="font-bold text-[17px] mb-2">{concepto}</h3>
+          <p className="text-sm font-[100]">Fecha de abono</p>
           <h3 className="font-bold text-[17px] mb-2">{fechaCargo}</h3>
           <p className="text-sm font-[100]">No. de operación</p>
           <h3 className="font-bold text-[17px] mb-2">{noOperacion}</h3>
