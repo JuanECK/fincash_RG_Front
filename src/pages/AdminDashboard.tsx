@@ -108,13 +108,6 @@ export const AdminDashboard: React.FC = () => {
     telefono: "",
     noCliente:""
     
-    
-    // Cliente: "",
-    // correo: "",
-    // idTarjeta: 0,
-    // noCliente: "",
-    // noTarjeta: "",
-    // telefono: "",
   });
   const [showModalElimina, setShowModalElimina] = useState(false);
   const [showModalEliminaTarjeta, setShowModalEliminaTarjeta] = useState(false);
@@ -124,6 +117,7 @@ export const AdminDashboard: React.FC = () => {
   const [showModalContraseña, setShowModalContraseña] = useState(false);
   const [showModalAbono, setShowModalAbono] = useState(false);
   const [showModalGasto, setShowModalGasto] = useState(false);
+  const [showEditaModalGasto, setShowEditaModalGasto] = useState(false);
   const [showModalTargetahabiente, setShowModalTargetahabiente] = useState(false);
   const [showModalEditaTarjetahadiente, setShowModalEditaTarjetahadiente] = useState(false);
   const [showModalDetalleGasto, setShowModalDetalleGasto] = useState(false);
@@ -141,6 +135,30 @@ export const AdminDashboard: React.FC = () => {
   const [idMovimientoEdicion, setIdMovimientoEdicion] = useState<string>('')
   const limitePorPagina = 15; // Cantidad de filas exactas por pantalla según tu diseño
 
+  function limpiarANumero(textoMoneda: string): number {
+    // 1. Quitar todo lo que NO sea un número o un punto decimal
+    const numeroLimpio = textoMoneda.replace(/[^\d.]/g, '');
+  
+    // 2. Convertir a número con decimales (eliminamos Math.round)
+    return parseFloat(numeroLimpio);
+  }
+
+  const formatearParaInput = (fechaString: string): string => {
+    // 1. Dividir el string "19/09/2026" por sus barras diagonales
+    const [dia, mes, anio] = fechaString.split('/');
+
+    // 2. Crear el objeto Date nativo (Restamos 1 al mes porque en JS los meses van de 0 a 11)
+    const fecha = new Date(Number(anio), Number(mes) - 1, Number(dia));
+
+    // 3. Extraer los componentes asegurando que tengan dos dígitos (ej: "09")
+    const yyyy = fecha.getFullYear();
+    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dd = String(fecha.getDate()).padStart(2, '0');
+
+    // 4. Retornar el formato "YYYY-MM-DD" que requiere el <input type="date">
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   const BtnsTatrjetahabientes = () => {
     // setbtnGuardarTarjetahabientes(false);
     // setBtnTarjetahabientes(true);
@@ -149,7 +167,25 @@ export const AdminDashboard: React.FC = () => {
     // setShowModalTargetahabiente(true)
   };
 
-  const handleDetalleMovimiento = async ( id:number ) => {
+  const handleDetalleMovimientoGasto = async ( id:number ) => {
+    try{
+      const response = await api.post("/admin/detalleGastos", { id });
+
+      if( response.data.status === 200 ){
+        console.log(response.data.data.datos)
+       setShowModalDetalleGasto(true); 
+       setDetalleClienteSelecionado(response.data.data.datos)
+       return
+      }
+    
+      // console.log("sesion caducada: ", response.data.status);
+      // endSessionCockie();
+
+    } catch (error) {
+      console.error("Error cargando los detalles del tarjetahabiente:", error);
+    }
+  }
+  const handleDetalleMovimientoAbono = async ( id:number ) => {
     try{
       const response = await api.post("/admin/detalleGastos", { id });
 
@@ -172,7 +208,7 @@ export const AdminDashboard: React.FC = () => {
     console.log("Editando detalle de gasto");
     setShowModalDetalleGasto(false);
     setIdMovimientoEdicion(detalleClienteSelecionado?.idMovimiento)
-    setShowModalGasto(true)
+    setShowEditaModalGasto(true)
   };
 
   const handledEliminarTarjeta = async (resultado: '1' | '0') => {
@@ -271,6 +307,11 @@ export const AdminDashboard: React.FC = () => {
     }).format(numero);
   };
 
+const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
+  const response = await api.post("/admin/detalleCliente", { idTarjeta });
+ setDetallesCliente(response.data.data);
+}
+
   const selecionaClienteTarjetabiente = async (
     idTarjeta: number | null,
     item: any,
@@ -286,7 +327,7 @@ export const AdminDashboard: React.FC = () => {
 
       try {
         const response = await api.post("/admin/detalleCliente", { idTarjeta });
-        // console.log(response.data.data)
+        console.log(response.data.data)
   
         if (response.data.status === 200) {
           if( estatus !== true ){
@@ -436,6 +477,34 @@ export const AdminDashboard: React.FC = () => {
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
       console.log('Se cambio la contraseña correctamente' )
+      // setBtnTarjetahabientes(true)
+      // setDetallesCliente(null)
+
+    }
+    
+  };
+  const handleAgregaGasto = (resultado: '1' | '0') => {
+    setShowModalGasto(false); 
+        setShowEditaModalGasto(false)
+        setIdMovimientoEdicion('')
+    // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
+    if (resultado === '1') {
+      console.log('Se agrego gasto correctamente' )
+      detalleClienteGastoAbono(dataInputs?.idTarjeta)
+      // setBtnTarjetahabientes(true)
+      // setDetallesCliente(null)
+
+    }
+    
+  };
+  const handleAgregaAbono = (resultado: '1' | '0') => {
+    setShowModalAbono(false); 
+        // setShowEditaModalAbono(false)
+        setIdMovimientoEdicion('')
+    // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
+    if (resultado === '1') {
+      console.log('Se agrego gasto correctamente' )
+      detalleClienteGastoAbono(dataInputs?.idTarjeta)
       // setBtnTarjetahabientes(true)
       // setDetallesCliente(null)
 
@@ -1274,7 +1343,7 @@ export const AdminDashboard: React.FC = () => {
                                     <button
                                       type="button"
                                       title="Ver comprobante digital"
-                                      onClick={compra.precio.charAt(0) === "+" ? (()=>{}): (()=>{handleDetalleMovimiento(compra.idMovimiento)}) }
+                                      onClick={compra.precio.charAt(0) === "+" ? (()=>{handleDetalleMovimientoAbono(compra.idMovimiento)}): (()=>{handleDetalleMovimientoGasto(compra.idMovimiento)}) }
                                       className="action-icon-btn !p-1 !bg-transparent border-0 opacity-40 group-hover:opacity-100 text-[#00E5FF] hover:scale-110 transition-all"
                                     >
                                       <span>
@@ -1397,14 +1466,15 @@ export const AdminDashboard: React.FC = () => {
             <path d="M0 19.2017V0.964355C0 0.671387 0.0895182 0.439453 0.268555 0.268555C0.447591 0.0895182 0.683594 0 0.976562 0H31.2622C31.5552 0 31.7871 0.0895182 31.958 0.268555C32.137 0.439453 32.2266 0.671387 32.2266 0.964355V19.2017C32.2266 19.4946 32.137 19.7306 31.958 19.9097C31.7871 20.0887 31.5552 20.1782 31.2622 20.1782H0.976562C0.683594 20.1782 0.447591 20.0887 0.268555 19.9097C0.0895182 19.7306 0 19.4946 0 19.2017ZM2.23389 17.1997C2.23389 17.6961 2.47803 17.9443 2.96631 17.9443H29.2603C29.7485 17.9443 29.9927 17.6961 29.9927 17.1997V2.97852C29.9927 2.4821 29.7485 2.23389 29.2603 2.23389H2.96631C2.47803 2.23389 2.23389 2.4821 2.23389 2.97852V17.1997ZM3.50342 16.3818V3.79639C3.50342 3.60107 3.60107 3.50342 3.79639 3.50342H13.3179C12.6831 4.15446 12.1867 5.04557 11.8286 6.17676C11.4705 7.2998 11.2915 8.59782 11.2915 10.0708C11.2915 11.5438 11.4705 12.8499 11.8286 13.9893C12.1948 15.1204 12.6994 16.0156 13.3423 16.6748H3.79639C3.60107 16.6748 3.50342 16.5771 3.50342 16.3818ZM12.7563 10.0708C12.7563 8.80127 12.8906 7.69043 13.1592 6.73828C13.4359 5.78613 13.8224 5.04557 14.3188 4.5166C14.8234 3.98763 15.4053 3.72314 16.0645 3.72314C16.748 3.72314 17.3462 3.98763 17.8589 4.5166C18.3797 5.04557 18.7826 5.78613 19.0674 6.73828C19.3522 7.69043 19.4946 8.80127 19.4946 10.0708C19.4946 11.3403 19.3522 12.4512 19.0674 13.4033C18.7826 14.3555 18.3797 15.1001 17.8589 15.6372C17.3462 16.1662 16.748 16.4307 16.0645 16.4307C15.4053 16.4307 14.8234 16.1662 14.3188 15.6372C13.8224 15.1001 13.4359 14.3555 13.1592 13.4033C12.8906 12.4512 12.7563 11.3403 12.7563 10.0708ZM18.8599 16.6748C19.5109 16.0156 20.0195 15.1204 20.3857 13.9893C20.7601 12.8499 20.9473 11.5438 20.9473 10.0708C20.9473 8.59782 20.7642 7.2998 20.3979 6.17676C20.0317 5.04557 19.5231 4.15446 18.8721 3.50342H28.4302C28.6255 3.50342 28.7231 3.60107 28.7231 3.79639V16.3818C28.7231 16.5771 28.6255 16.6748 28.4302 16.6748H18.8599Z" fill="#02FFA2"/>
             </svg>
           }
-          title="Abono"
-          // tarjetahabiente={dataInputs?.Cliente}
+          title={!idMovimientoEdicion ? 'Abono' : 'Edición de Abono' }
+          tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
           cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
-          // noCliente={dataInputs?.noCliente} 
+          noCliente={dataInputs?.noCliente} 
+          noOperacion={idMovimientoEdicion}
           textConfirm="Agregar"
           textCancel="Cancelar"
           // onConfirm={() => setShowModalAbono(false)}
-          onClose={() => setShowModalAbono(false)}
+          onClose={handleAgregaAbono}
         />)}
        
         { showModalGasto && (
@@ -1421,7 +1491,7 @@ export const AdminDashboard: React.FC = () => {
             textConfirm="Agregar"
             textCancel="Cancelar"
             // onConfirm={() => setShowModalGasto(false)}
-            onClose={() => {setShowModalGasto(false); setIdMovimientoEdicion('')}} 
+            onClose={handleAgregaGasto} 
           />
         )}
 
@@ -1454,21 +1524,32 @@ export const AdminDashboard: React.FC = () => {
         onEdit={() => {handleEditar()}}
       />
 
+        { showEditaModalGasto && (
+          <ModalGasto
+            // isOpen={showModalGasto}
+            title={!idMovimientoEdicion ? 'Agregar Gasto' : 'Edición de Gasto' }
+            tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
+            cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
+            noCliente={dataInputs?.noCliente} 
+            noOperacion={idMovimientoEdicion}
+            idTarjeta1={dataInputs?.idTarjeta}
+            idUsuario1={Number.parseInt(idUsuario as string, 10) }
+            idMovimientoVinculado1={limpiarANumero(idMovimientoEdicion)}
+            // -----
+            monto={limpiarANumero( detalleClienteSelecionado?.precio )}
+            nomComercio={detalleClienteSelecionado?.nombreNegocio}
+            concepto={detalleClienteSelecionado?.concepto}
+            fechaCargo={formatearParaInput(detalleClienteSelecionado?.Fecha)}
+            comprobante={detalleClienteSelecionado?.comprobante}
 
-        {/* <ModalAgregarTarjetahabiente
-          isOpen={showModalTargetahabiente}
-          icono={
-            <svg width="33" height="21" viewBox="0 0 33 21" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 19.2017V0.964355C0 0.671387 0.0895182 0.439453 0.268555 0.268555C0.447591 0.0895182 0.683594 0 0.976562 0H31.2622C31.5552 0 31.7871 0.0895182 31.958 0.268555C32.137 0.439453 32.2266 0.671387 32.2266 0.964355V19.2017C32.2266 19.4946 32.137 19.7306 31.958 19.9097C31.7871 20.0887 31.5552 20.1782 31.2622 20.1782H0.976562C0.683594 20.1782 0.447591 20.0887 0.268555 19.9097C0.0895182 19.7306 0 19.4946 0 19.2017ZM2.23389 17.1997C2.23389 17.6961 2.47803 17.9443 2.96631 17.9443H29.2603C29.7485 17.9443 29.9927 17.6961 29.9927 17.1997V2.97852C29.9927 2.4821 29.7485 2.23389 29.2603 2.23389H2.96631C2.47803 2.23389 2.23389 2.4821 2.23389 2.97852V17.1997ZM3.50342 16.3818V3.79639C3.50342 3.60107 3.60107 3.50342 3.79639 3.50342H13.3179C12.6831 4.15446 12.1867 5.04557 11.8286 6.17676C11.4705 7.2998 11.2915 8.59782 11.2915 10.0708C11.2915 11.5438 11.4705 12.8499 11.8286 13.9893C12.1948 15.1204 12.6994 16.0156 13.3423 16.6748H3.79639C3.60107 16.6748 3.50342 16.5771 3.50342 16.3818ZM12.7563 10.0708C12.7563 8.80127 12.8906 7.69043 13.1592 6.73828C13.4359 5.78613 13.8224 5.04557 14.3188 4.5166C14.8234 3.98763 15.4053 3.72314 16.0645 3.72314C16.748 3.72314 17.3462 3.98763 17.8589 4.5166C18.3797 5.04557 18.7826 5.78613 19.0674 6.73828C19.3522 7.69043 19.4946 8.80127 19.4946 10.0708C19.4946 11.3403 19.3522 12.4512 19.0674 13.4033C18.7826 14.3555 18.3797 15.1001 17.8589 15.6372C17.3462 16.1662 16.748 16.4307 16.0645 16.4307C15.4053 16.4307 14.8234 16.1662 14.3188 15.6372C13.8224 15.1001 13.4359 14.3555 13.1592 13.4033C12.8906 12.4512 12.7563 11.3403 12.7563 10.0708ZM18.8599 16.6748C19.5109 16.0156 20.0195 15.1204 20.3857 13.9893C20.7601 12.8499 20.9473 11.5438 20.9473 10.0708C20.9473 8.59782 20.7642 7.2998 20.3979 6.17676C20.0317 5.04557 19.5231 4.15446 18.8721 3.50342H28.4302C28.6255 3.50342 28.7231 3.60107 28.7231 3.79639V16.3818C28.7231 16.5771 28.6255 16.6748 28.4302 16.6748H18.8599Z" fill="#02FFA2"/>
-            </svg>
-          }
-          title="Abono"
-          centroNegocio={dataInputs?.Cliente}
-          textConfirm="Agregar"
-          textCancel="Cancelar"
-          onConfirm={() => setShowModalTargetahabiente(false)}
-          onCancel={() => setShowModalTargetahabiente(false)}
-        /> */}
+
+            textConfirm="Agregar"
+            textCancel="Cancelar"
+            // onConfirm={() => setShowModalGasto(false)}
+            onClose={handleAgregaGasto} 
+          />
+        )}
+
       </div>
     </>
   );
