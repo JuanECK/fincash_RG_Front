@@ -60,7 +60,8 @@ interface ModalTarjetahabienteProps {
 }
 
 interface ModalAgregarProps {
-  isOpen?: boolean;
+  // isOpen?: boolean;
+  title?:string;
   CentroN?: number;
   usuarioData?: any;
   noCliente?: number;
@@ -795,7 +796,7 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
     tipoMovimiento: "I", // -- 'I' (Abono) o 'E' (Cargo)
     monto: String(monto || '') || "",
     nombreNegocio:  "OnceCapital",
-    concepto: `Abono - ${concepto}` || "",
+    concepto: concepto || "",
     comprobante: comprobante || "",
     fechaMovimiento: fechaCargo || "",
     idUsuario: idUsuario1,
@@ -958,7 +959,7 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-1">
-              <button className="cursor-pointer">
+              <button type="button" className="cursor-pointer">
                <div className="flex justify-center items-center gap-3 py-2 px-5 rounded-full bg-(--blanco) text-(--DeepBlue)">
                 Subir comprobante
                 <svg
@@ -1415,32 +1416,65 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
 
   // if (!isOpen) return null;
 
+  // const busqueda = async () => {
+  //   const datosActualizados = {
+  //     ...busquedaInput,
+  //     IdCentroN: CentroN!,
+  //   };
+
+  //   const response = await api.post("/admin/busqueda", {
+  //     data: datosActualizados,
+  //   });
+  //   if (response.data.status === 200) {
+  //     console.log(response.data.data );
+  //     if(response.data.data === ''){
+  //       console.log("error");
+  //       setResultBusqueda({
+  //         nombreCompleto: 'No Encontrado',
+  //         noCliente: 0,
+  //       });
+  //       return
+  //     }
+  //     setResultBusqueda(response.data.data);
+  //   } 
+  // };
+
   const busqueda = async () => {
-    // 1. Creamos el objeto con los datos actualizados al momento
-    const datosActualizados = {
-      ...busquedaInput,
-      IdCentroN: CentroN!,
-    };
+  const datosActualizados = {
+    ...busquedaInput,
+    IdCentroN: CentroN!,
+  };
 
-    // console.log('busqueda: ',busquedaInput)
-
-    // const data = busquedaInput
+  try {
     const response = await api.post("/admin/busqueda", {
       data: datosActualizados,
     });
-    console.log(response);
-    if (response.data.status === 200) {
-      console.log(response.data);
 
-      setResultBusqueda(response.data.data);
-    } else {
-      console.log("error");
-      setResultBusqueda({
-        nombreCompleto: response.data.error.message,
-        noCliente: 0,
-      });
+    console.log(response.data)
+
+    if (response.data.status === 200) {
+      const dataRecibida = response.data.data;
+
+      // 1. Validamos si data es un string vacío, null, undefined, o un objeto sin propiedades {}
+      const esDataVacia = !dataRecibida ||  dataRecibida === '' || (typeof dataRecibida === 'object' && Object.keys(dataRecibida).length === 0);
+
+      if (esDataVacia) {
+        console.log("Cliente no encontrado");
+        setResultBusqueda({
+          nombreCompleto: 'No Encontrado',
+          noCliente: 0,
+        });
+        return; // Detenemos la ejecución aquí
+      }
+
+      // 2. Si tiene datos, rellenamos el estado con la respuesta de la API
+      setResultBusqueda(dataRecibida.resultado);
     }
-  };
+  } catch (error) {
+    console.error("Error al realizar la búsqueda:", error);
+    // Opcional: Manejar el estado de error aquí si la API se cae (500, 404, etc.)
+  }
+};
 
   // Manejadores de cambios
   const handleBusquedaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1847,7 +1881,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                     busqueda();
                   }}
                 >
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-200/50">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-200/50 cursor-pointer">
                     <svg
                       className="h-5 w-5"
                       fill="none"
@@ -1965,20 +1999,27 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
 };
 
 export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
-  isOpen,
+  // isOpen,
+  title,
+  usuarioData,
   onClose,
+
+  // =================================================
+  // continuar desde aqui y ver porque no se rellenan los inputs
+  // =================================================
 }) => {
   const [titularForm, setTitularForm] = useState({
-    nombreCentro: "",
-    nombreTitular: "",
-    correoTitular: "",
-    telefonoTitular: "",
-    porcentaje: "",
+    nombreCentro:  usuarioData?.nombreCentro || "",
+    nombreTitular: usuarioData?.nombreTitular || "",
+    correoTitular: usuarioData?.correoTitular || "",
+    telefonoTitular: usuarioData?.telefonoTitular || "",
+    porcentaje: usuarioData?.porcentaje || null,
+    idCentroN: usuarioData?.idCentroN || null,
   });
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  // if (!isOpen) return null;
 
   // Manejadores de cambios
   const handleTitularChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1987,12 +2028,8 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // console.log(titularForm)
     const data = titularForm;
-    // const {nombreCentro, nombreTitular, correoTitular, telefonoTitular, porcentaje1} = titularForm
-    // const porcentaje = Number.parseFloat(porcentaje1 as string)
     const response = await api.post("/admin/agregaCentroNegocios", { data });
-    //  const response = await api.post("/admin/agregaCentroNegocios", { nombreCentro, nombreTitular, correoTitular, telefonoTitular, porcentaje });
     console.log(response);
 
     if (response.data.status === 200) {
@@ -2001,28 +2038,20 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
       onClose!("1");
     } else {
       setErrorMessage(response.data.error.message);
-      // return (
-
-      //   <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-      //       <div className="w-full max-w-md rounded-2xl bg-(--TextoInactivo) p-8 shadow-2xl text-center border border-[#146f8c]">
-      //           <h2 className="text-2xl font-semibold text-white mb-4">{response.data.error.message}</h2>
-
-      //       </div>
-      //   </div>
-      // )
     }
-    // <ModalAvisoPopUp
-    // isOpen={modeal}
-    // mensaje={response.data.error.message}
-    // />
   };
+
+  const handledClosed = () => {
+    onClose!("0");
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
       {/* Contenedor del Modal */}
       <div className="w-full max-w-4xl min-w-md my-auto rounded-2xl bg-[#0d5c75] p-11 shadow-2xl border border-[#146f8c] text-white relative">
         {/* Botón Cerrar (X) */}
         <button
-          onClick={() => onClose!("0")}
+          onClick={handledClosed}
           className="absolute top-6 right-6 text-cyan-200 hover:text-white transition-colors"
         >
           <svg
@@ -2057,7 +2086,7 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
             </svg>
           </div>
           <h2 className="text-2xl font-semibold text-(--VerdeNeon)">
-            Agregar Centro de Negocios
+            {title}
           </h2>
         </div>
 
@@ -2169,7 +2198,7 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => onClose!("0")}
+              onClick={handledClosed}
               className="px-8 py-2.5 rounded-full bg-[#083543] text-red-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
             >
               Cancelar

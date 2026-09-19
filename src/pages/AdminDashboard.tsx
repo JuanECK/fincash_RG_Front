@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api, logoutSession } from "../services/api";
@@ -94,6 +94,7 @@ export const AdminDashboard: React.FC = () => {
   const [isLoadingTable, setIsLoadingTable] = useState(false);
   const { centroActivo, centroId, idUsuario } = useOutletContext<AdminContextType>();
   const [btnTarjetahabientes, setBtnTarjetahabientes] = useState(true);
+  const [busquedaPaginacion, setBusquedaPaginacion] = useState(false);
   // const [btnGuardarTarjetahabientes, setbtnGuardarTarjetahabientes] = useState(true);
   const [dataInputs, getDataInput] = useState<InputTarjetahabiente>({
 
@@ -134,8 +135,98 @@ export const AdminDashboard: React.FC = () => {
     precio:'',
     tipoMovimiento:'',
   });
+
   const [idMovimientoEdicion, setIdMovimientoEdicion] = useState<string>('')
+  const [tipoDatoBusqueda, setTipoDatoBusqueda] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const [busquedaInput, setBusquedaInput] = useState({
+    tipo:"Dashboard",
+    IdCentroN:"",
+    noTarjeta:null,
+    busquedaCliente: null,
+  });
+
   const limitePorPagina = 15; // Cantidad de filas exactas por pantalla según tu diseño
+
+  const busquedaRef = useRef<HTMLInputElement>(null)
+
+  //   const handleBusquedaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   setBusquedaInput({ ...busquedaInput, [e.target.name]: e.target.value });
+  // };
+
+
+  const handleBusquedaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valorStr = e.target.value ;
+    setTipoDatoBusqueda(false)
+    
+    // Expresión regular para validar si contiene solo números
+    const esNumero = /^\d+$/.test(valorStr);
+
+    setBusquedaInput((prev:any) => {
+      // 1. Si es número y no supera los 16 dígitos, se guarda en noTarjeta
+      if (esNumero) {
+        setTipoDatoBusqueda(true)
+        // if(valorStr.length === 16){
+          return {
+            ...prev,
+            // paramBusqueda: valorStr,
+            noTarjeta: valorStr,
+            busquedaCliente: null, // Limpiamos el otro campo
+          };
+        
+      } 
+      // 2. Si es string (o un número que excede los 16 dígitos), se guarda en busquedaCliente
+      return {
+        ...prev,
+        // paramBusqueda: valorStr,
+        noTarjeta: null, // Limpiamos el otro campo
+        busquedaCliente: valorStr === '' ? null:valorStr,
+      };
+    });
+  };
+
+    const busqueda = async () => {
+      // console.log({datosBusqueda:busquedaInput})
+      
+      if(busquedaInput.noTarjeta === null && busquedaInput.busquedaCliente === null ) return
+
+      console.log('pase el filtro')
+      if(tipoDatoBusqueda){
+       const longitud = String(busquedaInput.noTarjeta).length;
+       console.log(longitud)
+        if(longitud !== 16){
+          setErrorMessage("Para buscar por número de tarjeta debe de tener 16 dígitos");
+          return
+        }
+      }
+
+    const datosCompletos = {
+      ...busquedaInput,
+      IdCentroN:centroId
+    }
+
+    console.log({data:datosCompletos})
+    const response = await api.post("/admin/busqueda", {
+      data: datosCompletos,
+    });
+    // console.log(response.data.data);
+    if (response.data.data.resultado[2].length !== 0) {
+      // console.log(response.data.data.resultado[0][0].TotalRegistros);
+      setBusquedaPaginacion(true)
+      setTarjetahabientes(response.data.data.resultado[2])
+      setTotalRegistros(response.data.data.resultado[0][0].TotalRegistros);
+      return
+    } 
+    setBusquedaPaginacion(false)
+
+  };
+
+  const cancelarBusqueda = () => {
+    busquedaRef.current!.value = "";
+    setBusquedaPaginacion(false)
+    cargarDatosPaginados()
+  }
 
   function limpiarANumero(textoMoneda: string): number {
     // 1. Quitar todo lo que NO sea un número o un punto decimal
@@ -242,6 +333,10 @@ export const AdminDashboard: React.FC = () => {
       if( response.data.status === 200 ){
         setBtnTarjetahabientes(true)
         setDetallesCliente(null)
+        if(busquedaPaginacion){
+          busquedaRef.current!.value = "";
+          setBusquedaPaginacion(false)
+        }
         cargarDatosPaginados();
       }
     }
@@ -278,7 +373,7 @@ export const AdminDashboard: React.FC = () => {
     // aqui va la api para guardar los datos modificados del Tarjetahabiente asi como tambien los errores que se pudieran producir en el backend
     // y cuando sea exitoso refrescar la lista
     // ===========================================================================================================================================
-    console.log(varRandom);
+    // console.log(varRandom);
     setShowModalElimina(false);
   };
   const guardaEdicion = async () => {
@@ -396,7 +491,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
   useEffect(() => {
     setPaginaActual(1)
     setBtnTarjetahabientes(true)
-    console.log(idUsuario)
+    // console.log(idUsuario)
   }, [centroActivo]);
 
   // Manejador dinámico para actualizar cualquier input del formulario
@@ -407,6 +502,14 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
       [name]: value, // Actualiza dinámicamente la propiedad de la interfaz
     }));
   };
+
+  const cargosGlobales = async(idCentroN:number) =>{
+    const response = await api.post("/admin/cargosGlobales", { data:{idCentroN:idCentroN} });
+    if(response.data.status === 200){
+      console.log(response.data)
+      setMontoTotalCargos(response.data.data.MontoTotalCargos);
+    }
+  }
 
   useEffect(() => {
     cargarDatosPaginados();
@@ -420,16 +523,17 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
       const response = await api.get(
         `/admin/targetahabientes?idCentroN=${centroId}&page=${paginaActual}&limit=${limitePorPagina}`,
       );
+      console.log(response.data);
 
       if (response.data.status === 200) {
         const { tarjetahabientes, paginacion, MontoTotalCargos } =
           response.data.data;
-        // console.log(paginacion);
 
         setTarjetahabientes(tarjetahabientes);
         setTotalPaginas(paginacion.totalPaginas);
         setTotalRegistros(paginacion.totalRegistros);
         setMontoTotalCargos(MontoTotalCargos);
+
 
         // console.log(tarjetahabientes)
         // if (tarjetahabientes && tarjetahabientes.length > 0) {
@@ -462,6 +566,10 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
       setBtnTarjetahabientes(true)
+       if(busquedaPaginacion){
+          busquedaRef.current!.value = "";
+          setBusquedaPaginacion(false)
+        }
       cargarDatosPaginados();
       console.log('actualizamos centro de negocios')
     }
@@ -476,6 +584,10 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
       console.log('Tarjeta editada correctamente' )
       setBtnTarjetahabientes(true)
       setDetallesCliente(null)
+       if(busquedaPaginacion){
+          busquedaRef.current!.value = "";
+          setBusquedaPaginacion(false)
+        }
       cargarDatosPaginados();
     }
     
@@ -499,6 +611,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
       console.log('Se agrego gasto correctamente' )
+      cargosGlobales(centroId)
       detalleClienteGastoAbono(dataInputs?.idTarjeta)
       // setBtnTarjetahabientes(true)
       // setDetallesCliente(null)
@@ -507,8 +620,9 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
     
   };
   const handleAgregaAbono = (resultado: '1' | '0') => {
-    // setShowModalAbono(false); 
-        setShowEditaModalAbono(false)
+    
+    showModalAbono ? ( setShowModalAbono(false) ):( setShowEditaModalAbono(false) )
+        
         setIdMovimientoEdicion('')
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
@@ -527,6 +641,10 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
     if (resultado === '1') {
       console.log('Se elimino el tarjetahabiente correctamente' )
       setBtnTarjetahabientes(true)
+       if(busquedaPaginacion){
+          busquedaRef.current!.value = "";
+          setBusquedaPaginacion(false)
+        }
       cargarDatosPaginados();
     }
     
@@ -539,6 +657,10 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
       console.log('Se Elimino la tarjeta correctamente' )
       setBtnTarjetahabientes(true)
       setDetallesCliente(null)
+       if(busquedaPaginacion){
+          busquedaRef.current!.value = "";
+          setBusquedaPaginacion(false)
+        }
       cargarDatosPaginados();
     }
     
@@ -818,7 +940,71 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                     </svg>
                   </button>
                 </div>
-                <div className="relative pl-3">
+
+              <div className="relative max-w-xl pl-3">
+                <input
+                  type="text"
+                  name="paramBusqueda"
+                  autoComplete={"off"}
+                  placeholder="No. de Cliente"
+                  className="pr-10 search-input-box"
+                  ref={busquedaRef}
+                  onChange={handleBusquedaChange}
+                />
+                {busquedaPaginacion ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    cancelarBusqueda();
+                  }}
+                  >
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-200/50 cursor-pointer">
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                      />
+                  </svg>
+                  </span>
+                </button>
+                ) : (
+                  <button
+                  type="button"
+                  onClick={() => {
+                    busqueda();
+                  }}
+                >
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-200/50 cursor-pointer">
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </span>
+                </button>
+
+                ) }
+
+
+              </div>
+
+
+                {/* <div className="relative pl-3">
                   <input
                     type="text"
                     placeholder="No. de tarjeta o nombre de tarjethabiente"
@@ -838,7 +1024,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                       />
                     </svg>
                   </span>
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -911,19 +1097,19 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                       //     : ""
                       // }
                     >
-{/* ========================================= REVISAR CODIGO AQUI PARA QUE AGA ESTO ============================== */}
-{/* En tu elemento padre (tr), añade la clase "group" junto con la condición "selected"
-<tr className={`group ${tuCondicionParaSelected ? 'selected' : ''}`}>
-  
-  <td className={`font-bold rounded-tl-full rounded-bl-full ${
-    item.estatus === true 
-      ? "text-(--GrisLight) group-[.selected]:text-[white]" 
-      : "text-(--DeepBlue) group-[.selected]:text-[white]"
-  }`}>
-    {item.texto}
-  </td>
+                    {/* ========================================= REVISAR CODIGO AQUI PARA QUE AGA ESTO ============================== */}
+                    {/* En tu elemento padre (tr), añade la clase "group" junto con la condición "selected"
+                    <tr className={`group ${tuCondicionParaSelected ? 'selected' : ''}`}>
+                      
+                      <td className={`font-bold rounded-tl-full rounded-bl-full ${
+                        item.estatus === true 
+                          ? "text-(--GrisLight) group-[.selected]:text-[white]" 
+                          : "text-(--DeepBlue) group-[.selected]:text-[white]"
+                      }`}>
+                        {item.texto}
+                      </td>
 
-</tr> */}
+                    </tr> */}
 
   
 
@@ -1025,6 +1211,8 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
 
             {/* Componente de Paginación */}
 
+            {busquedaPaginacion ? "": (
+
             <div className="pagination-container">
               {/* Botón Atrás (‹) - Se deshabilita si estás en la página 1 */}
               <button
@@ -1083,6 +1271,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                 </span>
               </button>
             </div>
+            )}
           </section>
         </main>
 
@@ -1398,6 +1587,22 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
       </div>
       {/* MODALES */}
       <div className="flex flex-col items-center justify-center text-white">
+
+      {errorMessage && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl bg-(--TextoInactivo) p-8 shadow-2xl text-center border border-[#146f8c]">
+            <h2 className="text-2xl font-[200] text-white mb-4">
+              {errorMessage}
+            </h2>
+            <button
+              className="px-8 py-2.5 rounded-full bg-[#083543] text-emerald-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
+              onClick={() => setErrorMessage(null)}
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
         {/* Llamada al componentes con propiedades dinámicas */}
 
         {showModalEditaTarjetahadiente && (
@@ -1592,7 +1797,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
           concepto = {user?.nombreCompleto}
           idTarjeta1={dataInputs?.idTarjeta}
           idUsuario1={Number.parseInt(idUsuario as string, 10) }
-          idMovimientoVinculado1={null}
+          idMovimientoVinculado1={limpiarANumero(idMovimientoEdicion)}
           // -------
           monto={limpiarANumero( detalleClienteSelecionado?.precio )}
           fechaCargo={formatearParaInput(detalleClienteSelecionado?.Fecha)}

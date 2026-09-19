@@ -4,16 +4,37 @@ import { useAuth } from '../context/AuthContext';
 import { api, logoutSession } from '../services/api';
 import { ModalAgregarCentroNegocios } from '../modals/ModalGeneral';
 
-
+interface InputCentroN{
+  correoTitular:string;
+  idCentroN:number | null;
+  nombreCentro:string;
+  nombreTitular:string;
+  porcentaje:number | null;
+  telefonoTitular:string
+}
 
 export const AdminLayout: React.FC = () => {
 
     const [showModalAgregaCentroNegocio, setShowModalAgregaCentroNegocio] = useState(false);
+    const [showModalEditaCentroNegocio, setShowModalEditaCentroNegocio] = useState(false);
     const [centroActivo, setCentroActivo] = useState('');
     const [centroId, setCentroId] = useState(1);
     const [idUsuario, setIdUsuario] = useState<string | null>(null);
     const [cNegocio, setCNegocio] = useState<any[]>([]);
     const { user, logout } = useAuth();
+    const [isLoading, setIsLoading] = useState(false);
+
+    const [dataInputs, getDataInput] = useState<InputCentroN>({
+
+      correoTitular:"",
+      idCentroN:null,
+      nombreCentro:"",
+      nombreTitular:"",
+      porcentaje:null,
+      telefonoTitular:"",
+
+    
+  });
 
     // const navigate = useNavigate();
     // const location = useLocation(); // Sabe en qué URL estamos para pintar el botón activo
@@ -33,6 +54,24 @@ export const AdminLayout: React.FC = () => {
 
     }
 
+    const editaCentroN = async() => {
+      setIsLoading(true)
+      try {
+        
+        const response = await api.post("/admin/editaCentroNegocio", { data:{idCentroN:centroId} });
+        console.log(response)
+        if( response.data.status === 200){
+          setShowModalEditaCentroNegocio(true)
+          getDataInput(response.data.data.resultado)
+        }
+
+      } catch {
+        
+      }finally{
+        setIsLoading(false)
+      }
+    }
+
     useEffect(()=>{
       cargaCentroNegocios()
     },[])
@@ -47,6 +86,18 @@ export const AdminLayout: React.FC = () => {
     }
     
   };
+  const handleCloseModalEdicion = (resultado: '1' | '0') => {
+    setShowModalEditaCentroNegocio(false); // Cerramos el modal
+
+    // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
+    if (resultado === '1') {
+      cargaCentroNegocios();
+      console.log('actualizamos centro de negocios')
+    }
+    
+  };
+
+
 
 //   const handleLogout = async () => {
 //     await logoutSession();
@@ -56,7 +107,13 @@ export const AdminLayout: React.FC = () => {
 
   return (
     <div className="dashboard-layout">
-      
+      {isLoading && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="flex-1 flex items-center justify-center">
+            <span className="spinner" />
+          </div>
+        </div>
+      )}
 
         {/* 📁 BARRA LATERAL IZQUIERDA (Centros de Negocio) */}
         <aside className="sidebar-panel">
@@ -124,11 +181,14 @@ export const AdminLayout: React.FC = () => {
 
           <button
             type="button"
+            onClick={editaCentroN}
             className="w-full text-center text-md font-bold text-(--GrisLight) hover:text-(--VerdeNeon) px-4 transition-colors cursor-pointer"
           >
             Editar
           </button>
         </aside>
+
+          
 
       {/* 📊 PANEL OPERATIVO DINÁMICO */}
       <main className="main-content-panel">
@@ -136,11 +196,22 @@ export const AdminLayout: React.FC = () => {
         {/* <Outlet context={{ centroActivo, setCentroActivo }}/> */}
         <Outlet context={{ centroActivo, setCentroActivo, centroId, setCentroId, idUsuario, setIdUsuario }}/>
       </main>
-      <ModalAgregarCentroNegocios
-        isOpen={showModalAgregaCentroNegocio}
-        onCancel={()=> setShowModalAgregaCentroNegocio(false)}
-        onClose={handleCloseModal}
-      />
+      {showModalAgregaCentroNegocio && (
+        <ModalAgregarCentroNegocios
+          title={'Agregar Centro de Negocios'}
+          onCancel={()=> setShowModalAgregaCentroNegocio(false)}
+          onClose={handleCloseModal}
+        />
+      )}
+      {showModalEditaCentroNegocio && (
+        <ModalAgregarCentroNegocios
+          title={'Editar Centro de Negocios'}
+          usuarioData={dataInputs}
+          onCancel={()=> setShowModalAgregaCentroNegocio(false)}
+          onClose={handleCloseModalEdicion}
+        />
+      )}
     </div>
+  
   );
 };
