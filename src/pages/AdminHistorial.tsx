@@ -2,47 +2,172 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { api, logoutSession } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-
-const mockHistorialGeneral = [
-  {
-    operacion: "458965",
-    tipo: "Compra",
-    monto: "-$40,000.00",
-    fecha: "25/12/2026",
-    comercio: "Tiendita",
-    concepto: "Comida",
-    esAbono: false,
-  },
-  {
-    operacion: "587459",
-    tipo: "Compra",
-    monto: "-$89,586.00",
-    fecha: "25/12/2026",
-    comercio: "Gasolinera",
-    concepto: "Gasolina",
-    esAbono: false,
-  },
-  {
-    operacion: "852146",
-    tipo: "Abono",
-    monto: "+$31,321.00",
-    fecha: "24/12/2026",
-    comercio: "NA",
-    concepto: "NA",
-    esAbono: true,
-  },
-];
+import { ModalDetalleAbono, ModalDetalleGasto } from "../modals/ModalGeneral";
 
 interface AdminContextType {
   centroActivo: string;
   centroId:number;
 }
+interface movimientoSelec {
+  movimiento:string;
+  estatus:boolean;
+}
+interface selectCliente {
+  concepto: string;
+  estatus:boolean;
+  fechaMovimiento: string;
+  idMovimiento: string;
+  monto_formateado: string;
+  nombreNegocio: string;
+  tipoMovimiento: string;
+}
+
+interface DetalleGastos{
+  Fecha:string;
+  comprobante:string;
+  concepto:string;
+  idMovimiento:string;
+  nombreNegocio:string;
+  precio:string;
+  tipoMovimiento:string;
+}
 
 export const AdminHistorial: React.FC = () => {
   const { centroActivo, centroId } = useOutletContext<AdminContextType>();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isLoadingTable, setIsLoadingTable] = useState(false);
+  const [tarjetahabientes, setTarjetahabientes] = useState<any[]>([]);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [idMovimiento, setIdMovimiento] = useState("");
+  const [totalRegistros, setTotalRegistros] = useState(1);
+  const [selectedClient, setSelectedClient] = useState<selectCliente>({
+    concepto: "",
+    estatus: false,
+    fechaMovimiento: "",
+    idMovimiento: "",
+    monto_formateado: "",
+    nombreNegocio: "",
+    tipoMovimiento: "",
+  });
+  const [detalleClienteSelecionado, setDetalleClienteSelecionado] = useState<DetalleGastos>({
+    Fecha:'',
+    comprobante:'',
+    concepto:'',
+    idMovimiento:'',
+    nombreNegocio:'',
+    precio:'',
+    tipoMovimiento:'',
+  });
+  const [ seleccionMovimiento, setSeleccionMovimiento ] = useState<movimientoSelec>({movimiento:'', estatus:true})
+  const [showModalDetalleAbono, setShowModalDetalleAbono] = useState(false);
+  const [showModalDetalleGasto, setShowModalDetalleGasto] = useState(false);
+  const [showEditaModalGasto, setShowEditaModalGasto] = useState(false);
+  const [showEditaModalAbono, setShowEditaModalAbono] = useState(false);
+  const [idMovimientoEdicion, setIdMovimientoEdicion] = useState<string>('')
+
+  const [paginaActual, setPaginaActual] = useState(1);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+   const limitePorPagina = 15; // Cantidad de filas exactas por pantalla según tu diseño
+
+
+  useEffect(()=>{
+    cargarDatosPaginados();
+  },[paginaActual, centroActivo])
+
+  // 🔄 EFFECT: Se ejecuta al cargar la página y cada vez que cambia 'paginaActual'
+  const cargarDatosPaginados = async () => {
+    setIsLoadingTable(true);
+    try {
+      // Hacemos la consulta parametrizada al Backend pasando la página actual
+      const response = await api.get(
+        `/admin/cargaHistorico?idCentroN=${centroId}&page=${paginaActual}&limit=${limitePorPagina}&idMovimiento=${idMovimiento}`,
+      );
+      console.log(response.data);
+
+      if (response.data.status === 200) {
+        const { tarjetahabientes, paginacion } =
+          response.data.data;
+
+        setTarjetahabientes(tarjetahabientes);
+        setTotalPaginas(paginacion.totalPaginas);
+        setTotalRegistros(paginacion.totalRegistros);
+
+         console.log(tarjetahabientes)
+        // Seleccionamos automáticamente el primer cliente de la nueva página por estética
+        if (tarjetahabientes.length > 0) {
+          setSelectedClient(tarjetahabientes);
+        }
+        return;
+      }
+      console.log("sesion caducada: ", response.data.status);
+      endSessionCockie();
+    } catch (error) {
+      console.error("Error cargando la tabla paginada de red:", error);
+    } finally {
+      setIsLoadingTable(false);
+    }
+  };
+
+  const ver = (mov:string, estatus:boolean) => {
+    setSeleccionMovimiento(
+      {
+        movimiento:mov,
+        estatus: estatus
+      }
+    )
+  }
+  const handleEditarGasto = () => {
+    console.log("Editando detalle de Gasto");
+    setShowModalDetalleGasto(false);
+    setIdMovimientoEdicion(detalleClienteSelecionado?.idMovimiento)
+    setShowEditaModalGasto(true)
+  };
+  const handleEditarAbono = () => {
+    console.log("Editando detalle de Abono");
+    setShowModalDetalleAbono(false);
+    setIdMovimientoEdicion(detalleClienteSelecionado?.idMovimiento)
+    setShowEditaModalAbono(true)
+  };
+  const handleDetalleMovimientoGasto = async ( id:number ) => {
+    try{
+      const response = await api.post("/admin/detalleGastos", { id });
+
+      if( response.data.status === 200 ){
+        // console.log(response.data.data.datos)
+       setShowModalDetalleGasto(true); 
+       setDetalleClienteSelecionado(response.data.data.datos)
+       return
+      }
+    
+      // console.log("sesion caducada: ", response.data.status);
+      // endSessionCockie();
+
+    } catch (error) {
+      console.error("Error cargando los detalles del tarjetahabiente:", error);
+    }
+  }
+
+  const handleDetalleMovimientoAbono = async ( id:number ) => {
+    try{
+      const response = await api.post("/admin/detalleGastos", { id });
+
+      if( response.data.status === 200 ){
+        // console.log('abono')
+        console.log(response.data.data)
+       setShowModalDetalleAbono(true); 
+       setDetalleClienteSelecionado(response.data.data.datos)
+       return
+      }
+    
+      // console.log("sesion caducada: ", response.data.status);
+      // endSessionCockie();
+
+    } catch (error) {
+      console.error("Error cargando los detalles del tarjetahabiente:", error);
+    }
+  }
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -57,7 +182,16 @@ export const AdminHistorial: React.FC = () => {
     navigate("/", { replace: true });
   };
 
+  const endSessionCockie = () => {
+    setIsLoggingOut(true);
+    // 2. Limpiamos el estado global en el Frontend de React
+    logout();
+    // 3. Redirigimos al Login borrando el historial de navegación
+    navigate("/", { replace: true });
+  };
+
   return (
+    <>
     <div className="flex flex-col gap-4 w-full h-full pr-6">
       <div className="flex flex-col w-full pt-8">
         <div className="top-bar-user-historial">
@@ -173,37 +307,137 @@ export const AdminHistorial: React.FC = () => {
       </div>
 
       <section className="table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Operación</th>
-              <th>Tipo</th>
-              <th>Monto</th>
-              <th>Fecha</th>
-              <th>Comercio</th>
-              <th>Concepto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {mockHistorialGeneral.map((mov, idx) => (
-              <tr key={idx}>
-                <td className="font-mono text-[#00E5FF] font-bold">
-                  {mov.operacion}
-                </td>
-                <td className="text-slate-300 font-semibold">{mov.tipo}</td>
-                <td
-                  className={`font-mono font-bold ${mov.esAbono ? "text-emerald-400" : "text-white"}`}
-                >
-                  {mov.monto}
-                </td>
-                <td className="text-slate-400">{mov.fecha}</td>
-                <td className="font-bold text-slate-200">{mov.comercio}</td>
-                <td className="text-slate-300">{mov.concepto}</td>
+        {isLoadingTable ? (
+          <div className="flex-1 flex items-center justify-center">
+            <span className="spinner" />
+          </div>
+          ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Operación</th>
+                <th>Tipo</th>
+                <th>Monto</th>
+                <th>Fecha</th>
+                <th>Comercio</th>
+                <th>Concepto</th>
+                <th></th>
+                <th className="w-[0px]">Detalle</th>
+                <th></th>
+                <th className="w-[0px]">Eliminar</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {tarjetahabientes.map((mov, idx) => (
+                <tr 
+                key={idx}
+                onClick={()=>ver(mov.idMovimiento, mov.estatus)}
+                className={`group ${seleccionMovimiento.movimiento === mov.idMovimiento ? "selected" : ""}`}
+                >
+                  <td className={`font-mono rounded-tl-full rounded-bl-full font-bold 
+                  ${mov.tipoMovimiento === 'I' ? mov.estatus ? "text-(--VerdeNeon)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)"  : mov.estatus ? "text-(--GrisLight)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth) " }`}
+                  >{mov.idMovimiento}
+                  </td>
+                  <td className={`font-semibold 
+                    ${mov.tipoMovimiento === 'I' ? mov.estatus ? "text-(--VerdeNeon)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)"  : mov.estatus ? "text-(--GrisLight)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth) " }`}
+                  >{mov.tipoMovimiento === 'I'? 'Abono':'Compra'}</td>
+                  <td
+                    className={`font-mono 
+                    ${mov.tipoMovimiento === 'I' ? mov.estatus ? "text-(--VerdeNeon)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)"  : mov.estatus ? "text-(--GrisLight)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth) " }`}
+                  >
+                    {mov.monto_formateado}
+                  </td>
+
+                  <td className={`
+                    ${mov.tipoMovimiento === 'I' ? mov.estatus ? "text-(--VerdeNeon)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)"  : mov.estatus ? "text-(--GrisLight)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth) " }`}
+                  >{mov.fechaMovimiento}</td> 
+                  <td className={`font-bold 
+                    ${mov.tipoMovimiento === 'I' ? mov.estatus ? "text-(--VerdeNeon)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)"  : mov.estatus ? "text-(--GrisLight)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth) " }`}
+                    >{mov.nombreNegocio}</td>
+                  <td className={`rounded-tr-full rounded-br-full 
+                    ${mov.tipoMovimiento === 'I' ? mov.estatus ? "text-(--VerdeNeon)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)"  : mov.estatus ? "text-(--GrisLight)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth) " }`}
+                  >{mov.concepto}</td>
+                  
+                  <td className="w-3 p-0 bg-(--fondo)! [.selected>&]:bg-(--fondo)!"></td>
+                  <td className="rounded-tl-full rounded-bl-full rounded-tr-full rounded-br-full ">
+                    <div className="flex justify-center gap-2 ">
+                      <button 
+                        type="button"  
+                        onClick={mov.monto_formateado.charAt(0) === "+" ? (()=>{handleDetalleMovimientoAbono(mov.idMovimiento)}): (()=>{handleDetalleMovimientoGasto(mov.idMovimiento)}) }
+                        className="action-icon-btn" 
+                        title="Agregar gasto">
+                        <span>
+                          <svg width="16" height="10" viewBox="0 0 16 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7.94531 9.96094C7.17188 9.96094 6.43945 9.86719 5.74805 9.67969C5.05664 9.49219 4.41602 9.24414 3.82617 8.93555C3.23633 8.62695 2.70508 8.28711 2.23242 7.91602C1.76367 7.54102 1.36133 7.16797 1.02539 6.79688C0.693359 6.42188 0.439453 6.07422 0.263672 5.75391C0.0878906 5.43359 0 5.17578 0 4.98047C0 4.78125 0.0878906 4.52344 0.263672 4.20703C0.439453 3.88672 0.693359 3.53906 1.02539 3.16406C1.36133 2.78906 1.76367 2.41602 2.23242 2.04492C2.70508 1.67383 3.23633 1.33398 3.82617 1.02539C4.41602 0.716797 5.05664 0.46875 5.74805 0.28125C6.43945 0.09375 7.17188 0 7.94531 0C8.72656 0 9.46289 0.09375 10.1543 0.28125C10.8496 0.46875 11.4922 0.716797 12.082 1.02539C12.6719 1.33398 13.2012 1.67383 13.6699 2.04492C14.1387 2.41602 14.5371 2.78906 14.8652 3.16406C15.1973 3.53906 15.4492 3.88672 15.6211 4.20703C15.7969 4.52344 15.8848 4.78125 15.8848 4.98047C15.8848 5.17578 15.7969 5.43359 15.6211 5.75391C15.4492 6.07422 15.1973 6.42188 14.8652 6.79688C14.5371 7.16797 14.1387 7.54102 13.6699 7.91602C13.2051 8.28711 12.6777 8.62695 12.0879 8.93555C11.498 9.24414 10.8555 9.49219 10.1602 9.67969C9.46484 9.86719 8.72656 9.96094 7.94531 9.96094ZM7.94531 8.25586C8.39453 8.25586 8.81641 8.17188 9.21094 8.00391C9.60938 7.83203 9.95898 7.5957 10.2598 7.29492C10.5605 6.99414 10.7949 6.64648 10.9629 6.25195C11.1348 5.85742 11.2207 5.43359 11.2207 4.98047C11.2207 4.52734 11.1348 4.10352 10.9629 3.70898C10.7949 3.31445 10.5605 2.9668 10.2598 2.66602C9.95898 2.36523 9.60938 2.13086 9.21094 1.96289C8.81641 1.79102 8.39453 1.70508 7.94531 1.70508C7.49219 1.70508 7.06836 1.79102 6.67383 1.96289C6.2793 2.13086 5.93164 2.36523 5.63086 2.66602C5.33008 2.9668 5.09375 3.31445 4.92188 3.70898C4.75391 4.10352 4.66992 4.52734 4.66992 4.98047C4.66992 5.43359 4.75391 5.85742 4.92188 6.25195C5.09375 6.64648 5.33008 6.99414 5.63086 7.29492C5.93164 7.5957 6.2793 7.83203 6.67383 8.00391C7.06836 8.17188 7.49219 8.25586 7.94531 8.25586ZM7.94531 6.17578C7.61328 6.17578 7.33008 6.06055 7.0957 5.83008C6.86523 5.5957 6.75 5.3125 6.75 4.98047C6.75 4.64844 6.86523 4.36719 7.0957 4.13672C7.33008 3.90234 7.61328 3.78516 7.94531 3.78516C8.27344 3.78516 8.55469 3.90234 8.78906 4.13672C9.02344 4.36719 9.14062 4.64844 9.14062 4.98047C9.14062 5.3125 9.02344 5.5957 8.78906 5.83008C8.55469 6.06055 8.27344 6.17578 7.94531 6.17578Z" fill="white"/>
+                          </svg>
+                        </span>
+                      </button>
+                    </div>
+                  </td>
+                  <td className="w-3 p-0 bg-(--fondo)! [.selected>&]:bg-(--fondo)!"></td>
+
+                  <td className="rounded-tl-full rounded-bl-full rounded-tr-full rounded-br-full ">
+                    { mov.estatus !== true ? 
+                      <div className="flex justify-center gap-2 ">
+                        <button type="button" className="action-icon-btn" title="Agregar gasto">
+                          <span>
+                            <svg width="13" height="15" viewBox="0 0 13 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M6.15234 14.9639C5.30469 14.9639 4.50716 14.8044 3.75977 14.4854C3.01693 14.1663 2.36296 13.7243 1.79785 13.1592C1.2373 12.5941 0.797526 11.9401 0.478516 11.1973C0.159505 10.4544 0 9.6569 0 8.80469C0 8.59505 0.0729167 8.41732 0.21875 8.27148C0.369141 8.12109 0.546875 8.0459 0.751953 8.0459C0.966146 8.0459 1.14616 8.12109 1.29199 8.27148C1.44238 8.41732 1.51758 8.59505 1.51758 8.80469C1.51758 9.44271 1.63607 10.042 1.87305 10.6025C2.11458 11.1631 2.44727 11.6553 2.87109 12.0791C3.29948 12.5029 3.79395 12.8356 4.35449 13.0771C4.91504 13.3187 5.51432 13.4395 6.15234 13.4395C6.79492 13.4395 7.39421 13.3187 7.9502 13.0771C8.51074 12.8356 9.00293 12.5029 9.42676 12.0791C9.85514 11.6553 10.1878 11.1631 10.4248 10.6025C10.6663 10.042 10.7871 9.44271 10.7871 8.80469C10.7871 8.16667 10.6663 7.56738 10.4248 7.00684C10.1878 6.44629 9.85514 5.9541 9.42676 5.53027C9.00293 5.10189 8.51074 4.76921 7.9502 4.53223C7.39421 4.29069 6.79492 4.16992 6.15234 4.16992C5.88802 4.16992 5.62826 4.19271 5.37305 4.23828C5.1224 4.2793 4.8763 4.3431 4.63477 4.42969C4.48438 4.48438 4.32943 4.49121 4.16992 4.4502C4.01497 4.40918 3.88281 4.32715 3.77344 4.2041C3.66406 4.08105 3.6071 3.92155 3.60254 3.72559C3.60254 3.52051 3.66406 3.35872 3.78711 3.24023C3.91016 3.12174 4.04004 3.03743 4.17676 2.9873C4.4821 2.88249 4.80111 2.80046 5.13379 2.74121C5.46647 2.68197 5.80599 2.65234 6.15234 2.65234C7.00456 2.65234 7.80208 2.81185 8.54492 3.13086C9.28776 3.44987 9.93945 3.89193 10.5 4.45703C11.0651 5.02214 11.5072 5.67611 11.8262 6.41895C12.1452 7.16178 12.3047 7.95703 12.3047 8.80469C12.3047 9.6569 12.1452 10.4544 11.8262 11.1973C11.5072 11.9401 11.0651 12.5941 10.5 13.1592C9.93945 13.7243 9.28776 14.1663 8.54492 14.4854C7.80208 14.8044 7.00456 14.9639 6.15234 14.9639ZM4.44336 3.58887L6.84277 5.96777C6.91113 6.03158 6.96354 6.10677 7 6.19336C7.03646 6.27539 7.05469 6.36654 7.05469 6.4668C7.05469 6.67643 6.98177 6.85417 6.83594 7C6.69466 7.14128 6.52148 7.21191 6.31641 7.21191C6.11589 7.21191 5.94271 7.14355 5.79688 7.00684L2.99414 4.17676C2.91667 4.09928 2.85742 4.01497 2.81641 3.92383C2.77995 3.82812 2.76172 3.72786 2.76172 3.62305C2.76172 3.41341 2.83919 3.22884 2.99414 3.06934L5.79688 0.225586C5.94271 0.0751953 6.11589 0 6.31641 0C6.52604 0 6.7015 0.0751953 6.84277 0.225586C6.98405 0.371419 7.05469 0.549154 7.05469 0.758789C7.05469 0.859049 7.03646 0.952474 7 1.03906C6.96354 1.12109 6.91341 1.19629 6.84961 1.26465L4.44336 3.58887Z" fill="#D9D9D9"/>
+                            </svg>
+                          </span>
+                        </button>
+                      </div>
+                    :                
+                        <div className="flex justify-center gap-2 ">
+                          <button type="button" 
+                          className="action-icon-btn-trash" 
+                          title="Historial"
+                          >
+                            <span>
+                              <svg width="14" height="16" viewBox="0 0 14 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M4.64844 13.3096C4.79427 13.3096 4.91276 13.2663 5.00391 13.1797C5.09505 13.0931 5.13835 12.9792 5.13379 12.8379L4.91504 5.40039C4.91504 5.25911 4.86719 5.14746 4.77148 5.06543C4.68034 4.97884 4.56413 4.93555 4.42285 4.93555C4.27246 4.93555 4.15169 4.97884 4.06055 5.06543C3.97396 5.15202 3.93294 5.26595 3.9375 5.40723L4.14258 12.8379C4.15169 12.9837 4.19954 13.0999 4.28613 13.1865C4.37728 13.2686 4.49805 13.3096 4.64844 13.3096ZM6.74023 13.3096C6.89062 13.3096 7.01139 13.2686 7.10254 13.1865C7.19824 13.0999 7.24609 12.986 7.24609 12.8447V5.40723C7.24609 5.26595 7.19824 5.15202 7.10254 5.06543C7.01139 4.97884 6.89062 4.93555 6.74023 4.93555C6.5944 4.93555 6.47363 4.97884 6.37793 5.06543C6.28678 5.15202 6.24121 5.26595 6.24121 5.40723V12.8447C6.24121 12.986 6.28678 13.0999 6.37793 13.1865C6.47363 13.2686 6.5944 13.3096 6.74023 13.3096ZM8.83887 13.3096C8.98926 13.3096 9.10775 13.2686 9.19434 13.1865C9.28548 13.1045 9.33333 12.9883 9.33789 12.8379L9.54297 5.40723C9.54753 5.26595 9.50423 5.15202 9.41309 5.06543C9.3265 4.97884 9.20801 4.93555 9.05762 4.93555C8.9209 4.93555 8.80469 4.97884 8.70898 5.06543C8.61784 5.14746 8.56999 5.26139 8.56543 5.40723L8.35352 12.8379C8.34896 12.9837 8.38997 13.0999 8.47656 13.1865C8.56771 13.2686 8.68848 13.3096 8.83887 13.3096ZM3.63672 3.14453V1.66797C3.63672 1.14388 3.79395 0.736003 4.1084 0.444336C4.42741 0.148112 4.86947 0 5.43457 0H8.03223C8.59733 0 9.03939 0.148112 9.3584 0.444336C9.67741 0.736003 9.83691 1.14388 9.83691 1.66797V3.14453H8.57227V1.72949C8.57227 1.55632 8.5153 1.41732 8.40137 1.3125C8.28743 1.20312 8.13477 1.14844 7.94336 1.14844H5.52344C5.33659 1.14844 5.1862 1.20312 5.07227 1.3125C4.95833 1.41732 4.90137 1.55632 4.90137 1.72949V3.14453H3.63672ZM0.608398 3.89648C0.439779 3.89648 0.296224 3.83724 0.177734 3.71875C0.0592448 3.60026 0 3.45671 0 3.28809C0 3.12402 0.0592448 2.98503 0.177734 2.87109C0.296224 2.7526 0.439779 2.69336 0.608398 2.69336H12.8789C13.0475 2.69336 13.1888 2.75033 13.3027 2.86426C13.4212 2.97819 13.4805 3.11947 13.4805 3.28809C13.4805 3.45671 13.4212 3.60026 13.3027 3.71875C13.1888 3.83724 13.0475 3.89648 12.8789 3.89648H0.608398ZM3.60254 15.4287C3.07389 15.4287 2.65007 15.2806 2.33105 14.9844C2.0166 14.6882 1.84798 14.2757 1.8252 13.7471L1.34668 3.75293H12.1338L11.6621 13.7402C11.6393 14.2689 11.4684 14.6813 11.1494 14.9775C10.8304 15.2783 10.4089 15.4287 9.88477 15.4287H3.60254Z" 
+                                />
+                              </svg>
+                            </span>
+                          </button>
+                        </div>
+                    }
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </section>
     </div>
+      {/* MODALES */}
+      <div className="flex flex-col items-center justify-center text-white">
+        <ModalDetalleAbono 
+          isOpen={showModalDetalleAbono}
+          estatus={seleccionMovimiento.estatus}
+          monto={detalleClienteSelecionado?.precio}
+          nomComercio = {detalleClienteSelecionado?.nombreNegocio}
+          concepto = {detalleClienteSelecionado?.concepto}
+          fechaCargo = {detalleClienteSelecionado?.Fecha}
+          noOperacion = {detalleClienteSelecionado?.idMovimiento}
+          comprobante = {detalleClienteSelecionado?.comprobante}              
+          onCancel={() => {setShowModalDetalleAbono(false)}}
+          onEdit={() => {handleEditarAbono()}}
+        />
+
+        <ModalDetalleGasto 
+          isOpen={showModalDetalleGasto}
+          estatus={seleccionMovimiento.estatus}
+          monto={detalleClienteSelecionado?.precio}
+          nomComercio = {detalleClienteSelecionado?.nombreNegocio}
+          concepto = {detalleClienteSelecionado?.concepto}
+          fechaCargo = {detalleClienteSelecionado?.Fecha}
+          noOperacion = {detalleClienteSelecionado?.idMovimiento}
+          comprobante = {detalleClienteSelecionado?.comprobante}              
+          onCancel={() => {setShowModalDetalleGasto(false)}}
+          onEdit={() => {handleEditarGasto()}}
+        />
+      </div>
+    </>
   );
 };

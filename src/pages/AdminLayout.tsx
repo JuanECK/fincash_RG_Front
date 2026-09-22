@@ -41,15 +41,18 @@ export const AdminLayout: React.FC = () => {
 
     
     const cargaCentroNegocios = async () => {
+      console.log({Centro:centroActivo})
       const { idUsuario } = user!
       setIdUsuario(idUsuario)
       const response = await api.post("/admin/centroNegocios", { idUsuario });
 
-      // console.log(response.data)
+      console.log(response.data.data.cNegocios[0]?.centroNegocio)
 
       if( response.data.status === 200 ){
         setCNegocio(response.data.data.cNegocios)
-        setCentroActivo(response.data.data.cNegocios[0]?.centroNegocio)
+        if(centroActivo === ''){
+          setCentroActivo(response.data.data.cNegocios[0]?.centroNegocio)
+        }
       }
 
     }
@@ -59,7 +62,7 @@ export const AdminLayout: React.FC = () => {
       try {
         
         const response = await api.post("/admin/editaCentroNegocio", { data:{idCentroN:centroId} });
-        console.log(response)
+        // console.log(response)
         if( response.data.status === 200){
           setShowModalEditaCentroNegocio(true)
           getDataInput(response.data.data.resultado)
@@ -86,12 +89,13 @@ export const AdminLayout: React.FC = () => {
     }
     
   };
-  const handleCloseModalEdicion = (resultado: '1' | '0') => {
+  const handleCloseModalEdicion = (resultado: '1' | '0', centroN:string) => {
     setShowModalEditaCentroNegocio(false); // Cerramos el modal
 
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
       cargaCentroNegocios();
+      setCentroActivo(centroN)
       console.log('actualizamos centro de negocios')
     }
     
@@ -206,6 +210,7 @@ export const AdminLayout: React.FC = () => {
       {showModalEditaCentroNegocio && (
         <ModalAgregarCentroNegocios
           title={'Editar Centro de Negocios'}
+          tipo={'edicion'}
           usuarioData={dataInputs}
           onCancel={()=> setShowModalAgregaCentroNegocio(false)}
           onClose={handleCloseModalEdicion}

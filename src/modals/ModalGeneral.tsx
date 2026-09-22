@@ -65,15 +65,16 @@ interface ModalAgregarProps {
   CentroN?: number;
   usuarioData?: any;
   noCliente?: number;
+  tipo?:string;
   onCancel?: () => void;
   onConfirm?: (data: any) => void;
-  onClose?: (resultado: "1" | "0") => void;
+  onClose?: (resultado: "1" | "0", centroN:'') => void;
   centroNegocio?: string;
 }
 
 interface DetalleGastoProps {
   isOpen: boolean;
-  // id:number;
+  estatus?:boolean;
   monto?: string;
   nomComercio?: string;
   concepto?: string;
@@ -335,7 +336,7 @@ export const ModalEditaTarjetahabiente: React.FC<ModalAgregarProps> = ({
       if (response.data.status === 200) {
         // console.log(response);
         // console.log('respuesta exitosa')
-        onClose!("1");
+        onClose!("1", '');
         return;
       } else {
         setErrorMessage(response.data.error.message);
@@ -346,7 +347,7 @@ export const ModalEditaTarjetahabiente: React.FC<ModalAgregarProps> = ({
   };
 
   const handledClosed = () => {
-    onClose!("0");
+    onClose!("0", '');
   };
 
   return (
@@ -1511,7 +1512,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
         if (response.data.status === 200) {
           console.log(response);
           console.log("respuesta exitosa");
-          onClose!("1");
+          onClose!("1",'');
           return;
         } else {
           setErrorMessage(response.data.error.message);
@@ -1530,7 +1531,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
         );
         if (response.data.status === 200) {
           console.log(response);
-          onClose!("1");
+          onClose!("1",'');
         } else {
           setErrorMessage(response.data.error.message);
         }
@@ -1541,7 +1542,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
   };
 
   const handledClosed = () => {
-    onClose!("0");
+    onClose!("0",'');
   };
 
   return (
@@ -2002,6 +2003,7 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
   // isOpen,
   title,
   usuarioData,
+  tipo,
   onClose,
 
   // =================================================
@@ -2015,6 +2017,7 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
     telefonoTitular: usuarioData?.telefonoTitular || "",
     porcentaje: usuarioData?.porcentaje || null,
     idCentroN: usuarioData?.idCentroN || null,
+    tipo:tipo || ''
   });
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -2028,21 +2031,26 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const data = titularForm;
+    // const data = titularForm;
+    const data = {
+      ...titularForm,
+      idCentroN: Number.parseFloat(titularForm.idCentroN as string)
+    }
+    // console.log({data});
     const response = await api.post("/admin/agregaCentroNegocios", { data });
-    console.log(response);
+    // console.log(response);
 
     if (response.data.status === 200) {
       // console.log('respuesta exitosa')
-      console.log(response);
-      onClose!("1");
+      // console.log(response);
+      onClose!("1", titularForm.nombreCentro);
     } else {
       setErrorMessage(response.data.error.message);
     }
   };
 
   const handledClosed = () => {
-    onClose!("0");
+    onClose!("0", '');
   };
 
   return (
@@ -2100,6 +2108,7 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
               type="text"
               name="nombreTitular"
               autoComplete={"off"}
+              value={titularForm.nombreTitular}
               onInvalid={(e) =>
                 (e.target as HTMLInputElement).setCustomValidity(
                   "Campo obligatorio.",
@@ -2118,6 +2127,7 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
               name="correoTitular"
               placeholder="*Correo"
               autoComplete={"off"}
+              value={titularForm.correoTitular}
               onInvalid={(e) =>
                 (e.target as HTMLInputElement).setCustomValidity(
                   "Campo obligatorio.",
@@ -2134,6 +2144,7 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
               type="tel"
               name="telefonoTitular"
               autoComplete={"off"}
+              value={titularForm.telefonoTitular}
               onInvalid={(e) =>
                 (e.target as HTMLInputElement).setCustomValidity(
                   "Campo obligatorio.",
@@ -2157,6 +2168,7 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
               type="text"
               name="nombreCentro"
               autoComplete={"off"}
+              value={titularForm.nombreCentro}
               onInvalid={(e) =>
                 (e.target as HTMLInputElement).setCustomValidity(
                   "Campo obligatorio.",
@@ -2174,6 +2186,7 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
               type="text"
               name="porcentaje"
               autoComplete={"off"}
+              value={titularForm.porcentaje}
               onInvalid={(e) =>
                 (e.target as HTMLInputElement).setCustomValidity(
                   "Campo obligatorio.",
@@ -2227,7 +2240,7 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
 
 export const ModalDetalleGasto: React.FC<DetalleGastoProps> = ({
   isOpen,
-  // id,
+  estatus = true,
   monto,
   nomComercio,
   concepto,
@@ -2326,6 +2339,7 @@ export const ModalDetalleGasto: React.FC<DetalleGastoProps> = ({
           </button>
 
           {/* Botones de acción inferiores */}
+        {estatus && (
           <div className="flex justify-end gap-3 mt-7">
             <button
               type="button"
@@ -2335,6 +2349,7 @@ export const ModalDetalleGasto: React.FC<DetalleGastoProps> = ({
               Editar
             </button>
           </div>
+        )}
         </div>
       </div>
     </div>
@@ -2342,7 +2357,7 @@ export const ModalDetalleGasto: React.FC<DetalleGastoProps> = ({
 };
 export const ModalDetalleAbono : React.FC<DetalleGastoProps> = ({
   isOpen,
-  // id,
+  estatus = true,
   monto,
   nomComercio,
   concepto,
@@ -2441,6 +2456,7 @@ export const ModalDetalleAbono : React.FC<DetalleGastoProps> = ({
           </button>
 
           {/* Botones de acción inferiores */}
+          {estatus && (
           <div className="flex justify-end gap-3 mt-7">
             <button
               type="button"
@@ -2450,6 +2466,7 @@ export const ModalDetalleAbono : React.FC<DetalleGastoProps> = ({
               Editar
             </button>
           </div>
+          )}
         </div>
       </div>
     </div>

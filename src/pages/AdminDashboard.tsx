@@ -191,10 +191,10 @@ export const AdminDashboard: React.FC = () => {
       
       if(busquedaInput.noTarjeta === null && busquedaInput.busquedaCliente === null ) return
 
-      console.log('pase el filtro')
+      // console.log('pase el filtro')
       if(tipoDatoBusqueda){
        const longitud = String(busquedaInput.noTarjeta).length;
-       console.log(longitud)
+      //  console.log(longitud)
         if(longitud !== 16){
           setErrorMessage("Para buscar por número de tarjeta debe de tener 16 dígitos");
           return
@@ -206,7 +206,7 @@ export const AdminDashboard: React.FC = () => {
       IdCentroN:centroId
     }
 
-    console.log({data:datosCompletos})
+    // console.log({data:datosCompletos})
     const response = await api.post("/admin/busqueda", {
       data: datosCompletos,
     });
@@ -265,7 +265,7 @@ export const AdminDashboard: React.FC = () => {
       const response = await api.post("/admin/detalleGastos", { id });
 
       if( response.data.status === 200 ){
-        console.log(response.data.data.datos)
+        // console.log(response.data.data.datos)
        setShowModalDetalleGasto(true); 
        setDetalleClienteSelecionado(response.data.data.datos)
        return
@@ -283,8 +283,8 @@ export const AdminDashboard: React.FC = () => {
       const response = await api.post("/admin/detalleGastos", { id });
 
       if( response.data.status === 200 ){
-        console.log('abono')
-        console.log(response.data.data.datos)
+        // console.log('abono')
+        // console.log(response.data.data.datos)
        setShowModalDetalleAbono(true); 
        setDetalleClienteSelecionado(response.data.data.datos)
        return
@@ -322,14 +322,14 @@ export const AdminDashboard: React.FC = () => {
     //   noTarjeta: 0,
     // });
     // setDetallesCliente(null);
-    console.log(resultado)
+    // console.log(resultado)
     
     setShowModalAviso(false);
     
     if (resultado === '0') {
       console.log('registro Restaurado: ',selectedClient.idTarjeta )
       const response = await api.post("/admin/restauraTarjeta", { data:{idTarjeta:selectedClient.idTarjeta} });
-      console.log(response)
+      // console.log(response)
       if( response.data.status === 200 ){
         setBtnTarjetahabientes(true)
         setDetallesCliente(null)
@@ -385,7 +385,7 @@ export const AdminDashboard: React.FC = () => {
     // ===========================================================================================================================================
     try {
       const response = await api.post("/admin/editaTarjetahabiente", { data:dataInputs });
-      console.log(response)
+      // console.log(response)
       // setbtnGuardarTarjetahabientes(true);
       setSelectedClient({
         Cliente: "",
@@ -431,7 +431,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
 
       try {
         const response = await api.post("/admin/detalleCliente", { idTarjeta });
-        console.log(response.data.data)
+        // console.log(response.data.data)
   
         if (response.data.status === 200) {
           if( estatus !== true ){
@@ -506,7 +506,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
   const cargosGlobales = async(idCentroN:number) =>{
     const response = await api.post("/admin/cargosGlobales", { data:{idCentroN:idCentroN} });
     if(response.data.status === 200){
-      console.log(response.data)
+      // console.log(response.data)
       setMontoTotalCargos(response.data.data.MontoTotalCargos);
     }
   }
@@ -523,7 +523,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
       const response = await api.get(
         `/admin/targetahabientes?idCentroN=${centroId}&page=${paginaActual}&limit=${limitePorPagina}`,
       );
-      console.log(response.data);
+      // console.log(response.data);
 
       if (response.data.status === 200) {
         const { tarjetahabientes, paginacion, MontoTotalCargos } =
@@ -535,7 +535,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
         setMontoTotalCargos(MontoTotalCargos);
 
 
-        // console.log(tarjetahabientes)
+        console.log(tarjetahabientes)
         // if (tarjetahabientes && tarjetahabientes.length > 0) {
         //   setSelectedClient(tarjetahabientes[0]); // 👈 Asegúrate de que tenga el [0]
         // } else {
