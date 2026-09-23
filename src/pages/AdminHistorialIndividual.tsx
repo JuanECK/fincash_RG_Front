@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext, useLocation } from "react-router-dom";
 import { api, logoutSession } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { Modal, ModalAbono, ModalDetalleAbono, ModalDetalleGasto, ModalGasto } from "../modals/ModalGeneral";
@@ -32,9 +32,22 @@ interface DetalleGastos{
   precio:string;
   tipoMovimiento:string;
 }
+interface InputTarjetahabiente {
+  apellidoP: string;
+  apellidoM: string;
+  correo: string;
+  fechaVencimiento: string;
+  idCentroN: number | null;
+  idTarjeta: number | null;
+  noTarjeta: string;
+  nombreCliente: string;
+  telefono: string;
+  noCliente: string;
+}
 
-export const AdminHistorial: React.FC = () => {
+export const AdminHistorialIndividual: React.FC = () => {
   const { centroActivo, centroId, idUsuario } = useOutletContext<AdminContextType>();
+  const location = useLocation();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
   const [tarjetahabientes, setTarjetahabientes] = useState<any[]>([]);
@@ -83,46 +96,68 @@ export const AdminHistorial: React.FC = () => {
   const [paginaActual, setPaginaActual] = useState(1);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+    const [dataInputs, getDataInput] = useState<InputTarjetahabiente>({
+    apellidoP: "",   
+    apellidoM: "",      
+    correo: "",           
+    fechaVencimiento:"",
+    idCentroN: null,
+    idTarjeta:null,          
+    noTarjeta: "",       
+    nombreCliente: "",  
+    telefono: "",
+    noCliente:""
+    
+  });
+   const { data } = location.state || {};
+  //  if(!location.state){
+  // }else{
+    //  }
+    
+  useEffect(()=>{
+    console.log(data)
+      getDataInput(data)
+  },[data])
 
    const limitePorPagina = 15; // Cantidad de filas exactas por pantalla según tu diseño
 
   const busquedaRef = useRef<HTMLInputElement>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+
   useEffect(()=>{
     cargarDatosPaginados();
-  },[paginaActual, centroActivo])
+  },[data, centroActivo])
 
   // 🔄 EFFECT: Se ejecuta al cargar la página y cada vez que cambia 'paginaActual'
   const cargarDatosPaginados = async () => {
     setIsLoadingTable(true);
     try {
       // Hacemos la consulta parametrizada al Backend pasando la página actual
-      const response = await api.get(
-        `/admin/cargaHistorico?idCentroN=${centroId}&page=${paginaActual}&limit=${limitePorPagina}&idMovimiento=${idMovimiento}`,
-      );
+      // const response = await api.get(
+      //   `/admin/cargaHistorico?idCentroN=${centroId}&page=${paginaActual}&limit=${limitePorPagina}&idMovimiento=${idMovimiento}`,
+      // );
+      console.log({ idTarjeta:dataInputs.idTarjeta})
+      const response = await api.post("/admin/cargaHistoricoIndividualTarjeta", { idTarjeta:data.idTarjeta, idMovimiento:data.idMovimiento});
       console.log(response.data);
 
-      if (response.data.status === 200) {
-        const { tarjetahabientes, paginacion } =
-          response.data.data;
+      // if (response.data.status === 200) {
+      //   const { historico, usuario } = response.data.data;
 
-        setTarjetahabientes(tarjetahabientes);
-        setTotalPaginas(paginacion.totalPaginas);
-        setTotalRegistros(paginacion.totalRegistros);
+      //   setTarjetahabientes(historico);
+      //   // setTotalPaginas(paginacion.totalPaginas);
+      //   // setTotalRegistros(paginacion.totalRegistros);
 
-         console.log(tarjetahabientes)
-        // Seleccionamos automáticamente el primer cliente de la nueva página por estética
-        if (tarjetahabientes.length > 0) {
-          setSelectedClient(tarjetahabientes);
-          setBusquedaPaginacion(false)
-        }else{
-          setBusquedaPaginacion(true)
-        }
-        return;
-      }
-      console.log("sesion caducada: ", response.data.status);
-      endSessionCockie();
+      //   if (tarjetahabientes.length > 0) {
+      //     setSelectedClient(historico);
+      //     setBusquedaPaginacion(false)
+      //   }else{
+      //     setBusquedaPaginacion(true)
+      //   }
+      //   return;
+      // }
+      // console.log("sesion caducada: ", response.data.status);
+      // endSessionCockie();
     } catch (error) {
       console.error("Error cargando la tabla paginada de red:", error);
     } finally {
@@ -440,6 +475,14 @@ export const AdminHistorial: React.FC = () => {
     return parseFloat(numeroLimpio);
   }
 
+   const formatDigitoBancarios = (tarjeta: string): string => {
+    return tarjeta
+      .replace(/\D/g, "")       // 1. Elimina todo lo que no sea número
+      .slice(0, 16)             // 2. Limita a un máximo de 16 dígitos
+      .replace(/(.{4})/g, "$1 ") // 3. Agrupa de 4 en 4 dejando un espacio
+      .trim();                  // 4. Quita el espacio final sobrante
+  };
+
   const formatearParaInput = (fechaString: string): string => {
     // 1. Dividir el string "19/09/2026" por sus barras diagonales
     const [dia, mes, anio] = fechaString.split('/');
@@ -459,7 +502,7 @@ export const AdminHistorial: React.FC = () => {
   return (
     <>
     <div className="flex flex-col gap-4 w-full h-full pr-6">
-      <div className="flex flex-col w-full pt-8">
+      <div className="flex flex-col w-full pt-2">
         <div className="top-bar-user-historial">
           {/* <span className="w-2 h-2 rounded-full bg-emerald-400"></span> */}
             <div className="top-bar-user">
@@ -485,7 +528,7 @@ export const AdminHistorial: React.FC = () => {
 
             {/* Botones de Control de Sesión Superior */}
             <div className="flex items-center gap-3">
-                <div className="flex flex-col items-center px-6 py-2">
+                <div className="flex flex-col items-center px-6 py-1">
                     <div className="px-6 pb-1 pt-2 bg-(--MediumBlue) rounded-xl items-center">
                     <button
                         type="button"
@@ -540,11 +583,33 @@ export const AdminHistorial: React.FC = () => {
 
 
         {/* Tarjeta de Métricas Globales del Centro */}
-        <section className="pt-6 pb-0 flex flex-col">
+        <section className="pt-1 pb-0 flex flex-col">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-white tracking-tight pl-3">
-              Historial de operaciones {centroActivo}
-            </h1>
+            <div>
+              <h1 className="text-3xl font-bold text-white tracking-tight pl-4">
+                Historial individual de operaciones
+              </h1>
+              <div className="flex flex-col justify-start pl-4 pt-2">
+                <div className="flex justify-start">
+                  <p className="text-sm  text-write  font-[200] text-[16px]">
+                    Tarjethabiente:{" "}
+                    <span className="font-bold ">{`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}</span>
+                  </p>
+                </div>
+                <div className="flex justify-start">
+                  <p className="text-sm  text-write  font-[200] text-[16px]">
+                    Cta:{" "}
+                    <span className="font-bold ">{dataInputs?.noTarjeta}</span>
+                  </p>
+                </div>
+                <div className="flex justify-start">
+                  <p className="text-sm  text-write  font-[200] text-[16px]">
+                    No. Cliente:{" "}
+                    <span className="font-bold ">{dataInputs?.noCliente}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
 
               <div className="relative max-w-xl pl-3">
                 <input
@@ -882,11 +947,11 @@ export const AdminHistorial: React.FC = () => {
           <ModalGasto
             // isOpen={showModalGasto}
             title={!idMovimientoEdicion ? 'Agregar Gasto' : 'Edición de Gasto' }
-            // tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
-            // cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
-            // noCliente={dataInputs?.noCliente} 
+            tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
+            cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
+            noCliente={dataInputs?.noCliente} 
             noOperacion={idMovimientoEdicion}
-            // idTarjeta1={dataInputs?.idTarjeta}
+            idTarjeta1={dataInputs?.idTarjeta}
             idUsuario1={Number.parseInt(idUsuario as string, 10) }
             idMovimientoVinculado1={limpiarANumero(idMovimientoEdicion)}
             // -----
@@ -913,12 +978,12 @@ export const AdminHistorial: React.FC = () => {
             </svg>
           }
           title={!idMovimientoEdicion ? 'Abono' : 'Edición de Abono' }
-          // tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
-          // cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
-          // noCliente={dataInputs?.noCliente} 
+          tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
+          cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
+          noCliente={dataInputs?.noCliente} 
           noOperacion={idMovimientoEdicion}
           concepto = {user?.nombreCompleto}
-          // idTarjeta1={dataInputs?.idTarjeta}
+          idTarjeta1={dataInputs?.idTarjeta}
           idUsuario1={Number.parseInt(idUsuario as string, 10) }
           idMovimientoVinculado1={limpiarANumero(idMovimientoEdicion)}
           // -------

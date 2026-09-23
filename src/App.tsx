@@ -7,6 +7,7 @@ import { AdminLayout } from './pages/AdminLayout';        // 🔄 Sub-página 1
 import { AdminDashboard } from './pages/AdminDashboard';  // 🔄 Sub-página 1
 import { AdminHistorial } from './pages/AdminHistorial';  // 🔄 Sub-página 2
 import { UserHome } from './pages/UserDashboard';
+import { AdminHistorialIndividual } from './pages/AdminHistorialIndividual';
 
 // =============================================================================================
 // PREVENIMOS QUE EL USUARIO SE SALGA AL LOGIN PULSANDO LA FLECHA DE RETROCESO DE CHROME
@@ -55,6 +56,7 @@ function App() {
             {/* Sub-rutas inyectadas dentro del <Outlet /> sin refrescar la página */}
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="historial" element={<AdminHistorial />} />
+            <Route path="historialIndividual" element={<AdminHistorialIndividual />} />
             
             {/* Redirección interna por si entran a /admin a secas */}
             <Route index element={<Navigate to="dashboard" replace />} />
