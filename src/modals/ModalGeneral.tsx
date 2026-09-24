@@ -12,6 +12,7 @@ interface ModalProps {
   textConfirm?: string;
   noCliente?: string;
   idTarjeta?: number | null;
+  idMovimiento?: number | null;
   // onCancel: () => void;
   onClose?: (resultado: "1" | "0") => void;
 }
@@ -42,6 +43,7 @@ interface ModalContrasenaProps {
   concepto?: string;
   fechaCargo?: string;
   comprobante?: string;
+  bajaPorEdicion1?:number | null;
   onClose?: (resultado: "1" | "0") => void;
   // onConfirm: () => void;
   // onCancel: () => void;
@@ -111,6 +113,7 @@ export const Modal: React.FC<ModalProps> = ({
   textConfirm,
   noCliente,
   idTarjeta,
+  idMovimiento,
   onClose,
 }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -134,6 +137,12 @@ export const Modal: React.FC<ModalProps> = ({
       case 3:
         handledCerrarAviso();
         break;
+        case 4:
+        handleSubmit("/admin/eliminaGastoAbono", {idMovimiento:idMovimiento})
+        break
+        // case 5:
+        // handleSubmit("/admin/eliminaAbono")
+        // break
     }
   };
 
@@ -788,6 +797,7 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
   concepto,
   fechaCargo,
   comprobante,
+  bajaPorEdicion1,
   onClose,
 }) => {
       const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -802,6 +812,7 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
     fechaMovimiento: fechaCargo || "",
     idUsuario: idUsuario1,
     idMovimientoVinculado: idMovimientoVinculado1,
+    bajaPorEdicion: bajaPorEdicion1 
   });
 
    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1069,6 +1080,7 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
   concepto,
   fechaCargo,
   comprobante,
+  bajaPorEdicion1,
   onClose,
   // onConfirm,
   // onCancel,
@@ -1084,6 +1096,7 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
     fechaMovimiento: fechaCargo || "",
     idUsuario: idUsuario1,
     idMovimientoVinculado: idMovimientoVinculado1,
+    bajaPorEdicion:bajaPorEdicion1 
   });
 
     const [errorMessage, setErrorMessage] = useState<string | null>(null);

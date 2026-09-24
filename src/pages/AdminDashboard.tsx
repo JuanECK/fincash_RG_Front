@@ -446,7 +446,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
           getDataInput(response.data.data.usuario);
           // setbtnGuardarTarjetahabientes(true);
           setVarRandom(idCliente);
-          // console.log({targetaSelecionada:response.data});
+          console.log({targetaSelecionada:response.data});
           // console.log(selectedClient.idTarjeta)
           // console.log(item.idTarjeta)
           return;
@@ -766,14 +766,20 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
   }
 
   useEffect(() => {
+    // console.log(detalleClienteSelecionado)
   const tieneDatos = dataInputs && Object.keys(dataInputs).length > 0;
 
   // Solo navega si los datos cambiaron PORQUE se presionó el botón de navegar
   if (clicEnBotonNavegacion.current && tieneDatos) {
     clicEnBotonNavegacion.current = false; // Apagamos la bandera de inmediato
     
+    const data = {
+      ...dataInputs,
+      idMovimiento:""
+    }
+
     navigate('/admin/historialIndividual', {
-      state: { data: dataInputs }
+      state: { data: data }
     });
   }
 }, [dataInputs]); // Escucha el cambio de datos
@@ -1799,7 +1805,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
             concepto={detalleClienteSelecionado?.concepto}
             fechaCargo={formatearParaInput(detalleClienteSelecionado?.Fecha)}
             comprobante={detalleClienteSelecionado?.comprobante}
-
+            bajaPorEdicion1={0}
 
             textConfirm="Agregar"
             textCancel="Cancelar"
@@ -1828,6 +1834,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
           monto={limpiarANumero( detalleClienteSelecionado?.precio )}
           fechaCargo={formatearParaInput(detalleClienteSelecionado?.Fecha)}
           comprobante={detalleClienteSelecionado?.comprobante}
+          bajaPorEdicion1={0}
           textConfirm="Agregar"
           textCancel="Cancelar"
           // onConfirm={() => setShowModalAbono(false)}

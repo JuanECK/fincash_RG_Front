@@ -52,7 +52,7 @@ export const AdminHistorialIndividual: React.FC = () => {
   const [isLoadingTable, setIsLoadingTable] = useState(false);
   const [tarjetahabientes, setTarjetahabientes] = useState<any[]>([]);
   const [totalPaginas, setTotalPaginas] = useState(1);
-  const [idMovimiento, setIdMovimiento] = useState("");
+  // const [idMovimiento, setIdMovimiento] = useState("");
   const [totalRegistros, setTotalRegistros] = useState(1);
   const [selectedClient, setSelectedClient] = useState<selectCliente>({
     concepto: "",
@@ -78,11 +78,15 @@ export const AdminHistorialIndividual: React.FC = () => {
   const [showEditaModalGasto, setShowEditaModalGasto] = useState(false);
   
   const [showEditaModalAbono, setShowEditaModalAbono] = useState(false);
-  const [showModalAbono, setShowModalAbono] = useState(false);
-  const [showModalGasto, setShowModalGasto] = useState(false);
+  // const [showModalAbono, setShowModalAbono] = useState(false);
+  // const [showModalGasto, setShowModalGasto] = useState(false);
   const [idMovimientoEdicion, setIdMovimientoEdicion] = useState<string>('')
-  const [showModalEliminaTarjeta, setShowModalEliminaTarjeta] = useState(false);
-  const [showModalAviso, setShowModalAviso] = useState(false);
+  const [showModalEliminaGasto, setShowModalEliminaGasto] = useState(false);
+  const [showModalEliminaAbono, setShowModalEliminaAbono] = useState(false);
+  const [showRestaurarGasto, setShowRestaurarGasto] = useState(false);
+  const [showRestaurarAbono, setShowRestaurarAbono] = useState(false);
+  const [showAgregaModalGasto, setShowAgregaModalGasto] = useState(false);
+  const [showAgregaModalAbono, setShowAgregaModalAbono] = useState(false);
 
   const [busquedaPaginacion, setBusquedaPaginacion] = useState(false);
   const [tipoDatoBusqueda, setTipoDatoBusqueda] = useState(false)
@@ -134,30 +138,31 @@ export const AdminHistorialIndividual: React.FC = () => {
     setIsLoadingTable(true);
     try {
       // Hacemos la consulta parametrizada al Backend pasando la página actual
-      // const response = await api.get(
-      //   `/admin/cargaHistorico?idCentroN=${centroId}&page=${paginaActual}&limit=${limitePorPagina}&idMovimiento=${idMovimiento}`,
-      // );
-      console.log({ idTarjeta:dataInputs.idTarjeta})
-      const response = await api.post("/admin/cargaHistoricoIndividualTarjeta", { idTarjeta:data.idTarjeta, idMovimiento:data.idMovimiento});
+      // console.log({datosUsuario:data})
+      // console.log({Datos:{centroId:centroId, idTarjeta:data?.idTarjeta, idMovimiento:data}})
+      const response = await api.get(
+        `/admin/cargaHistoricoIndividualTarjeta?idCentroN=${centroId}&idTarjeta=${data.idTarjeta}&idMovimiento=${data.idMovimiento}&page=${paginaActual}&limit=${limitePorPagina}`,
+      );
+      // const response = await api.post("/admin/cargaHistoricoIndividualTarjeta", { idTarjeta:data.idTarjeta, idMovimiento:data.idMovimiento});
       console.log(response.data);
 
-      // if (response.data.status === 200) {
-      //   const { historico, usuario } = response.data.data;
+      if (response.data.status === 200) {
+        const { tarjetahabientes, paginacion } = response.data.data;
 
-      //   setTarjetahabientes(historico);
-      //   // setTotalPaginas(paginacion.totalPaginas);
-      //   // setTotalRegistros(paginacion.totalRegistros);
+        setTarjetahabientes(tarjetahabientes);
+        setTotalPaginas(paginacion.totalPaginas);
+        setTotalRegistros(paginacion.totalRegistros);
 
-      //   if (tarjetahabientes.length > 0) {
-      //     setSelectedClient(historico);
-      //     setBusquedaPaginacion(false)
-      //   }else{
-      //     setBusquedaPaginacion(true)
-      //   }
-      //   return;
-      // }
-      // console.log("sesion caducada: ", response.data.status);
-      // endSessionCockie();
+        if (tarjetahabientes.length > 0) {
+          setSelectedClient(tarjetahabientes);
+          setBusquedaPaginacion(false)
+        }else{
+          setBusquedaPaginacion(true)
+        }
+        return;
+      }
+      console.log("sesion caducada: ", response.data.status);
+      endSessionCockie();
     } catch (error) {
       console.error("Error cargando la tabla paginada de red:", error);
     } finally {
@@ -381,8 +386,24 @@ export const AdminHistorialIndividual: React.FC = () => {
     }
   }
 
-  const handleEliminaTarjeta = (resultado: '1' | '0') => {
-    setShowModalEliminaTarjeta(false); // Cerramos el modal
+  const handleEliminaGasto = (resultado: '1' | '0') => {
+    setShowModalEliminaGasto(false); // Cerramos el modal
+
+    // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
+    if (resultado === '1') {
+      console.log('Se Elimino la tarjeta correctamente' )
+      // setBtnTarjetahabientes(true)
+      // setDetallesCliente(null)
+       if(busquedaPaginacion){
+          busquedaRef.current!.value = "";
+          setBusquedaPaginacion(false)
+        }
+      cargarDatosPaginados();
+    }
+    
+  };
+  const handleEliminaAbono = (resultado: '1' | '0') => {
+    setShowModalEliminaAbono(false); // Cerramos el modal
 
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
@@ -398,49 +419,72 @@ export const AdminHistorialIndividual: React.FC = () => {
     
   };
 
-  const handledEliminarTarjeta = async (resultado: '1' | '0') => {
-    setShowModalAviso(false);
+  const handledRestaurarGasto = async (resultado: '1' | '0') => {
+    setShowRestaurarGasto(false);
     
     if (resultado === '0') {
-      // console.log('registro Restaurado: ',selectedClient.idTarjeta )
-      // const response = await api.post("/admin/restauraTarjeta", { data:{idTarjeta:selectedClient.idTarjeta} });
-      // console.log(response)
-      // if( response.data.status === 200 ){
-      //   // setBtnTarjetahabientes(true)
-      //   // setDetallesCliente(null)
-      //   if(busquedaPaginacion){
-      //     busquedaRef.current!.value = "";
-      //     setBusquedaPaginacion(false)
-      //   }
-      //   cargarDatosPaginados();
-      // }
+      console.log('registro Restaurado: ',limpiarANumero(seleccionMovimiento.movimiento) )
+      const response = await api.post("/admin/reactivaGastoAbono", { data:{idMovimiento:limpiarANumero(seleccionMovimiento.movimiento)} });
+      console.log(response)
+      if( response.data.status === 200 ){
+        console.log('respuesta bien 2')
+        // setBtnTarjetahabientes(true)
+        // setDetallesCliente(null)
+        // if(busquedaPaginacion){
+          //   busquedaRef.current!.value = "";
+          //   setBusquedaPaginacion(false)
+          // }
+          cargarDatosPaginados();
+        }
+      }
+    };
+    const handledRestaurarAbono = async (resultado: '1' | '0') => {
+      setShowRestaurarAbono(false);
+      
+      if (resultado === '0') {
+        console.log('registro Restaurado: ',limpiarANumero(seleccionMovimiento.movimiento) )
+        const response = await api.post("/admin/reactivaGastoAbono", { data:{idMovimiento:limpiarANumero(seleccionMovimiento.movimiento)} });
+        console.log(response)
+        if( response.data.status === 200 ){
+          console.log('respuesta bien 1')
+          // setBtnTarjetahabientes(true)
+        // setDetallesCliente(null)
+        // if(busquedaPaginacion){
+        //   busquedaRef.current!.value = "";
+        //   setBusquedaPaginacion(false)
+        // }
+        cargarDatosPaginados();
+      }
     }
   };
 
     const handleAgregaAbono = (resultado: '1' | '0') => {
     
-    showModalAbono ? ( setShowModalAbono(false) ):( setShowEditaModalAbono(false) )
+    showEditaModalAbono ? ( setShowEditaModalAbono(false) ):( setShowAgregaModalAbono(false) )
         
         setIdMovimientoEdicion('')
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
       console.log('Se agrego gasto correctamente' )
       // detalleClienteGastoAbono(dataInputs?.idTarjeta)
-  
+      cargarDatosPaginados()
+      
 
     }
     
   };
 
     const handleAgregaGasto = (resultado: '1' | '0') => {
-    setShowModalGasto(false); 
-        setShowEditaModalGasto(false)
-        setIdMovimientoEdicion('')
+      showEditaModalGasto ? (setShowEditaModalGasto(false)):(setShowAgregaModalGasto(false))
+    // setShowModalGasto(false); 
+    //     setShowEditaModalGasto(false)
+    //     setIdMovimientoEdicion('')
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
       console.log('Se agrego gasto correctamente' )
       // cargosGlobales(centroId)
       // detalleClienteGastoAbono(dataInputs?.idTarjeta)
+      cargarDatosPaginados()
 
     }
     
@@ -528,7 +572,7 @@ export const AdminHistorialIndividual: React.FC = () => {
 
             {/* Botones de Control de Sesión Superior */}
             <div className="flex items-center gap-3">
-                <div className="flex flex-col items-center px-6 py-1">
+                <div className="flex flex-col items-center pl-2 py-1">
                     <div className="px-6 pb-1 pt-2 bg-(--MediumBlue) rounded-xl items-center">
                     <button
                         type="button"
@@ -549,7 +593,7 @@ export const AdminHistorialIndividual: React.FC = () => {
                         </svg>
                     </button>
                     </div>
-                    <label htmlFor="inicio" className="font-light text-[12px]">
+                    <label htmlFor="inicio" className="font-light text-(--blanco) text-[12px]">
                     Inicio
                     </label>
                 </div>
@@ -574,8 +618,43 @@ export const AdminHistorialIndividual: React.FC = () => {
                         </svg>
                     </button>
                     </div>
-                    <label htmlFor="inicio" className="font-light text-[12px]">
+                    <label htmlFor="inicio" className="font-light text-(--blanco) text-[12px]">
                     Salir
+                    </label>
+                </div>
+{/* ========================================================================================================= */}
+                <div className="flex flex-col items-center pl-7 py-1">
+                    <div className="px-6 pb-1 pt-2 bg-(--MediumBlue) rounded-xl items-center">
+                    <button
+                        type="button"
+                        className="cursor-pointer"
+                        onClick={()=>setShowAgregaModalAbono(true)}
+                    >
+                      <svg width="27" height="12" viewBox="0 0 27 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M0 6.68359V4.88574H7.71094V6.68359H0ZM2.95312 9.54785V2.02148H4.75098V9.54785H2.95312Z" fill="#02FFA2"/>
+                      <path d="M13.6914 9.55664H15.3662C15.5667 9.55664 15.7285 9.49512 15.8516 9.37207C15.9746 9.24902 16.0361 9.0918 16.0361 8.90039V7.63574C16.0361 7.43978 15.9746 7.28255 15.8516 7.16406C15.7285 7.04102 15.5667 6.97949 15.3662 6.97949H13.6914C13.4909 6.97949 13.3291 7.04102 13.2061 7.16406C13.083 7.28255 13.0215 7.43978 13.0215 7.63574V8.90039C13.0215 9.0918 13.083 9.24902 13.2061 9.37207C13.3291 9.49512 13.4909 9.55664 13.6914 9.55664ZM10.8955 4.30664H18.9277H26.96V2.75488H10.8955V4.30664ZM13.042 11.6758C12.3265 11.6758 11.7887 11.498 11.4287 11.1426C11.0732 10.7917 10.8955 10.2653 10.8955 9.56348V2.11914C10.8955 1.41276 11.0732 0.884115 11.4287 0.533203C11.7887 0.177734 12.3265 0 13.042 0H24.8135C25.529 0 26.0645 0.177734 26.4199 0.533203C26.7799 0.888672 26.96 1.41732 26.96 2.11914V9.56348C26.96 10.2653 26.7799 10.7917 26.4199 11.1426C26.0645 11.498 25.529 11.6758 24.8135 11.6758H13.042Z" fill="#02FFA2"/>
+                      </svg>
+                    </button>
+                    </div>
+                    <label htmlFor="inicio" className="font-light text-(--blanco) text-[12px]">
+                    Abono
+                    </label>
+                </div>
+                <div className="flex flex-col items-center">
+                    <div className="px-6 pb-1 pt-2 bg-(--MediumBlue) rounded-xl items-center">
+                    <button
+                        type="button"
+                        className="bg-(--MediumBlue) transition-all cursor-pointer"
+                        onClick={()=>setShowAgregaModalGasto(true)}
+                    >
+                      <svg width="26" height="16" viewBox="0 0 26 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M22.8828 2.44043C23.5938 2.44043 24.1292 2.61816 24.4893 2.97363C24.8493 3.32454 25.0293 3.85319 25.0293 4.55957V11.6348C25.0293 12.3411 24.8584 12.8698 24.5166 13.2207C24.1748 13.5762 23.6986 13.7539 23.0879 13.7539H16.7168C16.9036 13.4303 17.0495 13.084 17.1543 12.7148C17.2591 12.3457 17.3115 11.9629 17.3115 11.5664C17.3115 10.9603 17.1953 10.3929 16.9629 9.86426C16.735 9.33105 16.4183 8.86165 16.0127 8.45605C15.6071 8.05046 15.1377 7.73372 14.6045 7.50586C14.0713 7.27344 13.5016 7.15723 12.8955 7.15723V4.55957C12.8955 3.85319 13.0732 3.32454 13.4287 2.97363C13.7887 2.61816 14.3265 2.44043 15.042 2.44043H22.8828ZM16.2656 2.70703C16.2656 2.20117 16.3841 1.74544 16.6211 1.33984C16.8581 0.929688 17.1794 0.603841 17.585 0.362305C17.9906 0.120768 18.4486 0 18.959 0C19.4694 0 19.9274 0.120768 20.333 0.362305C20.7432 0.603841 21.0667 0.929688 21.3037 1.33984C21.5407 1.74544 21.6592 2.20117 21.6592 2.70703L20.5586 2.71387C20.5586 2.38574 20.4902 2.09635 20.3535 1.8457C20.2214 1.59505 20.0345 1.39909 19.793 1.25781C19.556 1.11198 19.278 1.03906 18.959 1.03906C18.6445 1.03906 18.3665 1.11198 18.125 1.25781C17.888 1.39909 17.7012 1.59505 17.5645 1.8457C17.4323 2.09635 17.3662 2.38574 17.3662 2.71387L16.2656 2.70703ZM12.9023 15.0391C12.4284 15.0391 11.9818 14.9479 11.5625 14.7656C11.1432 14.5879 10.7741 14.3395 10.4551 14.0205C10.1361 13.7015 9.88542 13.3324 9.70312 12.9131C9.52083 12.4938 9.42969 12.0449 9.42969 11.5664C9.42969 11.0879 9.52083 10.6413 9.70312 10.2266C9.88542 9.80729 10.1361 9.43815 10.4551 9.11914C10.7741 8.79557 11.1432 8.54492 11.5625 8.36719C11.9818 8.1849 12.4284 8.09375 12.9023 8.09375C13.3809 8.09375 13.8298 8.1849 14.249 8.36719C14.6683 8.54492 15.0374 8.79329 15.3564 9.1123C15.6755 9.43132 15.9238 9.80046 16.1016 10.2197C16.2839 10.639 16.375 11.0879 16.375 11.5664C16.375 12.0404 16.2839 12.487 16.1016 12.9062C15.9193 13.3255 15.6663 13.6947 15.3428 14.0137C15.0238 14.3327 14.6546 14.5833 14.2354 14.7656C13.8161 14.9479 13.3717 15.0391 12.9023 15.0391ZM11.1387 11.9834H14.6523C14.7663 11.9834 14.8643 11.9401 14.9463 11.8535C15.0329 11.7715 15.0762 11.6758 15.0762 11.5664C15.0762 11.457 15.0329 11.3613 14.9463 11.2793C14.8643 11.1927 14.7663 11.1494 14.6523 11.1494H11.1387C11.0247 11.1494 10.9268 11.1927 10.8447 11.2793C10.7627 11.3613 10.7217 11.457 10.7217 11.5664C10.7217 11.6758 10.7627 11.7715 10.8447 11.8535C10.9268 11.9401 11.0247 11.9834 11.1387 11.9834Z" fill="#02FFA2"/>
+                      <path d="M0 8.72949V6.93164H7.71094V8.72949H0ZM2.95312 11.5938V4.06738H4.75098V11.5938H2.95312Z" fill="#02FFA2"/>
+                      </svg>
+                    </button>
+                    </div>
+                    <label htmlFor="inicio" className="font-light text-(--blanco) text-[12px]">
+                    Gasto
                     </label>
                 </div>
             </div>
@@ -745,10 +824,10 @@ export const AdminHistorialIndividual: React.FC = () => {
 
                   <td className={`
                     ${mov.tipoMovimiento === 'I' ? mov.estatus ? "text-(--VerdeNeon)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)"  : mov.estatus ? "text-(--GrisLight)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth) " }`}
-                  >{mov.fechaMovimiento}</td> 
+                  >{mov.fecha}</td> 
                   <td className={`font-bold 
                     ${mov.tipoMovimiento === 'I' ? mov.estatus ? "text-(--VerdeNeon)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)"  : mov.estatus ? "text-(--GrisLight)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth) " }`}
-                    >{mov.nombreNegocio}</td>
+                    >{mov.comercio}</td>
                   <td className={`rounded-tr-full rounded-br-full 
                     ${mov.tipoMovimiento === 'I' ? mov.estatus ? "text-(--VerdeNeon)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)"  : mov.estatus ? "text-(--GrisLight)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth) " }`}
                   >{mov.concepto}</td>
@@ -778,7 +857,7 @@ export const AdminHistorialIndividual: React.FC = () => {
                         type="button" 
                         className="action-icon-btn" 
                         title="Agregar gasto"
-                        onClick={()=> setShowModalAviso(true)}
+                        onClick={mov.monto_formateado.charAt(0) === "+" ? (()=> setShowRestaurarAbono(true)) : ( () => setShowRestaurarGasto(true)) }
                         >
                           <span>
                             <svg width="13" height="15" viewBox="0 0 13 15" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -792,7 +871,7 @@ export const AdminHistorialIndividual: React.FC = () => {
                           <button type="button" 
                           className="action-icon-btn-trash" 
                           title="Historial"
-                          onClick={()=> setShowModalEliminaTarjeta(true)}
+                          onClick={mov.monto_formateado.charAt(0) === "+" ? (()=> setShowModalEliminaAbono(true)) : ( () => setShowModalEliminaGasto(true)) }
                           >
                             <span>
                               <svg width="14" height="16" viewBox="0 0 14 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -920,26 +999,50 @@ export const AdminHistorialIndividual: React.FC = () => {
           onCancel={() => {setShowModalDetalleGasto(false)}}
           onEdit={() => {handleEditarGasto()}}
         />
-        { showModalEliminaTarjeta && (
+        { showModalEliminaGasto && (
           <Modal
-            tipo={2}
-            title="Eliminar tarjeta"
-            description="Eliminar una tarjeta afecta el balance general del Centro de Negocios al que pertenece, porque todas las operaciones (abonos y cargos) también serán eliminadas."
+            tipo={4}
+            title="Eliminar gasto"
+            description="Eliminar un gasto afectará el balance general de la plataforma"
             textCancel="No eliminar"
             textConfirm="Eliminar"
+            idMovimiento={limpiarANumero(seleccionMovimiento.movimiento)}
             // idTarjeta={dataInputs?.idTarjeta}
-            onClose={handleEliminaTarjeta}
+            onClose={handleEliminaGasto}
           />
         ) }
-          { showModalAviso && (
+        { showModalEliminaAbono && (
+          <Modal
+            tipo={4}
+            title="Eliminar abono"
+            description="Eliminar un gasto afectará el balance general de la plataforma"
+            textCancel="No eliminar"
+            textConfirm="Eliminar"
+            idMovimiento={limpiarANumero(seleccionMovimiento.movimiento)}
+            // idTarjeta={dataInputs?.idTarjeta}
+            onClose={handleEliminaAbono}
+          />
+        ) }
+          { showRestaurarGasto && (
           <Modal
             tipo={3}
-            title="Estás por restaurar un registro"
-            description="Restaurar un registro afectará los balances generales de la plataforma"
+            title="Recuperar gasto"
+            description="Recuperar un gasto afectará el balance general de la plataforma"
             textCancel="Restaurar el registro"
             textConfirm="No restaurar el registro"
             // onCancel={() => setShowModalAviso(false)}
-            onClose={handledEliminarTarjeta}
+            onClose={handledRestaurarGasto}
+          />
+        ) }
+          { showRestaurarAbono && (
+          <Modal
+            tipo={3}
+            title="Recuperar abono"
+            description="Recuperar un abono afectará el balance general de la plataforma "
+            textCancel="Restaurar el registro"
+            textConfirm="No restaurar el registro"
+            // onCancel={() => setShowModalAviso(false)}
+            onClose={handledRestaurarAbono}
           />
         ) }
 
@@ -960,7 +1063,7 @@ export const AdminHistorialIndividual: React.FC = () => {
             concepto={detalleClienteSelecionado?.concepto}
             fechaCargo={formatearParaInput(detalleClienteSelecionado?.Fecha)}
             comprobante={detalleClienteSelecionado?.comprobante}
-
+            bajaPorEdicion1={0}
 
             textConfirm="Agregar"
             textCancel="Cancelar"
@@ -986,12 +1089,67 @@ export const AdminHistorialIndividual: React.FC = () => {
           idTarjeta1={dataInputs?.idTarjeta}
           idUsuario1={Number.parseInt(idUsuario as string, 10) }
           idMovimientoVinculado1={limpiarANumero(idMovimientoEdicion)}
+          bajaPorEdicion1={0}
           // -------
           monto={limpiarANumero( detalleClienteSelecionado?.precio )}
           fechaCargo={formatearParaInput(detalleClienteSelecionado?.Fecha)}
           comprobante={detalleClienteSelecionado?.comprobante}
           textConfirm="Agregar"
           textCancel="Cancelar"
+          onClose={handleAgregaAbono}
+        />)}
+
+
+        { showAgregaModalGasto && (
+          <ModalGasto
+            // isOpen={showModalGasto}
+            title={'Agregar Gasto'}
+            tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
+            cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
+            noCliente={dataInputs?.noCliente} 
+            noOperacion={idMovimientoEdicion}
+            idTarjeta1={dataInputs?.idTarjeta}
+            idUsuario1={Number.parseInt(idUsuario as string, 10) }
+            idMovimientoVinculado1={limpiarANumero(idMovimientoEdicion)}
+            // -----
+            // monto={limpiarANumero( detalleClienteSelecionado?.precio )}
+            // nomComercio={detalleClienteSelecionado?.nombreNegocio}
+            // concepto={detalleClienteSelecionado?.concepto}
+            // fechaCargo={formatearParaInput(detalleClienteSelecionado?.Fecha)}
+            // comprobante={detalleClienteSelecionado?.comprobante}
+            bajaPorEdicion1={0}
+
+            textConfirm="Agregar"
+            textCancel="Cancelar"
+            // onConfirm={() => setShowModalGasto(false)}
+            onClose={handleAgregaGasto} 
+          />
+        )}
+
+        { showAgregaModalAbono && ( 
+          <ModalAbono
+          icono={
+            <svg width="33" height="21" viewBox="0 0 33 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 19.2017V0.964355C0 0.671387 0.0895182 0.439453 0.268555 0.268555C0.447591 0.0895182 0.683594 0 0.976562 0H31.2622C31.5552 0 31.7871 0.0895182 31.958 0.268555C32.137 0.439453 32.2266 0.671387 32.2266 0.964355V19.2017C32.2266 19.4946 32.137 19.7306 31.958 19.9097C31.7871 20.0887 31.5552 20.1782 31.2622 20.1782H0.976562C0.683594 20.1782 0.447591 20.0887 0.268555 19.9097C0.0895182 19.7306 0 19.4946 0 19.2017ZM2.23389 17.1997C2.23389 17.6961 2.47803 17.9443 2.96631 17.9443H29.2603C29.7485 17.9443 29.9927 17.6961 29.9927 17.1997V2.97852C29.9927 2.4821 29.7485 2.23389 29.2603 2.23389H2.96631C2.47803 2.23389 2.23389 2.4821 2.23389 2.97852V17.1997ZM3.50342 16.3818V3.79639C3.50342 3.60107 3.60107 3.50342 3.79639 3.50342H13.3179C12.6831 4.15446 12.1867 5.04557 11.8286 6.17676C11.4705 7.2998 11.2915 8.59782 11.2915 10.0708C11.2915 11.5438 11.4705 12.8499 11.8286 13.9893C12.1948 15.1204 12.6994 16.0156 13.3423 16.6748H3.79639C3.60107 16.6748 3.50342 16.5771 3.50342 16.3818ZM12.7563 10.0708C12.7563 8.80127 12.8906 7.69043 13.1592 6.73828C13.4359 5.78613 13.8224 5.04557 14.3188 4.5166C14.8234 3.98763 15.4053 3.72314 16.0645 3.72314C16.748 3.72314 17.3462 3.98763 17.8589 4.5166C18.3797 5.04557 18.7826 5.78613 19.0674 6.73828C19.3522 7.69043 19.4946 8.80127 19.4946 10.0708C19.4946 11.3403 19.3522 12.4512 19.0674 13.4033C18.7826 14.3555 18.3797 15.1001 17.8589 15.6372C17.3462 16.1662 16.748 16.4307 16.0645 16.4307C15.4053 16.4307 14.8234 16.1662 14.3188 15.6372C13.8224 15.1001 13.4359 14.3555 13.1592 13.4033C12.8906 12.4512 12.7563 11.3403 12.7563 10.0708ZM18.8599 16.6748C19.5109 16.0156 20.0195 15.1204 20.3857 13.9893C20.7601 12.8499 20.9473 11.5438 20.9473 10.0708C20.9473 8.59782 20.7642 7.2998 20.3979 6.17676C20.0317 5.04557 19.5231 4.15446 18.8721 3.50342H28.4302C28.6255 3.50342 28.7231 3.60107 28.7231 3.79639V16.3818C28.7231 16.5771 28.6255 16.6748 28.4302 16.6748H18.8599Z" fill="#02FFA2"/>
+            </svg>
+          }
+          title={'Abono'}
+          tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
+          cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
+          noCliente={dataInputs?.noCliente} 
+          noOperacion={idMovimientoEdicion}
+          concepto = {user?.nombreCompleto}
+          idTarjeta1={dataInputs?.idTarjeta}
+          idUsuario1={Number.parseInt(idUsuario as string, 10) }
+          idMovimientoVinculado1={limpiarANumero(idMovimientoEdicion)}
+          // -------
+          // monto={limpiarANumero( detalleClienteSelecionado?.precio )}
+          // fechaCargo={formatearParaInput(detalleClienteSelecionado?.Fecha)}
+          // comprobante={detalleClienteSelecionado?.comprobante}
+          bajaPorEdicion1={0}
+          textConfirm="Agregar"
+          textCancel="Cancelar"
+          // onConfirm={() => setShowModalAbono(false)}
           onClose={handleAgregaAbono}
         />)}
         
