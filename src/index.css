@@ -283,3 +283,16 @@ body{
   background: #00E5FF;
 }
 
+/* ------------------------------------------------------- */
+/* 📎 COMDENEDOR DE CARGA DE ARCHIVO CUSTOM (FILE INPUT) */
+.file-upload-wrapper {
+  @apply border-2 border-dashed border-[#1a5f74] hover:border-[#00E5FF] rounded-xl p-4 text-center cursor-pointer transition-colors relative flex flex-col items-center justify-center gap-2;
+}
+
+.file-upload-wrapper.has-file {
+  @apply border-[#00E5FF] bg-[#008D96]/10;
+}
+
+.hidden-file-input {
+  @apply absolute inset-0 opacity-0 cursor-pointer w-full h-full;
+}

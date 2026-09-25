@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useOutletContext, useLocation } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { api, logoutSession } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { Modal, ModalAbono, ModalDetalleAbono, ModalDetalleGasto, ModalGasto } from "../modals/ModalGeneral";
@@ -32,26 +32,14 @@ interface DetalleGastos{
   precio:string;
   tipoMovimiento:string;
 }
-interface InputTarjetahabiente {
-  apellidoP: string;
-  apellidoM: string;
-  correo: string;
-  fechaVencimiento: string;
-  idCentroN: number | null;
-  idTarjeta: number | null;
-  noTarjeta: string;
-  nombreCliente: string;
-  telefono: string;
-  noCliente: string;
-}
 
-export const AdminHistorialIndividual: React.FC = () => {
+export const AdminHistorial: React.FC = () => {
   const { centroActivo, centroId, idUsuario } = useOutletContext<AdminContextType>();
-  const location = useLocation();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
   const [tarjetahabientes, setTarjetahabientes] = useState<any[]>([]);
   const [totalPaginas, setTotalPaginas] = useState(1);
+  const [idMovimiento, setIdMovimiento] = useState("");
   const [totalRegistros, setTotalRegistros] = useState(1);
   const [selectedClient, setSelectedClient] = useState<selectCliente>({
     concepto: "",
@@ -75,14 +63,13 @@ export const AdminHistorialIndividual: React.FC = () => {
   const [showModalDetalleAbono, setShowModalDetalleAbono] = useState(false);
   const [showModalDetalleGasto, setShowModalDetalleGasto] = useState(false);
   const [showEditaModalGasto, setShowEditaModalGasto] = useState(false);
+  
   const [showEditaModalAbono, setShowEditaModalAbono] = useState(false);
+  const [showModalAbono, setShowModalAbono] = useState(false);
+  const [showModalGasto, setShowModalGasto] = useState(false);
   const [idMovimientoEdicion, setIdMovimientoEdicion] = useState<string>('')
-  const [showModalEliminaGasto, setShowModalEliminaGasto] = useState(false);
-  const [showModalEliminaAbono, setShowModalEliminaAbono] = useState(false);
-  const [showRestaurarGasto, setShowRestaurarGasto] = useState(false);
-  const [showRestaurarAbono, setShowRestaurarAbono] = useState(false);
-  const [showAgregaModalGasto, setShowAgregaModalGasto] = useState(false);
-  const [showAgregaModalAbono, setShowAgregaModalAbono] = useState(false);
+  const [showModalEliminaTarjeta, setShowModalEliminaTarjeta] = useState(false);
+  const [showModalAviso, setShowModalAviso] = useState(false);
 
   const [busquedaPaginacion, setBusquedaPaginacion] = useState(false);
   const [tipoDatoBusqueda, setTipoDatoBusqueda] = useState(false)
@@ -93,46 +80,23 @@ export const AdminHistorialIndividual: React.FC = () => {
   const [paginaActual, setPaginaActual] = useState(1);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-    const [dataInputs, getDataInput] = useState<InputTarjetahabiente>({
-    apellidoP: "",   
-    apellidoM: "",      
-    correo: "",           
-    fechaVencimiento:"",
-    idCentroN: null,
-    idTarjeta:null,          
-    noTarjeta: "",       
-    nombreCliente: "",  
-    telefono: "",
-    noCliente:""
-    
-  });
-   const { data } = location.state || {};
-  //  if(!location.state){
-  // }else{
-    //  }
-    
-  useEffect(()=>{
-    console.log(data)
-      getDataInput(data)
-  },[data])
 
    const limitePorPagina = 15; // Cantidad de filas exactas por pantalla según tu diseño
 
   const busquedaRef = useRef<HTMLInputElement>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-
   useEffect(()=>{
     cargarDatosPaginados();
-  },[data, centroActivo])
+  },[paginaActual, centroActivo])
 
   // 🔄 EFFECT: Se ejecuta al cargar la página y cada vez que cambia 'paginaActual'
   const cargarDatosPaginados = async () => {
     setIsLoadingTable(true);
     try {
-      
+      // Hacemos la consulta parametrizada al Backend pasando la página actual
       const response = await api.get(
-        `/admin/cargaHistoricoIndividualTarjeta?idCentroN=${centroId}&idTarjeta=${data.idTarjeta}&idMovimiento=${data.idMovimiento}&page=${paginaActual}&limit=${limitePorPagina}`,
+        `/admin/cargaHistorico?idCentroN=${centroId}&page=${paginaActual}&limit=${limitePorPagina}&idMovimiento=${idMovimiento}`,
       );
       console.log(response.data);
 
@@ -143,6 +107,8 @@ export const AdminHistorialIndividual: React.FC = () => {
         setTotalPaginas(paginacion.totalPaginas);
         setTotalRegistros(paginacion.totalRegistros);
 
+         console.log(tarjetahabientes)
+        // Seleccionamos automáticamente el primer cliente de la nueva página por estética
         if (tarjetahabientes.length > 0) {
           setSelectedClient(tarjetahabientes);
           setBusquedaPaginacion(false)
@@ -252,7 +218,9 @@ export const AdminHistorialIndividual: React.FC = () => {
   }
 
   const handleBusquedaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // setTipoDatoBusqueda(false)
     const valorStr = limpiarANumero(e.target.value)
+
     setBusquedaInput((prev:any) => {
       // 1. Si es número y no supera los 16 dígitos, se guarda en noTarjeta
         setTipoDatoBusqueda(true)
@@ -273,8 +241,10 @@ export const AdminHistorialIndividual: React.FC = () => {
       );
     console.log(response.data.data.tarjetahabientes.length);
     if (response.data.data.tarjetahabientes.length !== 0) {
+      // console.log(response.data.data.resultado[0][0].TotalRegistros);
       setBusquedaPaginacion(true)
       setTarjetahabientes(response.data.data.tarjetahabientes)
+      // setTotalRegistros(response.data.data.paginacion);
       return
     } 
     setBusquedaPaginacion(false)
@@ -298,14 +268,12 @@ export const AdminHistorialIndividual: React.FC = () => {
     setIdMovimientoEdicion(detalleClienteSelecionado?.idMovimiento)
     setShowEditaModalGasto(true)
   };
-
   const handleEditarAbono = () => {
     console.log("Editando detalle de Abono");
     setShowModalDetalleAbono(false);
     setIdMovimientoEdicion(detalleClienteSelecionado?.idMovimiento)
     setShowEditaModalAbono(true)
   };
-
   const handleDetalleMovimientoGasto = async ( id:number ) => {
     try{
       const response = await api.post("/admin/detalleGastos", { id });
@@ -316,6 +284,10 @@ export const AdminHistorialIndividual: React.FC = () => {
        setDetalleClienteSelecionado(response.data.data.datos)
        return
       }
+    
+      // console.log("sesion caducada: ", response.data.status);
+      // endSessionCockie();
+
     } catch (error) {
       console.error("Error cargando los detalles del tarjetahabiente:", error);
     }
@@ -326,37 +298,29 @@ export const AdminHistorialIndividual: React.FC = () => {
       const response = await api.post("/admin/detalleGastos", { id });
 
       if( response.data.status === 200 ){
+        // console.log('abono')
         console.log(response.data.data)
        setShowModalDetalleAbono(true); 
        setDetalleClienteSelecionado(response.data.data.datos)
        return
       }
+    
+      // console.log("sesion caducada: ", response.data.status);
+      // endSessionCockie();
+
     } catch (error) {
       console.error("Error cargando los detalles del tarjetahabiente:", error);
     }
   }
 
-  const handleEliminaGasto = (resultado: '1' | '0') => {
-    setShowModalEliminaGasto(false); // Cerramos el modal
+  const handleEliminaTarjeta = (resultado: '1' | '0') => {
+    setShowModalEliminaTarjeta(false); // Cerramos el modal
 
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
       console.log('Se Elimino la tarjeta correctamente' )
-       if(busquedaPaginacion){
-          busquedaRef.current!.value = "";
-          setBusquedaPaginacion(false);
-          setBusquedaInput({idMovimiento:""});
-        }
-      cargarDatosPaginados();
-    }
-    
-  };
-  const handleEliminaAbono = (resultado: '1' | '0') => {
-    setShowModalEliminaAbono(false); // Cerramos el modal
-
-    // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
-    if (resultado === '1') {
-      console.log('Se Elimino la tarjeta correctamente' )
+      // setBtnTarjetahabientes(true)
+      // setDetallesCliente(null)
        if(busquedaPaginacion){
           busquedaRef.current!.value = "";
           setBusquedaInput({idMovimiento:""});
@@ -367,70 +331,57 @@ export const AdminHistorialIndividual: React.FC = () => {
     
   };
 
-  const handledRestaurarGasto = async (resultado: '1' | '0') => {
-    setShowRestaurarGasto(false);
+  const handledEliminarTarjeta = async (resultado: '1' | '0') => {
+    setShowModalAviso(false);
     
     if (resultado === '0') {
-      console.log('registro Restaurado: ',limpiarANumero(seleccionMovimiento.movimiento) )
-      const response = await api.post("/admin/reactivaGastoAbono", { data:{idMovimiento:limpiarANumero(seleccionMovimiento.movimiento)} });
-      console.log(response)
-      if( response.data.status === 200 ){
-        console.log('respuesta bien 2')
-        if(busquedaPaginacion){
-            busquedaRef.current!.value = "";
-            setBusquedaInput({idMovimiento:""})
-            setBusquedaPaginacion(false)
-          }
-          cargarDatosPaginados();
-        }
-      }
-    };
-    const handledRestaurarAbono = async (resultado: '1' | '0') => {
-      setShowRestaurarAbono(false);
-      
-      if (resultado === '0') {
-        console.log('registro Restaurado: ',limpiarANumero(seleccionMovimiento.movimiento) )
-        const response = await api.post("/admin/reactivaGastoAbono", { data:{idMovimiento:limpiarANumero(seleccionMovimiento.movimiento)} });
-        console.log(response)
-        if( response.data.status === 200 ){
-          console.log('respuesta bien 1')
+      // console.log('registro Restaurado: ',selectedClient.idTarjeta )
+      // const response = await api.post("/admin/restauraTarjeta", { data:{idTarjeta:selectedClient.idTarjeta} });
+      // console.log(response)
+      // if( response.data.status === 200 ){
+      //   // setBtnTarjetahabientes(true)
+      //   // setDetallesCliente(null)
         if(busquedaPaginacion){
           busquedaRef.current!.value = "";
-          setBusquedaInput({idMovimiento:""})
+          setBusquedaInput({idMovimiento:""});
           setBusquedaPaginacion(false)
         }
         cargarDatosPaginados();
-      }
+      // }
     }
   };
 
     const handleAgregaAbono = (resultado: '1' | '0') => {
     
-    showEditaModalAbono ? ( setShowEditaModalAbono(false) ):( setShowAgregaModalAbono(false) )
+    showModalAbono ? ( setShowModalAbono(false) ):( setShowEditaModalAbono(false) )
         
         setIdMovimientoEdicion('')
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
       console.log('Se agrego gasto correctamente' )
-      busquedaRef.current!.value = "";
-      setBusquedaInput({idMovimiento:""});
-      setBusquedaPaginacion(false)
-      cargarDatosPaginados()
-      
+      // detalleClienteGastoAbono(dataInputs?.idTarjeta)
+        busquedaRef.current!.value = "";
+        setBusquedaInput({idMovimiento:""});
+        setBusquedaPaginacion(false)
+        cargarDatosPaginados()
+
     }
     
   };
 
     const handleAgregaGasto = (resultado: '1' | '0') => {
-      showEditaModalGasto ? (setShowEditaModalGasto(false)):(setShowAgregaModalGasto(false))
+    setShowModalGasto(false); 
+        setShowEditaModalGasto(false)
+        setIdMovimientoEdicion('')
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
       console.log('Se agrego gasto correctamente' )
+      // cargosGlobales(centroId)
+      // detalleClienteGastoAbono(dataInputs?.idTarjeta)
       busquedaRef.current!.value = "";
-      setBusquedaInput({idMovimiento:""})
+      setBusquedaInput({idMovimiento:""});
       setBusquedaPaginacion(false)
       cargarDatosPaginados()
-
     }
     
   };
@@ -464,14 +415,6 @@ export const AdminHistorialIndividual: React.FC = () => {
     return parseFloat(numeroLimpio);
   }
 
-   const formatDigitoBancarios = (tarjeta: string): string => {
-    return tarjeta
-      .replace(/\D/g, "")       // 1. Elimina todo lo que no sea número
-      .slice(0, 16)             // 2. Limita a un máximo de 16 dígitos
-      .replace(/(.{4})/g, "$1 ") // 3. Agrupa de 4 en 4 dejando un espacio
-      .trim();                  // 4. Quita el espacio final sobrante
-  };
-
   const formatearParaInput = (fechaString: string): string => {
     // 1. Dividir el string "19/09/2026" por sus barras diagonales
     const [dia, mes, anio] = fechaString.split('/');
@@ -491,7 +434,7 @@ export const AdminHistorialIndividual: React.FC = () => {
   return (
     <>
     <div className="flex flex-col gap-4 w-full h-full pr-6">
-      <div className="flex flex-col w-full pt-2">
+      <div className="flex flex-col w-full pt-8">
         <div className="top-bar-user-historial">
           {/* <span className="w-2 h-2 rounded-full bg-emerald-400"></span> */}
             <div className="top-bar-user">
@@ -517,7 +460,7 @@ export const AdminHistorialIndividual: React.FC = () => {
 
             {/* Botones de Control de Sesión Superior */}
             <div className="flex items-center gap-3">
-                <div className="flex flex-col items-center pl-2 py-1">
+                <div className="flex flex-col items-center px-6 py-2">
                     <div className="px-6 pb-1 pt-2 bg-(--MediumBlue) rounded-xl items-center">
                     <button
                         type="button"
@@ -538,7 +481,7 @@ export const AdminHistorialIndividual: React.FC = () => {
                         </svg>
                     </button>
                     </div>
-                    <label htmlFor="inicio" className="font-light text-(--blanco) text-[12px]">
+                    <label htmlFor="inicio" className="font-light text-[12px]">
                     Inicio
                     </label>
                 </div>
@@ -563,43 +506,8 @@ export const AdminHistorialIndividual: React.FC = () => {
                         </svg>
                     </button>
                     </div>
-                    <label htmlFor="inicio" className="font-light text-(--blanco) text-[12px]">
+                    <label htmlFor="inicio" className="font-light text-[12px]">
                     Salir
-                    </label>
-                </div>
-{/* ========================================================================================================= */}
-                <div className="flex flex-col items-center pl-7 py-1">
-                    <div className="px-6 pb-1 pt-2 bg-(--MediumBlue) rounded-xl items-center">
-                    <button
-                        type="button"
-                        className="cursor-pointer"
-                        onClick={()=>setShowAgregaModalAbono(true)}
-                    >
-                      <svg width="27" height="12" viewBox="0 0 27 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M0 6.68359V4.88574H7.71094V6.68359H0ZM2.95312 9.54785V2.02148H4.75098V9.54785H2.95312Z" fill="#02FFA2"/>
-                      <path d="M13.6914 9.55664H15.3662C15.5667 9.55664 15.7285 9.49512 15.8516 9.37207C15.9746 9.24902 16.0361 9.0918 16.0361 8.90039V7.63574C16.0361 7.43978 15.9746 7.28255 15.8516 7.16406C15.7285 7.04102 15.5667 6.97949 15.3662 6.97949H13.6914C13.4909 6.97949 13.3291 7.04102 13.2061 7.16406C13.083 7.28255 13.0215 7.43978 13.0215 7.63574V8.90039C13.0215 9.0918 13.083 9.24902 13.2061 9.37207C13.3291 9.49512 13.4909 9.55664 13.6914 9.55664ZM10.8955 4.30664H18.9277H26.96V2.75488H10.8955V4.30664ZM13.042 11.6758C12.3265 11.6758 11.7887 11.498 11.4287 11.1426C11.0732 10.7917 10.8955 10.2653 10.8955 9.56348V2.11914C10.8955 1.41276 11.0732 0.884115 11.4287 0.533203C11.7887 0.177734 12.3265 0 13.042 0H24.8135C25.529 0 26.0645 0.177734 26.4199 0.533203C26.7799 0.888672 26.96 1.41732 26.96 2.11914V9.56348C26.96 10.2653 26.7799 10.7917 26.4199 11.1426C26.0645 11.498 25.529 11.6758 24.8135 11.6758H13.042Z" fill="#02FFA2"/>
-                      </svg>
-                    </button>
-                    </div>
-                    <label htmlFor="inicio" className="font-light text-(--blanco) text-[12px]">
-                    Abono
-                    </label>
-                </div>
-                <div className="flex flex-col items-center">
-                    <div className="px-6 pb-1 pt-2 bg-(--MediumBlue) rounded-xl items-center">
-                    <button
-                        type="button"
-                        className="bg-(--MediumBlue) transition-all cursor-pointer"
-                        onClick={()=>setShowAgregaModalGasto(true)}
-                    >
-                      <svg width="26" height="16" viewBox="0 0 26 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M22.8828 2.44043C23.5938 2.44043 24.1292 2.61816 24.4893 2.97363C24.8493 3.32454 25.0293 3.85319 25.0293 4.55957V11.6348C25.0293 12.3411 24.8584 12.8698 24.5166 13.2207C24.1748 13.5762 23.6986 13.7539 23.0879 13.7539H16.7168C16.9036 13.4303 17.0495 13.084 17.1543 12.7148C17.2591 12.3457 17.3115 11.9629 17.3115 11.5664C17.3115 10.9603 17.1953 10.3929 16.9629 9.86426C16.735 9.33105 16.4183 8.86165 16.0127 8.45605C15.6071 8.05046 15.1377 7.73372 14.6045 7.50586C14.0713 7.27344 13.5016 7.15723 12.8955 7.15723V4.55957C12.8955 3.85319 13.0732 3.32454 13.4287 2.97363C13.7887 2.61816 14.3265 2.44043 15.042 2.44043H22.8828ZM16.2656 2.70703C16.2656 2.20117 16.3841 1.74544 16.6211 1.33984C16.8581 0.929688 17.1794 0.603841 17.585 0.362305C17.9906 0.120768 18.4486 0 18.959 0C19.4694 0 19.9274 0.120768 20.333 0.362305C20.7432 0.603841 21.0667 0.929688 21.3037 1.33984C21.5407 1.74544 21.6592 2.20117 21.6592 2.70703L20.5586 2.71387C20.5586 2.38574 20.4902 2.09635 20.3535 1.8457C20.2214 1.59505 20.0345 1.39909 19.793 1.25781C19.556 1.11198 19.278 1.03906 18.959 1.03906C18.6445 1.03906 18.3665 1.11198 18.125 1.25781C17.888 1.39909 17.7012 1.59505 17.5645 1.8457C17.4323 2.09635 17.3662 2.38574 17.3662 2.71387L16.2656 2.70703ZM12.9023 15.0391C12.4284 15.0391 11.9818 14.9479 11.5625 14.7656C11.1432 14.5879 10.7741 14.3395 10.4551 14.0205C10.1361 13.7015 9.88542 13.3324 9.70312 12.9131C9.52083 12.4938 9.42969 12.0449 9.42969 11.5664C9.42969 11.0879 9.52083 10.6413 9.70312 10.2266C9.88542 9.80729 10.1361 9.43815 10.4551 9.11914C10.7741 8.79557 11.1432 8.54492 11.5625 8.36719C11.9818 8.1849 12.4284 8.09375 12.9023 8.09375C13.3809 8.09375 13.8298 8.1849 14.249 8.36719C14.6683 8.54492 15.0374 8.79329 15.3564 9.1123C15.6755 9.43132 15.9238 9.80046 16.1016 10.2197C16.2839 10.639 16.375 11.0879 16.375 11.5664C16.375 12.0404 16.2839 12.487 16.1016 12.9062C15.9193 13.3255 15.6663 13.6947 15.3428 14.0137C15.0238 14.3327 14.6546 14.5833 14.2354 14.7656C13.8161 14.9479 13.3717 15.0391 12.9023 15.0391ZM11.1387 11.9834H14.6523C14.7663 11.9834 14.8643 11.9401 14.9463 11.8535C15.0329 11.7715 15.0762 11.6758 15.0762 11.5664C15.0762 11.457 15.0329 11.3613 14.9463 11.2793C14.8643 11.1927 14.7663 11.1494 14.6523 11.1494H11.1387C11.0247 11.1494 10.9268 11.1927 10.8447 11.2793C10.7627 11.3613 10.7217 11.457 10.7217 11.5664C10.7217 11.6758 10.7627 11.7715 10.8447 11.8535C10.9268 11.9401 11.0247 11.9834 11.1387 11.9834Z" fill="#02FFA2"/>
-                      <path d="M0 8.72949V6.93164H7.71094V8.72949H0ZM2.95312 11.5938V4.06738H4.75098V11.5938H2.95312Z" fill="#02FFA2"/>
-                      </svg>
-                    </button>
-                    </div>
-                    <label htmlFor="inicio" className="font-light text-(--blanco) text-[12px]">
-                    Gasto
                     </label>
                 </div>
             </div>
@@ -607,33 +515,11 @@ export const AdminHistorialIndividual: React.FC = () => {
 
 
         {/* Tarjeta de Métricas Globales del Centro */}
-        <section className="pt-1 pb-0 flex flex-col">
+        <section className="pt-6 pb-0 flex flex-col">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-white tracking-tight pl-4">
-                Historial individual de operaciones
-              </h1>
-              <div className="flex flex-col justify-start pl-4 pt-2">
-                <div className="flex justify-start">
-                  <p className="text-sm  text-write  font-[200] text-[16px]">
-                    Tarjethabiente:{" "}
-                    <span className="font-bold ">{`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}</span>
-                  </p>
-                </div>
-                <div className="flex justify-start">
-                  <p className="text-sm  text-write  font-[200] text-[16px]">
-                    Cta:{" "}
-                    <span className="font-bold ">{dataInputs?.noTarjeta}</span>
-                  </p>
-                </div>
-                <div className="flex justify-start">
-                  <p className="text-sm  text-write  font-[200] text-[16px]">
-                    No. Cliente:{" "}
-                    <span className="font-bold ">{dataInputs?.noCliente}</span>
-                  </p>
-                </div>
-              </div>
-            </div>
+            <h1 className="text-3xl font-bold text-white tracking-tight pl-3">
+              Historial de operaciones {centroActivo}
+            </h1>
 
               <div className="relative max-w-xl pl-3">
                 <input
@@ -691,8 +577,36 @@ export const AdminHistorialIndividual: React.FC = () => {
                     </svg>
                   </span>
                 </button>
+
                 ) }
+
+
               </div>
+
+
+            {/* <div className="flex ">
+              <div className="relative pl-3">
+                <input
+                  type="text"
+                  placeholder="No. de tarjeta o nombre de tarjethabiente"
+                  className="search-input-box"
+                />
+                <span className="absolute right-4 top-3 text-slate-400 text-xs cursor-pointer">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 14 14"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M0 5.45508C0 4.70312 0.141276 3.99902 0.423828 3.34277C0.70638 2.68197 1.09831 2.10091 1.59961 1.59961C2.10091 1.09831 2.67969 0.70638 3.33594 0.423828C3.99674 0.141276 4.70312 0 5.45508 0C6.20703 0 6.91113 0.141276 7.56738 0.423828C8.22819 0.70638 8.80924 1.09831 9.31055 1.59961C9.81185 2.10091 10.2038 2.68197 10.4863 3.34277C10.7689 3.99902 10.9102 4.70312 10.9102 5.45508C10.9102 6.07943 10.8099 6.67188 10.6094 7.23242C10.4134 7.79297 10.14 8.30111 9.78906 8.75684L13.1318 12.1201C13.2048 12.193 13.2594 12.2773 13.2959 12.373C13.3369 12.4688 13.3574 12.5713 13.3574 12.6807C13.3574 12.8311 13.3232 12.9678 13.2549 13.0908C13.1911 13.2139 13.0999 13.3096 12.9814 13.3779C12.863 13.4508 12.7262 13.4873 12.5713 13.4873C12.4619 13.4873 12.3571 13.4668 12.2568 13.4258C12.1611 13.3893 12.0723 13.3324 11.9902 13.2549L8.62695 9.88477C8.18034 10.2038 7.68815 10.4544 7.15039 10.6367C6.61263 10.819 6.04753 10.9102 5.45508 10.9102C4.70312 10.9102 3.99674 10.7689 3.33594 10.4863C2.67969 10.2038 2.10091 9.81185 1.59961 9.31055C1.09831 8.80924 0.70638 8.23047 0.423828 7.57422C0.141276 6.91341 0 6.20703 0 5.45508ZM1.16895 5.45508C1.16895 6.04753 1.27832 6.60352 1.49707 7.12305C1.72038 7.63802 2.02799 8.09147 2.41992 8.4834C2.81641 8.87533 3.27214 9.18294 3.78711 9.40625C4.30664 9.62956 4.86263 9.74121 5.45508 9.74121C6.04753 9.74121 6.60124 9.62956 7.11621 9.40625C7.63574 9.18294 8.09147 8.87533 8.4834 8.4834C8.87533 8.09147 9.18294 7.63802 9.40625 7.12305C9.62956 6.60352 9.74121 6.04753 9.74121 5.45508C9.74121 4.86263 9.62956 4.30892 9.40625 3.79395C9.18294 3.27441 8.87533 2.81868 8.4834 2.42676C8.09147 2.03027 7.63574 1.72266 7.11621 1.50391C6.60124 1.2806 6.04753 1.16895 5.45508 1.16895C4.86263 1.16895 4.30664 1.2806 3.78711 1.50391C3.27214 1.72266 2.81641 2.03027 2.41992 2.42676C2.02799 2.81868 1.72038 3.27441 1.49707 3.79395C1.27832 4.30892 1.16895 4.86263 1.16895 5.45508Z"
+                      fill="#D9D9D9"
+                    />
+                  </svg>
+                </span>
+              </div>
+            </div> */}
           </div>
         </section>
       </div>
@@ -741,10 +655,10 @@ export const AdminHistorialIndividual: React.FC = () => {
 
                   <td className={`
                     ${mov.tipoMovimiento === 'I' ? mov.estatus ? "text-(--VerdeNeon)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)"  : mov.estatus ? "text-(--GrisLight)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth) " }`}
-                  >{mov.fecha}</td> 
+                  >{mov.fechaMovimiento}</td> 
                   <td className={`font-bold 
                     ${mov.tipoMovimiento === 'I' ? mov.estatus ? "text-(--VerdeNeon)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)"  : mov.estatus ? "text-(--GrisLight)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth) " }`}
-                    >{mov.comercio}</td>
+                    >{mov.nombreNegocio}</td>
                   <td className={`rounded-tr-full rounded-br-full 
                     ${mov.tipoMovimiento === 'I' ? mov.estatus ? "text-(--VerdeNeon)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)"  : mov.estatus ? "text-(--GrisLight)" : "text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth) " }`}
                   >{mov.concepto}</td>
@@ -774,7 +688,7 @@ export const AdminHistorialIndividual: React.FC = () => {
                         type="button" 
                         className="action-icon-btn" 
                         title="Agregar gasto"
-                        onClick={mov.monto_formateado.charAt(0) === "+" ? (()=> setShowRestaurarAbono(true)) : ( () => setShowRestaurarGasto(true)) }
+                        onClick={()=> setShowModalAviso(true)}
                         >
                           <span>
                             <svg width="13" height="15" viewBox="0 0 13 15" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -788,7 +702,7 @@ export const AdminHistorialIndividual: React.FC = () => {
                           <button type="button" 
                           className="action-icon-btn-trash" 
                           title="Historial"
-                          onClick={mov.monto_formateado.charAt(0) === "+" ? (()=> setShowModalEliminaAbono(true)) : ( () => setShowModalEliminaGasto(true)) }
+                          onClick={()=> setShowModalEliminaTarjeta(true)}
                           >
                             <span>
                               <svg width="14" height="16" viewBox="0 0 14 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -916,57 +830,38 @@ export const AdminHistorialIndividual: React.FC = () => {
           onCancel={() => {setShowModalDetalleGasto(false)}}
           onEdit={() => {handleEditarGasto()}}
         />
-        { showModalEliminaGasto && (
+        { showModalEliminaTarjeta && (
           <Modal
-            tipo={4}
-            title="Eliminar gasto"
-            description="Eliminar un gasto afectará el balance general de la plataforma"
+            tipo={2}
+            title="Eliminar tarjeta"
+            description="Eliminar una tarjeta afecta el balance general del Centro de Negocios al que pertenece, porque todas las operaciones (abonos y cargos) también serán eliminadas."
             textCancel="No eliminar"
             textConfirm="Eliminar"
-            idMovimiento={limpiarANumero(seleccionMovimiento.movimiento)}
-            onClose={handleEliminaGasto}
+            // idTarjeta={dataInputs?.idTarjeta}
+            onClose={handleEliminaTarjeta}
           />
         ) }
-        { showModalEliminaAbono && (
-          <Modal
-            tipo={4}
-            title="Eliminar abono"
-            description="Eliminar un gasto afectará el balance general de la plataforma"
-            textCancel="No eliminar"
-            textConfirm="Eliminar"
-            idMovimiento={limpiarANumero(seleccionMovimiento.movimiento)}
-            onClose={handleEliminaAbono}
-          />
-        ) }
-          { showRestaurarGasto && (
+          { showModalAviso && (
           <Modal
             tipo={3}
-            title="Recuperar gasto"
-            description="Recuperar un gasto afectará el balance general de la plataforma"
+            title="Estás por restaurar un registro"
+            description="Restaurar un registro afectará los balances generales de la plataforma"
             textCancel="Restaurar el registro"
             textConfirm="No restaurar el registro"
-            onClose={handledRestaurarGasto}
-          />
-        ) }
-          { showRestaurarAbono && (
-          <Modal
-            tipo={3}
-            title="Recuperar abono"
-            description="Recuperar un abono afectará el balance general de la plataforma "
-            textCancel="Restaurar el registro"
-            textConfirm="No restaurar el registro"
-            onClose={handledRestaurarAbono}
+            // onCancel={() => setShowModalAviso(false)}
+            onClose={handledEliminarTarjeta}
           />
         ) }
 
         { showEditaModalGasto && (
           <ModalGasto
+            // isOpen={showModalGasto}
             title={!idMovimientoEdicion ? 'Agregar Gasto' : 'Edición de Gasto' }
-            tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
-            cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
-            noCliente={dataInputs?.noCliente} 
+            // tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
+            // cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
+            // noCliente={dataInputs?.noCliente} 
             noOperacion={idMovimientoEdicion}
-            idTarjeta1={dataInputs?.idTarjeta}
+            // idTarjeta1={dataInputs?.idTarjeta}
             idUsuario1={Number.parseInt(idUsuario as string, 10) }
             idMovimientoVinculado1={limpiarANumero(idMovimientoEdicion)}
             // -----
@@ -975,13 +870,15 @@ export const AdminHistorialIndividual: React.FC = () => {
             concepto={detalleClienteSelecionado?.concepto}
             fechaCargo={formatearParaInput(detalleClienteSelecionado?.Fecha)}
             comprobante={detalleClienteSelecionado?.comprobante}
-            bajaPorEdicion1={0}
+
 
             textConfirm="Agregar"
             textCancel="Cancelar"
+            // onConfirm={() => setShowModalGasto(false)}
             onClose={handleAgregaGasto} 
           />
         )}
+
 
         { showEditaModalAbono && ( 
           <ModalAbono
@@ -991,62 +888,18 @@ export const AdminHistorialIndividual: React.FC = () => {
             </svg>
           }
           title={!idMovimientoEdicion ? 'Abono' : 'Edición de Abono' }
-          tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
-          cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
-          noCliente={dataInputs?.noCliente} 
+          // tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
+          // cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
+          // noCliente={dataInputs?.noCliente} 
           noOperacion={idMovimientoEdicion}
           concepto = {user?.nombreCompleto}
-          idTarjeta1={dataInputs?.idTarjeta}
+          // idTarjeta1={dataInputs?.idTarjeta}
           idUsuario1={Number.parseInt(idUsuario as string, 10) }
           idMovimientoVinculado1={limpiarANumero(idMovimientoEdicion)}
-          bajaPorEdicion1={0}
           // -------
           monto={limpiarANumero( detalleClienteSelecionado?.precio )}
           fechaCargo={formatearParaInput(detalleClienteSelecionado?.Fecha)}
           comprobante={detalleClienteSelecionado?.comprobante}
-          textConfirm="Agregar"
-          textCancel="Cancelar"
-          onClose={handleAgregaAbono}
-        />)}
-
-
-        { showAgregaModalGasto && (
-          <ModalGasto
-            title={'Agregar Gasto'}
-            tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
-            cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
-            noCliente={dataInputs?.noCliente} 
-            noOperacion={idMovimientoEdicion}
-            idTarjeta1={dataInputs?.idTarjeta}
-            idUsuario1={Number.parseInt(idUsuario as string, 10) }
-            idMovimientoVinculado1={limpiarANumero(idMovimientoEdicion)}
-            // -----
-            bajaPorEdicion1={0}
-
-            textConfirm="Agregar"
-            textCancel="Cancelar"
-            onClose={handleAgregaGasto} 
-          />
-        )}
-
-        { showAgregaModalAbono && ( 
-          <ModalAbono
-          icono={
-            <svg width="33" height="21" viewBox="0 0 33 21" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 19.2017V0.964355C0 0.671387 0.0895182 0.439453 0.268555 0.268555C0.447591 0.0895182 0.683594 0 0.976562 0H31.2622C31.5552 0 31.7871 0.0895182 31.958 0.268555C32.137 0.439453 32.2266 0.671387 32.2266 0.964355V19.2017C32.2266 19.4946 32.137 19.7306 31.958 19.9097C31.7871 20.0887 31.5552 20.1782 31.2622 20.1782H0.976562C0.683594 20.1782 0.447591 20.0887 0.268555 19.9097C0.0895182 19.7306 0 19.4946 0 19.2017ZM2.23389 17.1997C2.23389 17.6961 2.47803 17.9443 2.96631 17.9443H29.2603C29.7485 17.9443 29.9927 17.6961 29.9927 17.1997V2.97852C29.9927 2.4821 29.7485 2.23389 29.2603 2.23389H2.96631C2.47803 2.23389 2.23389 2.4821 2.23389 2.97852V17.1997ZM3.50342 16.3818V3.79639C3.50342 3.60107 3.60107 3.50342 3.79639 3.50342H13.3179C12.6831 4.15446 12.1867 5.04557 11.8286 6.17676C11.4705 7.2998 11.2915 8.59782 11.2915 10.0708C11.2915 11.5438 11.4705 12.8499 11.8286 13.9893C12.1948 15.1204 12.6994 16.0156 13.3423 16.6748H3.79639C3.60107 16.6748 3.50342 16.5771 3.50342 16.3818ZM12.7563 10.0708C12.7563 8.80127 12.8906 7.69043 13.1592 6.73828C13.4359 5.78613 13.8224 5.04557 14.3188 4.5166C14.8234 3.98763 15.4053 3.72314 16.0645 3.72314C16.748 3.72314 17.3462 3.98763 17.8589 4.5166C18.3797 5.04557 18.7826 5.78613 19.0674 6.73828C19.3522 7.69043 19.4946 8.80127 19.4946 10.0708C19.4946 11.3403 19.3522 12.4512 19.0674 13.4033C18.7826 14.3555 18.3797 15.1001 17.8589 15.6372C17.3462 16.1662 16.748 16.4307 16.0645 16.4307C15.4053 16.4307 14.8234 16.1662 14.3188 15.6372C13.8224 15.1001 13.4359 14.3555 13.1592 13.4033C12.8906 12.4512 12.7563 11.3403 12.7563 10.0708ZM18.8599 16.6748C19.5109 16.0156 20.0195 15.1204 20.3857 13.9893C20.7601 12.8499 20.9473 11.5438 20.9473 10.0708C20.9473 8.59782 20.7642 7.2998 20.3979 6.17676C20.0317 5.04557 19.5231 4.15446 18.8721 3.50342H28.4302C28.6255 3.50342 28.7231 3.60107 28.7231 3.79639V16.3818C28.7231 16.5771 28.6255 16.6748 28.4302 16.6748H18.8599Z" fill="#02FFA2"/>
-            </svg>
-          }
-          title={'Abono'}
-          tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
-          cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
-          noCliente={dataInputs?.noCliente} 
-          noOperacion={idMovimientoEdicion}
-          concepto = {user?.nombreCompleto}
-          idTarjeta1={dataInputs?.idTarjeta}
-          idUsuario1={Number.parseInt(idUsuario as string, 10) }
-          idMovimientoVinculado1={limpiarANumero(idMovimientoEdicion)}
-          // -------
-          bajaPorEdicion1={0}
           textConfirm="Agregar"
           textCancel="Cancelar"
           onClose={handleAgregaAbono}
