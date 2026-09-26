@@ -806,13 +806,25 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
     idTarjeta: null,
     tipoMovimiento: "I", // -- 'I' (Abono) o 'E' (Cargo)
     monto: String(monto || '') || "",
-    nombreNegocio:  "OnceCapital",
+    nombreNegocio: nomComercio || "",
     concepto: concepto || "",
     comprobante: comprobante || "",
+    comprobanteFile: null as File | null,
     fechaMovimiento: fechaCargo || "",
     idUsuario: idUsuario1,
     idMovimientoVinculado: idMovimientoVinculado1,
-    bajaPorEdicion: bajaPorEdicion1 
+    bajaPorEdicion:bajaPorEdicion1 
+
+    // idTarjeta: null,
+    // tipoMovimiento: "I", // -- 'I' (Abono) o 'E' (Cargo)
+    // monto: String(monto || '') || "",
+    // nombreNegocio:  "OnceCapital",
+    // concepto: concepto || "",
+    // comprobante: comprobante || "",
+    // fechaMovimiento: fechaCargo || "",
+    // idUsuario: idUsuario1,
+    // idMovimientoVinculado: idMovimientoVinculado1,
+    // bajaPorEdicion: bajaPorEdicion1 
   });
 
    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -826,15 +838,48 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
     e.preventDefault();
     try {
 
-      const data = {
-        ...form,
-        idTarjeta:idTarjeta1,
-      };
+    const dataToSend = new FormData();
+
+    // console.log(form)
+    // Recorremos tu objeto 'form' de React y lo inyectamos al contenedor automáticamente
+    dataToSend.append('idTarjeta', String(idTarjeta1));
+    dataToSend.append('tipoMovimiento', form.tipoMovimiento);
+    dataToSend.append('monto', form.monto);
+    dataToSend.append('nombreNegocio', form.nombreNegocio);
+    dataToSend.append('concepto', form.concepto);
+    dataToSend.append('fechaMovimiento', form.fechaMovimiento);
+    dataToSend.append('idUsuario', String(form.idUsuario));
+    dataToSend.append('idMovimientoVinculado', String(idMovimientoVinculado1));
+    dataToSend.append('bajaPorEdicion', String(form.bajaPorEdicion));
+    
+    // 🚨 LA LLAVE CRÍTICA: Adjuntamos el archivo binario PDF real.
+    // 'comprobante' es el nombre exacto que espera Multer en uploadPdf.single('comprobante')
+     if (form.comprobanteFile) {
+      // 🚨 NOTA DE RED: El primer parámetro debe seguir siendo 'comprobante' 
+      // para que encaje con el uploadPdf.single('comprobante') de tu Node.js en AWS
+      dataToSend.append('comprobanteFile', form.comprobanteFile);
+      
+    }
+
+      // const data = {
+      //   ...form,
+      //   idTarjeta:idTarjeta1,
+      // };
   
-      console.log({ data: data });
+      // console.log({ data: data });
   
-      const response = await api.post("/admin/agregaAbonoGasto", { data:data});
-      console.log(response.data)
+      // const response = await api.post("/admin/agregaAbonoGasto", { data:data});
+      // console.log(response.data)
+
+            console.log({ data: Object.fromEntries(dataToSend) });
+  
+      // const response = await api.post("/admin/agregaAbonoGasto", { data:data});
+
+      const response = await api.post("/admin/agregaAbonoGasto", dataToSend, {
+        headers: {
+        'Content-Type': 'multipart/form-data', // Avisa al navegador que van bytes y archivos
+      },
+      });
   
       if(response.data.status === 200){
         onClose!('1')
@@ -1118,6 +1163,7 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
       }
       console.log('entre ')
       setErrorMessage(null);
+      // setForm({comprobanteFile:selectedFile})
       setFile(selectedFile);
     }
   };
@@ -1131,38 +1177,46 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
 
     const dataToSend = new FormData();
 
+    // console.log(form)
     // Recorremos tu objeto 'form' de React y lo inyectamos al contenedor automáticamente
-    dataToSend.append('idTarjeta', String(form.idTarjeta));
+    dataToSend.append('idTarjeta', String(idTarjeta1));
     dataToSend.append('tipoMovimiento', form.tipoMovimiento);
     dataToSend.append('monto', form.monto);
     dataToSend.append('nombreNegocio', form.nombreNegocio);
     dataToSend.append('concepto', form.concepto);
     dataToSend.append('fechaMovimiento', form.fechaMovimiento);
     dataToSend.append('idUsuario', String(form.idUsuario));
-    dataToSend.append('idMovimientoVinculado', String(form.idMovimientoVinculado));
+    dataToSend.append('idMovimientoVinculado', String(idMovimientoVinculado1));
     dataToSend.append('bajaPorEdicion', String(form.bajaPorEdicion));
     
     // 🚨 LA LLAVE CRÍTICA: Adjuntamos el archivo binario PDF real.
     // 'comprobante' es el nombre exacto que espera Multer en uploadPdf.single('comprobante')
-     if (form.comprobanteFile) {
+     if (file) {
+      console.log('File ok')
       // 🚨 NOTA DE RED: El primer parámetro debe seguir siendo 'comprobante' 
       // para que encaje con el uploadPdf.single('comprobante') de tu Node.js en AWS
-      dataToSend.append('comprobante', form.comprobanteFile);
+      dataToSend.append('comprobanteFile', file!);
       
     }
 
-      const data = {
-        ...form,
-        idTarjeta:idTarjeta1,
-      };
+      // const data = {
+      //   ...form,
+      //   idTarjeta:idTarjeta1,
+      // };
   
-      console.log({ data: data });
+      // console.log({ data: form });
+      console.log({ data: Object.fromEntries(dataToSend) });
   
-      const response = await api.post("/admin/agregaAbonoGasto", { data:dataToSend}, {
-        headers: {
-        'Content-Type': 'multipart/form-data', // Avisa al navegador que van bytes y archivos
-      },
-      });
+      // const response = await api.post("/admin/agregaAbonoGasto", { data:data});
+
+      const response = await api.post("/admin/agregaAbonoGasto", dataToSend 
+      //   {
+      //   headers: {
+      //   'Content-Type': 'multipart/form-data', // Avisa al navegador que van bytes y archivos
+      // },
+      // }
+    );
+
       console.log(response.data)
   
       if(response.data.status === 200){

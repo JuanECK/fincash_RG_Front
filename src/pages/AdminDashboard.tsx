@@ -432,7 +432,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
 
       try {
         const response = await api.post("/admin/detalleCliente", { idTarjeta });
-        // console.log(response.data.data)
+        console.log({Server:response.data.data.usuario})
   
         if (response.data.status === 200) {
           if( estatus !== true ){
@@ -446,9 +446,9 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
           getDataInput(response.data.data.usuario);
           // setbtnGuardarTarjetahabientes(true);
           setVarRandom(idCliente);
-          console.log({targetaSelecionada:response.data});
+          // console.log({targetaSelecionada:response.data});
           // console.log(selectedClient.idTarjeta)
-          // console.log(item.idTarjeta)
+          // console.log({dataInputs:dataInputs})
           return;
         }
   
@@ -837,6 +837,11 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
   //   }
   // }
 
+ const prueba = ()=>{
+  // console.log({dataInputs:dataInputs})
+  setShowModalGasto(true)
+ }
+
   return (
     <>
       <div className="dashboard-layout-Admin">
@@ -1172,7 +1177,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                         :
                           <div className="flex justify-center gap-2 ">
                             {/* Agregar gasto */}
-                            <button type="button" onClick={()=> setShowModalGasto(true)} className="action-icon-btn" title="Agregar gasto">
+                            <button type="button" onClick={()=> prueba()} className="action-icon-btn" title="Agregar gasto">
                               <span>
                                 <svg
                                   width="14"
