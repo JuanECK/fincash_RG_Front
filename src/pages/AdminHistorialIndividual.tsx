@@ -124,7 +124,7 @@ export const AdminHistorialIndividual: React.FC = () => {
 
   useEffect(()=>{
     cargarDatosPaginados();
-  },[data, centroActivo])
+  },[paginaActual, data, centroActivo])
 
   // 🔄 EFFECT: Se ejecuta al cargar la página y cada vez que cambia 'paginaActual'
   const cargarDatosPaginados = async () => {
@@ -311,7 +311,7 @@ export const AdminHistorialIndividual: React.FC = () => {
       const response = await api.post("/admin/detalleGastos", { id });
 
       if( response.data.status === 200 ){
-        console.log(response.data.data.datos)
+        // console.log(response.data.data.datos)
        setShowModalDetalleGasto(true); 
        setDetalleClienteSelecionado(response.data.data.datos)
        return
@@ -326,7 +326,7 @@ export const AdminHistorialIndividual: React.FC = () => {
       const response = await api.post("/admin/detalleGastos", { id });
 
       if( response.data.status === 200 ){
-        console.log(response.data.data)
+        // console.log(response.data.data)
        setShowModalDetalleAbono(true); 
        setDetalleClienteSelecionado(response.data.data.datos)
        return
@@ -456,8 +456,12 @@ export const AdminHistorialIndividual: React.FC = () => {
     navigate("/", { replace: true });
   };
 
-    function limpiarANumero(textoMoneda: string): number {
+    function limpiarANumero(textoMoneda: string): number | null {
+    // function limpiarANumero(textoMoneda: string): number | null {
     // 1. Quitar todo lo que NO sea un número o un punto decimal
+    
+    if (textoMoneda === '') return null
+
     const numeroLimpio = textoMoneda.replace(/[^\d.]/g, '');
   
     // 2. Convertir a número con decimales (eliminamos Math.round)

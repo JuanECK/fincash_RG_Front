@@ -2,6 +2,7 @@ import React, { useEffect, useState, type HtmlHTMLAttributes } from "react";
 import { api } from "../services/api";
 import ModalAvisoPopUp from "./ModalAviso";
 import { formToJSON } from "axios";
+import { fromJSONSchema, set } from "zod";
 // import { ModalAviso } from './ModalAviso'
 
 interface ModalProps {
@@ -1142,7 +1143,8 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
     fechaMovimiento: fechaCargo || "",
     idUsuario: idUsuario1,
     idMovimientoVinculado: idMovimientoVinculado1,
-    bajaPorEdicion:bajaPorEdicion1 
+    bajaPorEdicion:bajaPorEdicion1, 
+    isEdith:0
   });
 
   const [file, setFile] = useState<File | null>(null);
@@ -1162,6 +1164,14 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
         return;
       }
       console.log('entre ')
+      if( comprobante && selectedFile ){
+        console.log('es edicion')
+        setForm({...form, isEdith:1})
+        setErrorMessage(null);
+        setFile(selectedFile);
+        return
+      }
+      setForm({...form, comprobante:''})
       setErrorMessage(null);
       // setForm({comprobanteFile:selectedFile})
       setFile(selectedFile);
@@ -1177,17 +1187,19 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
 
     const dataToSend = new FormData();
 
-    // console.log(form)
+    console.log({idMovimientoVinculado1:idMovimientoVinculado1})
     // Recorremos tu objeto 'form' de React y lo inyectamos al contenedor automáticamente
     dataToSend.append('idTarjeta', String(idTarjeta1));
     dataToSend.append('tipoMovimiento', form.tipoMovimiento);
     dataToSend.append('monto', form.monto);
     dataToSend.append('nombreNegocio', form.nombreNegocio);
     dataToSend.append('concepto', form.concepto);
+    dataToSend.append('comprobante', form.comprobante);
     dataToSend.append('fechaMovimiento', form.fechaMovimiento);
     dataToSend.append('idUsuario', String(form.idUsuario));
     dataToSend.append('idMovimientoVinculado', String(idMovimientoVinculado1));
     dataToSend.append('bajaPorEdicion', String(form.bajaPorEdicion));
+    dataToSend.append('isEdith', String(form.isEdith));
     
     // 🚨 LA LLAVE CRÍTICA: Adjuntamos el archivo binario PDF real.
     // 'comprobante' es el nombre exacto que espera Multer en uploadPdf.single('comprobante')
@@ -1205,17 +1217,11 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
       // };
   
       // console.log({ data: form });
-      console.log({ data: Object.fromEntries(dataToSend) });
+      console.log({ Formdata: Object.fromEntries(dataToSend) });
   
       // const response = await api.post("/admin/agregaAbonoGasto", { data:data});
 
-      const response = await api.post("/admin/agregaAbonoGasto", dataToSend 
-      //   {
-      //   headers: {
-      //   'Content-Type': 'multipart/form-data', // Avisa al navegador que van bytes y archivos
-      // },
-      // }
-    );
+      const response = await api.post("/admin/agregaAbonoGasto", dataToSend );
 
       console.log(response.data)
   
@@ -1430,7 +1436,9 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
                 <div className={`relative overflow-hidden flex justify-center items-center gap-3 py-2 px-5 mt-5 rounded-full bg-(--blanco) ${file ? 'has-file' : ''}`}>
                   
                   <span className="text-sm font-[400] text-(--DeepBlue)">
-                    {file ? file.name : 'Arrastra o selecciona el archivo PDF'}
+                    {form.comprobante ? comprobante && form.isEdith === 1 ? file?.name : comprobante : file ? file.name : 'Arrastra o selecciona el archivo PDF' }
+                    {/* {form.isEdith === 1 ? file ? file.name : 'Arrastra o selecciona el archivo PDF' :comprobante } */}
+                    {/* {form.comprobante ? comprobante : file ? file.name : 'Arrastra o selecciona el archivo PDF'} */}
                   </span>
                   <span>
                     <svg
@@ -2426,7 +2434,7 @@ export const ModalDetalleGasto: React.FC<DetalleGastoProps> = ({
   // setComprobanteEditar(comprobante)
 
   const handlevisualizarTiket = () => {
-    console.log("visualizando tiket");
+    console.log("nombre comprobante: ", comprobante);
   };
 
   return (

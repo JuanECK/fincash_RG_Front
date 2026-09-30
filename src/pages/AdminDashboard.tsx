@@ -266,7 +266,7 @@ export const AdminDashboard: React.FC = () => {
       const response = await api.post("/admin/detalleGastos", { id });
 
       if( response.data.status === 200 ){
-        // console.log(response.data.data.datos)
+        console.log(response.data.data.datos)
        setShowModalDetalleGasto(true); 
        setDetalleClienteSelecionado(response.data.data.datos)
        return
@@ -285,7 +285,7 @@ export const AdminDashboard: React.FC = () => {
 
       if( response.data.status === 200 ){
         // console.log('abono')
-        // console.log(response.data.data.datos)
+        console.log(response.data.data.datos)
        setShowModalDetalleAbono(true); 
        setDetalleClienteSelecionado(response.data.data.datos)
        return
@@ -524,7 +524,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
       const response = await api.get(
         `/admin/targetahabientes?idCentroN=${centroId}&page=${paginaActual}&limit=${limitePorPagina}`,
       );
-      // console.log(response.data);
+      console.log(response.data);
 
       if (response.data.status === 200) {
         const { tarjetahabientes, paginacion, MontoTotalCargos } =
