@@ -30,9 +30,10 @@ export const LoginPage: React.FC = () => {
   // =============================================================================================
     useEffect(() => {
     const verificarSesionActiva = async () => {
+      
       try {
         const response = await api.get('/auth/me');
-        
+    
         if (response.data.status === 200) {
           const { idUsuario, idPerfil, nombreCompleto } = response.data;
           
@@ -54,7 +55,8 @@ export const LoginPage: React.FC = () => {
         }
       } catch {
         // Si falla (no hay cookie o expiró), simplemente dejamos al usuario en el formulario
-        console.log('Sin sesión previa activa en las cookies.');
+        // console.log('Sin sesión previa activa en las cookies.');
+        // console.log({respuestaError:res})
       } finally {
         setIsCheckingAuth(false); // Apagamos la pantalla de carga
       }
@@ -140,7 +142,7 @@ export const LoginPage: React.FC = () => {
       }
 
       const { user } = response.data;
-      console.log({user:user})
+      // console.log({user:user})
       // const { user, redirectTo } = response.data;
 
       const perfilNumero = Number.parseInt(user.idPerfil, 10);
@@ -177,7 +179,7 @@ export const LoginPage: React.FC = () => {
       // Guardamos la sesión en el contexto global
       setTimeout(() => {
         
-        console.log({ idUsuario: user.idUsuario })
+        // console.log({ idUsuario: user.idUsuario })
         navigate(mapaRutas[userRole], { replace: true });
       }, 0);
 

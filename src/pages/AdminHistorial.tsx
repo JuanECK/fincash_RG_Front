@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useOutletContext, useLocation } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { api, logoutSession } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { Modal, ModalAbono, ModalDetalleAbono, ModalDetalleGasto, ModalGasto } from "../modals/ModalGeneral";
@@ -13,15 +13,15 @@ interface movimientoSelec {
   movimiento:string;
   estatus:boolean;
 }
-interface selectCliente {
-  concepto: string;
-  estatus:boolean;
-  fechaMovimiento: string;
-  idMovimiento: string;
-  monto_formateado: string;
-  nombreNegocio: string;
-  tipoMovimiento: string;
-}
+// interface selectCliente {
+//   concepto: string;
+//   estatus:boolean;
+//   fechaMovimiento: string;
+//   idMovimiento: string;
+//   monto_formateado: string;
+//   nombreNegocio: string;
+//   tipoMovimiento: string;
+// }
 
 interface DetalleGastos{
   Fecha:string;
@@ -48,21 +48,21 @@ tipoMovimiento:string;
 
 export const AdminHistorial: React.FC = () => {
   const { centroActivo, centroId, idUsuario } = useOutletContext<AdminContextType>();
-  const location = useLocation();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  // const location = useLocation();
+  // const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
   const [tarjetahabientes, setTarjetahabientes] = useState<any[]>([]);
   const [totalPaginas, setTotalPaginas] = useState(1);
-  const [totalRegistros, setTotalRegistros] = useState(1);
-  const [selectedClient, setSelectedClient] = useState<selectCliente>({
-    concepto: "",
-    estatus: false,
-    fechaMovimiento: "",
-    idMovimiento: "",
-    monto_formateado: "",
-    nombreNegocio: "",
-    tipoMovimiento: "",
-  });
+  // const [totalRegistros, setTotalRegistros] = useState(1);
+  // const [selectedClient, setSelectedClient] = useState<selectCliente>({
+  //   concepto: "",
+  //   estatus: false,
+  //   fechaMovimiento: "",
+  //   idMovimiento: "",
+  //   monto_formateado: "",
+  //   nombreNegocio: "",
+  //   tipoMovimiento: "",
+  // });
   const [detalleClienteSelecionado, setDetalleClienteSelecionado] = useState<DetalleGastos>({
     Fecha:'',
     comprobante:'',
@@ -84,7 +84,7 @@ export const AdminHistorial: React.FC = () => {
   const [showRestaurarAbono, setShowRestaurarAbono] = useState(false);
 
   const [busquedaPaginacion, setBusquedaPaginacion] = useState(false);
-  const [tipoDatoBusqueda, setTipoDatoBusqueda] = useState(false)
+  // const [tipoDatoBusqueda, setTipoDatoBusqueda] = useState(false)
   const [busquedaInput, setBusquedaInput] = useState({
     idMovimiento: "",
   });
@@ -106,7 +106,7 @@ export const AdminHistorial: React.FC = () => {
       tipoMovimiento: "",
     
   });
-   const { data } = location.state || {};
+  //  const { data } = location.state || {};
   //  if(!location.state){
   // }else{
     //  }
@@ -134,26 +134,26 @@ export const AdminHistorial: React.FC = () => {
       const response = await api.get(
         `/admin/cargaHistorico?idCentroN=${centroId}&page=${paginaActual}&limit=${limitePorPagina}&idMovimiento=${""}`,
       );
-      console.log(response.data);
+      // console.log(response.data);
 
       if (response.data.status === 200) {
         const { tarjetahabientes, paginacion } = response.data.data;
 
         setTarjetahabientes(tarjetahabientes);
         setTotalPaginas(paginacion.totalPaginas);
-        setTotalRegistros(paginacion.totalRegistros);
+        // setTotalRegistros(paginacion.totalRegistros);
 
-         console.log(tarjetahabientes)
+        //  console.log(tarjetahabientes)
         // Seleccionamos automáticamente el primer cliente de la nueva página por estética
         if (tarjetahabientes.length > 0) {
-          setSelectedClient(tarjetahabientes);
+          // setSelectedClient(tarjetahabientes);
           setBusquedaPaginacion(false)
         }else{
           setBusquedaPaginacion(true)
         }
         return;
       }
-      console.log("sesion caducada: ", response.data.status);
+      // console.log("sesion caducada: ", response.data.status);
       endSessionCockie();
     } catch (error) {
       console.error("Error cargando la tabla paginada de red:", error);
@@ -295,7 +295,7 @@ export const AdminHistorial: React.FC = () => {
     const valorStr = limpiarANumero(e.target.value)
     setBusquedaInput((prev:any) => {
       // 1. Si es número y no supera los 16 dígitos, se guarda en noTarjeta
-        setTipoDatoBusqueda(true)
+        // setTipoDatoBusqueda(true)
           return {
             ...prev,
             idMovimiento:valorStr,
@@ -307,11 +307,11 @@ export const AdminHistorial: React.FC = () => {
     
 
     if(busquedaInput.idMovimiento === "" ) return
-    console.log({centroId:centroId, idTarjeta:"", idMovimiento:busquedaInput.idMovimiento, paginaActual:paginaActual, limitePorPagina:limitePorPagina})
+    // console.log({centroId:centroId, idTarjeta:"", idMovimiento:busquedaInput.idMovimiento, paginaActual:paginaActual, limitePorPagina:limitePorPagina})
       const response = await api.get(
         `/admin/cargaHistorico?idCentroN=${centroId}&idTarjeta=${""}&idMovimiento=${busquedaInput.idMovimiento}&page=${paginaActual}&limit=${limitePorPagina}`,
       );
-    console.log(response.data.data.tarjetahabientes.length);
+    // console.log(response.data.data.tarjetahabientes.length);
     if (response.data.data.tarjetahabientes.length !== 0) {
       setBusquedaPaginacion(true)
       setTarjetahabientes(response.data.data.tarjetahabientes)
@@ -333,14 +333,14 @@ export const AdminHistorial: React.FC = () => {
   }
 
   const handleEditarGasto = () => {
-    console.log("Editando detalle de Gasto");
+    // console.log("Editando detalle de Gasto");
     setShowModalDetalleGasto(false);
     setIdMovimientoEdicion(detalleClienteSelecionado?.idMovimiento)
     setShowEditaModalGasto(true)
   };
 
   const handleEditarAbono = () => {
-    console.log("Editando detalle de Abono");
+    // console.log("Editando detalle de Abono");
     setShowModalDetalleAbono(false);
     setIdMovimientoEdicion(detalleClienteSelecionado?.idMovimiento)
     setShowEditaModalAbono(true)
@@ -351,7 +351,7 @@ export const AdminHistorial: React.FC = () => {
       const response = await api.post("/admin/detalleGastos", { id });
 
       if( response.data.status === 200 ){
-        console.log(response.data.data.datos)
+        // console.log(response.data.data.datos)
        setShowModalDetalleGasto(true); 
        setDetalleClienteSelecionado(response.data.data.datos)
        getDataInput(response.data.data.datos)
@@ -367,7 +367,7 @@ export const AdminHistorial: React.FC = () => {
       const response = await api.post("/admin/detalleGastos", { id });
 
       if( response.data.status === 200 ){
-        console.log(response.data.data)
+        // console.log(response.data.data)
        setShowModalDetalleAbono(true); 
        setDetalleClienteSelecionado(response.data.data.datos)
        getDataInput(response.data.data.datos)
@@ -383,7 +383,7 @@ export const AdminHistorial: React.FC = () => {
 
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
-      console.log('Se Elimino la tarjeta correctamente' )
+      // console.log('Se Elimino la tarjeta correctamente' )
        if(busquedaPaginacion){
           busquedaRef.current!.value = "";
           setBusquedaPaginacion(false);
@@ -398,7 +398,7 @@ export const AdminHistorial: React.FC = () => {
 
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
-      console.log('Se Elimino la tarjeta correctamente' )
+      // console.log('Se Elimino la tarjeta correctamente' )
        if(busquedaPaginacion){
           busquedaRef.current!.value = "";
           setBusquedaInput({idMovimiento:""});
@@ -413,11 +413,11 @@ export const AdminHistorial: React.FC = () => {
     setShowRestaurarGasto(false);
     
     if (resultado === '0') {
-      console.log('registro Restaurado: ',limpiarANumero(seleccionMovimiento.movimiento) )
+      // console.log('registro Restaurado: ',limpiarANumero(seleccionMovimiento.movimiento) )
       const response = await api.post("/admin/reactivaGastoAbono", { data:{idMovimiento:limpiarANumero(seleccionMovimiento.movimiento)} });
-      console.log(response)
+      // console.log(response)
       if( response.data.status === 200 ){
-        console.log('respuesta bien 2')
+        // console.log('respuesta bien 2')
         if(busquedaPaginacion){
             busquedaRef.current!.value = "";
             setBusquedaInput({idMovimiento:""})
@@ -431,11 +431,11 @@ export const AdminHistorial: React.FC = () => {
       setShowRestaurarAbono(false);
       
       if (resultado === '0') {
-        console.log('registro Restaurado: ',limpiarANumero(seleccionMovimiento.movimiento) )
+        // console.log('registro Restaurado: ',limpiarANumero(seleccionMovimiento.movimiento) )
         const response = await api.post("/admin/reactivaGastoAbono", { data:{idMovimiento:limpiarANumero(seleccionMovimiento.movimiento)} });
-        console.log(response)
+        // console.log(response)
         if( response.data.status === 200 ){
-          console.log('respuesta bien 1')
+          // console.log('respuesta bien 1')
         if(busquedaPaginacion){
           busquedaRef.current!.value = "";
           setBusquedaInput({idMovimiento:""})
@@ -453,7 +453,7 @@ export const AdminHistorial: React.FC = () => {
         setIdMovimientoEdicion('')
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
-      console.log('Se agrego gasto correctamente' )
+      // console.log('Se agrego gasto correctamente' )
       busquedaRef.current!.value = "";
       setBusquedaInput({idMovimiento:""});
       setBusquedaPaginacion(false)
@@ -467,7 +467,7 @@ export const AdminHistorial: React.FC = () => {
     setShowEditaModalGasto(false)
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
-      console.log('Se agrego gasto correctamente' )
+      // console.log('Se agrego gasto correctamente' )
       busquedaRef.current!.value = "";
       setBusquedaInput({idMovimiento:""})
       setBusquedaPaginacion(false)
@@ -478,7 +478,7 @@ export const AdminHistorial: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    setIsLoggingOut(true);
+    // setIsLoggingOut(true);
 
     // 1. Avisamos al backend para que limpie cookies y ejecute el SP de SQL Server
     await logoutSession();
@@ -491,7 +491,7 @@ export const AdminHistorial: React.FC = () => {
   };
 
   const endSessionCockie = () => {
-    setIsLoggingOut(true);
+    // setIsLoggingOut(true);
     // 2. Limpiamos el estado global en el Frontend de React
     logout();
     // 3. Redirigimos al Login borrando el historial de navegación
@@ -962,7 +962,7 @@ export const AdminHistorial: React.FC = () => {
             comprobante={detalleClienteSelecionado?.comprobante}
             bajaPorEdicion1={0}
 
-            textConfirm="Agregar"
+            textConfirm="Guardar"
             textCancel="Cancelar"
             onClose={handleAgregaGasto} 
           />
@@ -989,7 +989,7 @@ export const AdminHistorial: React.FC = () => {
           monto={limpiarANumero( detalleClienteSelecionado?.precio )}
           fechaCargo={formatearParaInput(detalleClienteSelecionado?.Fecha)}
           comprobante={detalleClienteSelecionado?.comprobante}
-          textConfirm="Agregar"
+          textConfirm="Guardar"
           textCancel="Cancelar"
           onClose={handleAgregaAbono}
         />)}

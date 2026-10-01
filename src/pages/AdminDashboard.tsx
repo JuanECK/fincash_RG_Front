@@ -4,8 +4,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { api, logoutSession } from "../services/api";
 import { Modal, ModalAbono, ModalAgregarTarjetahabiente, ModalAviso, ModalContraseña, ModalDetalleAbono, ModalDetalleGasto, ModalEditaTarjetahabiente, ModalGasto} from "../modals/ModalGeneral";
 import { useOutletContext } from 'react-router-dom';
-import { tr } from "zod/v4/locales/index.js";
-import { number } from "zod";
+// import { tr } from "zod/v4/locales/index.js";
+// import { number } from "zod";
 
 
 interface TarjetaUsuario {
@@ -75,7 +75,7 @@ export const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  // const [ setIsLoggingOut ] = useState(false);
   const [tarjetahabientes, setTarjetahabientes] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<selectCliente>({
     Cliente: "",
@@ -112,7 +112,7 @@ export const AdminDashboard: React.FC = () => {
   });
   const [showModalElimina, setShowModalElimina] = useState(false);
   const [showModalEliminaTarjeta, setShowModalEliminaTarjeta] = useState(false);
-  const [varRandom, setVarRandom] = useState<number | string | null>("");
+  // const [varRandom setVarRandom] = useState<number | string | null>("");
   const [showModalAviso, setShowModalAviso] = useState(false);
   const [showModalGuardado, setShowModalGuardado] = useState(false);
   const [showModalContraseña, setShowModalContraseña] = useState(false);
@@ -221,6 +221,15 @@ export const AdminDashboard: React.FC = () => {
     } 
     setBusquedaPaginacion(false)
 
+      if(response.data.status === 401){
+        // console.log("sesion caducada: ", response.data);
+        setErrorMessage(response.data.error.message)
+        endSessionCockie();
+      }else if(response.data.status === 403 ){
+         setErrorMessage(response.data.error.message)
+        endSessionCockie();
+      }
+
   };
 
   const cancelarBusqueda = () => {
@@ -266,14 +275,20 @@ export const AdminDashboard: React.FC = () => {
       const response = await api.post("/admin/detalleGastos", { id });
 
       if( response.data.status === 200 ){
-        console.log(response.data.data.datos)
+        // console.log(response.data.data.datos)
        setShowModalDetalleGasto(true); 
        setDetalleClienteSelecionado(response.data.data.datos)
        return
       }
     
-      // console.log("sesion caducada: ", response.data.status);
-      // endSessionCockie();
+      if(response.data.status === 401){
+        // console.log("sesion caducada: ", response.data);
+        setErrorMessage(response.data.error.message)
+        endSessionCockie();
+      }else if(response.data.status === 403 ){
+         setErrorMessage(response.data.error.message)
+        endSessionCockie();
+      }
 
     } catch (error) {
       console.error("Error cargando los detalles del tarjetahabiente:", error);
@@ -285,14 +300,20 @@ export const AdminDashboard: React.FC = () => {
 
       if( response.data.status === 200 ){
         // console.log('abono')
-        console.log(response.data.data.datos)
+        // console.log(response.data.data.datos)
        setShowModalDetalleAbono(true); 
        setDetalleClienteSelecionado(response.data.data.datos)
        return
       }
     
-      // console.log("sesion caducada: ", response.data.status);
-      // endSessionCockie();
+      if(response.data.status === 401){
+        // console.log("sesion caducada: ", response.data);
+        setErrorMessage(response.data.error.message)
+        endSessionCockie();
+      }else if(response.data.status === 403 ){
+         setErrorMessage(response.data.error.message)
+        endSessionCockie();
+      }
 
     } catch (error) {
       console.error("Error cargando los detalles del tarjetahabiente:", error);
@@ -300,13 +321,13 @@ export const AdminDashboard: React.FC = () => {
   }
 
   const handleEditarGasto = () => {
-    console.log("Editando detalle de Gasto");
+    // console.log("Editando detalle de Gasto");
     setShowModalDetalleGasto(false);
     setIdMovimientoEdicion(detalleClienteSelecionado?.idMovimiento)
     setShowEditaModalGasto(true)
   };
   const handleEditarAbono = () => {
-    console.log("Editando detalle de Abono");
+    // console.log("Editando detalle de Abono");
     setShowModalDetalleAbono(false);
     setIdMovimientoEdicion(detalleClienteSelecionado?.idMovimiento)
     setShowEditaModalAbono(true)
@@ -328,7 +349,7 @@ export const AdminDashboard: React.FC = () => {
     setShowModalAviso(false);
     
     if (resultado === '0') {
-      console.log('registro Restaurado: ',selectedClient.idTarjeta )
+      // console.log('registro Restaurado: ',selectedClient.idTarjeta )
       const response = await api.post("/admin/restauraTarjeta", { data:{idTarjeta:selectedClient.idTarjeta} });
       // console.log(response)
       if( response.data.status === 200 ){
@@ -339,6 +360,15 @@ export const AdminDashboard: React.FC = () => {
           setBusquedaPaginacion(false)
         }
         cargarDatosPaginados();
+      }
+
+      if(response.data.status === 401){
+        // console.log("sesion caducada: ", response.data);
+        setErrorMessage(response.data.error.message)
+        endSessionCockie();
+      }else if(response.data.status === 403 ){
+         setErrorMessage(response.data.error.message)
+        endSessionCockie();
       }
     }
   };
@@ -368,42 +398,42 @@ export const AdminDashboard: React.FC = () => {
     return cleaned;
   };
 
-  const eliminaTargetahabiente = () => {
-    console.log("Elemento eliminado de la base de datos");
-    // ===========================================================================================================================================
-    // aqui va la api para guardar los datos modificados del Tarjetahabiente asi como tambien los errores que se pudieran producir en el backend
-    // y cuando sea exitoso refrescar la lista
-    // ===========================================================================================================================================
-    // console.log(varRandom);
-    setShowModalElimina(false);
-  };
-  const guardaEdicion = async () => {
-    console.log({'Datos enviados':dataInputs})
-    // console.log("Elemento Guardado en la base de datos");
-    // ===========================================================================================================================================
-    // aqui va la api para guardar los datos modificados del Tarjetahabiente asi como tambien los errores que se pudieran producir en el backend
-    // y cuando sea exitoso refrescar la lista
-    // ===========================================================================================================================================
-    try {
-      const response = await api.post("/admin/editaTarjetahabiente", { data:dataInputs });
-      // console.log(response)
-      // setbtnGuardarTarjetahabientes(true);
-      setSelectedClient({
-        Cliente: "",
-        fechaVencimiento: "",
-        idCentroN: 0,
-        idCliente: 0,
-        idTarjeta: 0,
-        noTarjeta: 0,
-      });
-      setDetallesCliente(null);
-      setShowModalGuardado(true); // Abrimos el modal para avisar de los datos actualizados correctemante
-      // console.log(dataInputs)
-      // setbtnGuardarTarjetahabientes(true)
-    } catch (error) {
+  // const eliminaTargetahabiente = () => {
+  //   console.log("Elemento eliminado de la base de datos");
+  //   // ===========================================================================================================================================
+  //   // aqui va la api para guardar los datos modificados del Tarjetahabiente asi como tambien los errores que se pudieran producir en el backend
+  //   // y cuando sea exitoso refrescar la lista
+  //   // ===========================================================================================================================================
+  //   // console.log(varRandom);
+  //   setShowModalElimina(false);
+  // };
+  // const guardaEdicion = async () => {
+  //   console.log({'Datos enviados':dataInputs})
+  //   // console.log("Elemento Guardado en la base de datos");
+  //   // ===========================================================================================================================================
+  //   // aqui va la api para guardar los datos modificados del Tarjetahabiente asi como tambien los errores que se pudieran producir en el backend
+  //   // y cuando sea exitoso refrescar la lista
+  //   // ===========================================================================================================================================
+  //   try {
+  //     const response = await api.post("/admin/editaTarjetahabiente", { data:dataInputs });
+  //     // console.log(response)
+  //     // setbtnGuardarTarjetahabientes(true);
+  //     setSelectedClient({
+  //       Cliente: "",
+  //       fechaVencimiento: "",
+  //       idCentroN: 0,
+  //       idCliente: 0,
+  //       idTarjeta: 0,
+  //       noTarjeta: 0,
+  //     });
+  //     setDetallesCliente(null);
+  //     setShowModalGuardado(true); // Abrimos el modal para avisar de los datos actualizados correctemante
+  //     // console.log(dataInputs)
+  //     // setbtnGuardarTarjetahabientes(true)
+  //   } catch (error) {
       
-    }
-  };
+  //   }
+  // };
 
   const formatearAPesos = (numero: number) => {
     return new Intl.NumberFormat("es-MX", {
@@ -414,25 +444,35 @@ export const AdminDashboard: React.FC = () => {
 
 const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
   const response = await api.post("/admin/detalleCliente", { idTarjeta });
- setDetallesCliente(response.data.data);
+  setDetallesCliente(response.data.data);
+
+  if(response.data.status === 401){
+    // console.log("sesion caducada: ", response.data);
+    setErrorMessage(response.data.error.message)
+    endSessionCockie();
+  }else if(response.data.status === 403 ){
+      setErrorMessage(response.data.error.message)
+    endSessionCockie();
+  }
 }
 
   const selecionaClienteTarjetabiente = async (
     idTarjeta: number | null,
     item: any,
-    idCliente:number | null,
+    // idCliente:number | null,
     estatus?:boolean
   ) => {
     // idTarjeta = 200
     // if( estatus !== true ){
-    
+    // setBtnTarjetahabientes(false)
 
       setLoading(true);
       setSelectedClient(item);
 
       try {
         const response = await api.post("/admin/detalleCliente", { idTarjeta });
-        console.log({Server:response.data.data.usuario})
+        // console.log({Server:response.data.data.usuario.length === 0})
+        // console.log(estatus)
   
         if (response.data.status === 200) {
           if( estatus !== true ){
@@ -445,15 +485,20 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
           setDetallesCliente(response.data.data);
           getDataInput(response.data.data.usuario);
           // setbtnGuardarTarjetahabientes(true);
-          setVarRandom(idCliente);
+          // setVarRandom(idCliente);
           // console.log({targetaSelecionada:response.data});
           // console.log(selectedClient.idTarjeta)
           // console.log({dataInputs:dataInputs})
           return;
         }
-  
-        console.log("sesion caducada: ", response.data.status);
-        endSessionCockie();
+        if(response.data.status === 401){
+          // console.log("sesion caducada: ", response.data);
+          setErrorMessage(response.data.error.message)
+          endSessionCockie();
+        }else if(response.data.status === 403 ){
+          setErrorMessage(response.data.error.message)
+          endSessionCockie();
+      }
       } catch (error) {
         console.error("Error cargando los detalles del tarjetahabiente:", error);
       } finally {
@@ -496,13 +541,13 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
   }, [centroActivo]);
 
   // Manejador dinámico para actualizar cualquier input del formulario
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    getDataInput((prev) => ({
-      ...prev,
-      [name]: value, // Actualiza dinámicamente la propiedad de la interfaz
-    }));
-  };
+  // const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const { name, value } = e.target;
+  //   getDataInput((prev) => ({
+  //     ...prev,
+  //     [name]: value, // Actualiza dinámicamente la propiedad de la interfaz
+  //   }));
+  // };
 
   const cargosGlobales = async(idCentroN:number) =>{
     const response = await api.post("/admin/cargosGlobales", { data:{idCentroN:idCentroN} });
@@ -510,6 +555,19 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
       // console.log(response.data)
       setMontoTotalCargos(response.data.data.MontoTotalCargos);
     }
+
+    if(response.data.status === 401){
+      // console.log("sesion caducada: ", response.data);
+      setErrorMessage(response.data.error.message)
+      endSessionCockie();
+    }else if(response.data.status === 403 ){
+        setErrorMessage(response.data.error.message)
+      endSessionCockie();
+    }
+    // if(response.data.status === 403 || response.data.status === 401){
+    //   console.log("sesion caducada: ", response.data.status);
+    //   endSessionCockie();
+    // }
   }
 
   useEffect(() => {
@@ -524,7 +582,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
       const response = await api.get(
         `/admin/targetahabientes?idCentroN=${centroId}&page=${paginaActual}&limit=${limitePorPagina}`,
       );
-      console.log(response.data);
+      // console.log(response.data);
 
       if (response.data.status === 200) {
         const { tarjetahabientes, paginacion, MontoTotalCargos } =
@@ -557,8 +615,14 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
         // console.log(selectedClient)
         return;
       }
-      console.log("sesion caducada: ", response.data.status);
-      endSessionCockie();
+      if(response.data.status === 401){
+        // console.log("sesion caducada: ", response.data);
+        setErrorMessage(response.data.error.message)
+        endSessionCockie();
+      }else if(response.data.status === 403 ){
+         setErrorMessage(response.data.error.message)
+        endSessionCockie();
+      }
     } catch (error) {
       console.error("Error cargando la tabla paginada de red:", error);
     } finally {
@@ -577,7 +641,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
           setBusquedaPaginacion(false)
         }
       cargarDatosPaginados();
-      console.log('actualizamos centro de negocios')
+      // console.log('actualizamos centro de negocios')
     }
     
   };
@@ -587,7 +651,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
 
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
-      console.log('Tarjeta editada correctamente' )
+      // console.log('Tarjeta editada correctamente' )
       setBtnTarjetahabientes(true)
       setDetallesCliente(null)
        if(busquedaPaginacion){
@@ -603,7 +667,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
 
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
-      console.log('Se cambio la contraseña correctamente' )
+      // console.log('Se cambio la contraseña correctamente' )
       // setBtnTarjetahabientes(true)
       // setDetallesCliente(null)
 
@@ -616,7 +680,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
         setIdMovimientoEdicion('')
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
-      console.log('Se agrego gasto correctamente' )
+      // console.log('Se agrego gasto correctamente' )
       cargosGlobales(centroId)
       detalleClienteGastoAbono(dataInputs?.idTarjeta)
       // setBtnTarjetahabientes(true)
@@ -632,7 +696,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
         setIdMovimientoEdicion('')
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
-      console.log('Se agrego gasto correctamente' )
+      // console.log('Se agrego gasto correctamente' )
       detalleClienteGastoAbono(dataInputs?.idTarjeta)
       // setBtnTarjetahabientes(true)
       // setDetallesCliente(null)
@@ -645,7 +709,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
 
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
-      console.log('Se elimino el tarjetahabiente correctamente' )
+      // console.log('Se elimino el tarjetahabiente correctamente' )
       setBtnTarjetahabientes(true)
        if(busquedaPaginacion){
           busquedaRef.current!.value = "";
@@ -660,7 +724,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
 
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
-      console.log('Se Elimino la tarjeta correctamente' )
+      // console.log('Se Elimino la tarjeta correctamente' )
       setBtnTarjetahabientes(true)
       setDetallesCliente(null)
        if(busquedaPaginacion){
@@ -788,7 +852,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
   // INICIAMOS EL CIERRE DE SESION SEGURA
   // =============================================================================================
   const handleLogout = async () => {
-    setIsLoggingOut(true);
+    // setIsLoggingOut(true);
 
     // 1. Avisamos al backend para que limpie cookies y ejecute el SP de SQL Server
     await logoutSession();
@@ -801,7 +865,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
   };
 
   const endSessionCockie = () => {
-    setIsLoggingOut(true);
+    // setIsLoggingOut(true);
     // 2. Limpiamos el estado global en el Frontend de React
     logout();
     // 3. Redirigimos al Login borrando el historial de navegación
@@ -1104,7 +1168,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                   {tarjetahabientes.map((item) => (
                     <tr
                       key={item.idTarjeta}
-                      onClick={()=>selecionaClienteTarjetabiente(item.idTarjeta, item, item.idCliente, item.estatus)}
+                      onClick={()=>selecionaClienteTarjetabiente(item.idTarjeta, item, item.estatus)}
                         
                         // onClick={()=>{
                         // selecionaClienteTarjetabiente(
@@ -1812,7 +1876,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
             comprobante={detalleClienteSelecionado?.comprobante}
             bajaPorEdicion1={0}
 
-            textConfirm="Agregar"
+            textConfirm="Guardar"
             textCancel="Cancelar"
             // onConfirm={() => setShowModalGasto(false)}
             onClose={handleAgregaGasto} 
@@ -1840,7 +1904,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
           fechaCargo={formatearParaInput(detalleClienteSelecionado?.Fecha)}
           comprobante={detalleClienteSelecionado?.comprobante}
           bajaPorEdicion1={0}
-          textConfirm="Agregar"
+          textConfirm="Guardar"
           textCancel="Cancelar"
           // onConfirm={() => setShowModalAbono(false)}
           onClose={handleAgregaAbono}

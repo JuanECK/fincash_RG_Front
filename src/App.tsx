@@ -6,7 +6,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminLayout } from './pages/AdminLayout';        // 🔄 Sub-página 1
 import { AdminDashboard } from './pages/AdminDashboard';  // 🔄 Sub-página 1
 import { AdminHistorial } from './pages/AdminHistorial';  // 🔄 Sub-página 2
-import { UserHome } from './pages/UserDashboard';
+// import { UserHome } from './pages/UserDashboard';
 import { AdminHistorialIndividual } from './pages/AdminHistorialIndividual';
 
 // =============================================================================================
@@ -74,7 +74,7 @@ function App() {
             {/* ========================================================= */}
 
            {/* 🔒 Ruta del Rol 2 (Clientes) */}
-            <Route path="/user/home" element={<ProtectedRoute allowedRoles={[2]}><UserHome /></ProtectedRoute>} />
+            {/* <Route path="/user/home" element={<ProtectedRoute allowedRoles={[2]}><UserHome /></ProtectedRoute>} /> */}
             {/* ========================================================= */}
           {/* <Route 
             path="/user/home" 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { api, logoutSession } from '../services/api';
+import { api } from '../services/api';
 import { ModalAgregarCentroNegocios } from '../modals/ModalGeneral';
 
 interface InputCentroN{
@@ -21,7 +21,7 @@ export const AdminLayout: React.FC = () => {
     const [centroId, setCentroId] = useState(1);
     const [idUsuario, setIdUsuario] = useState<string | null>(null);
     const [cNegocio, setCNegocio] = useState<any[]>([]);
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
 
     const [dataInputs, getDataInput] = useState<InputCentroN>({
@@ -41,12 +41,12 @@ export const AdminLayout: React.FC = () => {
 
     
     const cargaCentroNegocios = async () => {
-      console.log({Centro:centroActivo})
+      // console.log({Centro:centroActivo})
       const { idUsuario } = user!
       setIdUsuario(idUsuario)
       const response = await api.post("/admin/centroNegocios", { idUsuario });
 
-      console.log(response.data.data.cNegocios[0]?.centroNegocio)
+      // console.log(response.data.data)
 
       if( response.data.status === 200 ){
         setCNegocio(response.data.data.cNegocios)
@@ -85,7 +85,7 @@ export const AdminLayout: React.FC = () => {
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
       cargaCentroNegocios();
-      console.log('actualizamos centro de negocios')
+      // console.log('actualizamos centro de negocios')
     }
     
   };
@@ -96,7 +96,7 @@ export const AdminLayout: React.FC = () => {
     if (resultado === '1') {
       cargaCentroNegocios();
       setCentroActivo(centroN)
-      console.log('actualizamos centro de negocios')
+      // console.log('actualizamos centro de negocios')
     }
     
   };
@@ -211,6 +211,7 @@ export const AdminLayout: React.FC = () => {
         <ModalAgregarCentroNegocios
           title={'Editar Centro de Negocios'}
           tipo={'edicion'}
+          edicionModal={true}
           usuarioData={dataInputs}
           onCancel={()=> setShowModalAgregaCentroNegocio(false)}
           onClose={handleCloseModalEdicion}

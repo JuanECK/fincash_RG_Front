@@ -1,8 +1,8 @@
-import React, { useEffect, useState, type HtmlHTMLAttributes } from "react";
-import { api } from "../services/api";
-import ModalAvisoPopUp from "./ModalAviso";
-import { formToJSON } from "axios";
-import { fromJSONSchema, set } from "zod";
+import React, { useEffect, useState } from "react";
+import { abrirVisorComprobantePdf, api } from "../services/api";
+// import ModalAvisoPopUp from "./ModalAviso";
+// import { formToJSON } from "axios";
+// import { fromJSONSchema, set } from "zod";
 // import { ModalAviso } from './ModalAviso'
 
 interface ModalProps {
@@ -51,16 +51,16 @@ interface ModalContrasenaProps {
   icono?: React.ReactNode;
 }
 
-interface ModalTarjetahabienteProps {
-  isOpen: boolean;
-  title?: string;
-  centroNegocio?: string;
-  textConfirm?: string;
-  textCancel?: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-  icono?: React.ReactNode;
-}
+// interface ModalTarjetahabienteProps {
+//   isOpen: boolean;
+//   title?: string;
+//   centroNegocio?: string;
+//   textConfirm?: string;
+//   textCancel?: string;
+//   onConfirm: () => void;
+//   onCancel: () => void;
+//   icono?: React.ReactNode;
+// }
 
 interface ModalAgregarProps {
   // isOpen?: boolean;
@@ -73,6 +73,7 @@ interface ModalAgregarProps {
   onConfirm?: (data: any) => void;
   onClose?: (resultado: "1" | "0", centroN:'') => void;
   centroNegocio?: string;
+  edicionModal?:boolean;
 }
 
 interface DetalleGastoProps {
@@ -152,11 +153,11 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   const handleSubmit = async (direccion?: string, tipoDato?: any) => {
-    console.log(direccion, " ", tipoDato);
+    // console.log(direccion, " ", tipoDato);
     try {
       // console.log({ data:eliminarCerosIzquierda(noCliente!)});
       const response = await api.post(direccion!, { data: tipoDato });
-      console.log(response.data);
+      // console.log(response.data);
       if (response.data.status === 200) {
         onClose!("1");
         return;
@@ -164,7 +165,7 @@ export const Modal: React.FC<ModalProps> = ({
         setErrorMessage(response.data.error.message);
       }
     } catch (error) {
-      console.log("Error del servidor", error);
+      // console.log("Error del servidor", error);
     }
   };
 
@@ -336,12 +337,12 @@ export const ModalEditaTarjetahabiente: React.FC<ModalAgregarProps> = ({
       //   idCliente:noCliente,
       // };
 
-      console.log("Datos a enviar:", titularForm);
+      // console.log("Datos a enviar:", titularForm);
 
       const response = await api.post("/admin/editaTarjetahabiente", {
         data: titularForm,
       });
-      console.log(response);
+      // console.log(response);
 
       if (response.data.status === 200) {
         // console.log(response);
@@ -352,7 +353,7 @@ export const ModalEditaTarjetahabiente: React.FC<ModalAgregarProps> = ({
         setErrorMessage(response.data.error.message);
       }
     } catch (error) {
-      console.log("Error del servidor", error);
+      // console.log("Error del servidor", error);
     }
   };
 
@@ -596,12 +597,12 @@ export const ModalContraseña: React.FC<ModalContrasenaProps> = ({
   tarjetahabiente,
   cta,
   noCliente,
-  textConfirm,
-  textCancel,
+  // textConfirm,
+  // textCancel,
   onClose,
   // onConfirm,
   // onCancel,
-  icono,
+  // icono,
 }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -634,12 +635,12 @@ export const ModalContraseña: React.FC<ModalContrasenaProps> = ({
       //   idCliente:noCliente,
       // };
 
-      console.log({ data: llenaDatosAsincronos });
+      // console.log({ data: llenaDatosAsincronos });
 
       const response = await api.post("/admin/cambioContrasena", {
         data: llenaDatosAsincronos,
       });
-      console.log(response.data);
+      // console.log(response.data);
 
       if (response.data.status === 200) {
         onClose!("1");
@@ -648,7 +649,7 @@ export const ModalContraseña: React.FC<ModalContrasenaProps> = ({
         setErrorMessage(response.data.error.message);
       }
     } catch (error) {
-      console.log("Error del servidor", error);
+      // console.log("Error del servidor", error);
     }
   };
 
@@ -801,8 +802,8 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
   bajaPorEdicion1,
   onClose,
 }) => {
-      const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [file, setFile] = useState<File | null>(null);
     const [form, setForm] = useState({
     idTarjeta: null,
     tipoMovimiento: "I", // -- 'I' (Abono) o 'E' (Cargo)
@@ -814,74 +815,73 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
     fechaMovimiento: fechaCargo || "",
     idUsuario: idUsuario1,
     idMovimientoVinculado: idMovimientoVinculado1,
-    bajaPorEdicion:bajaPorEdicion1 
-
-    // idTarjeta: null,
-    // tipoMovimiento: "I", // -- 'I' (Abono) o 'E' (Cargo)
-    // monto: String(monto || '') || "",
-    // nombreNegocio:  "OnceCapital",
-    // concepto: concepto || "",
-    // comprobante: comprobante || "",
-    // fechaMovimiento: fechaCargo || "",
-    // idUsuario: idUsuario1,
-    // idMovimientoVinculado: idMovimientoVinculado1,
-    // bajaPorEdicion: bajaPorEdicion1 
+    bajaPorEdicion:bajaPorEdicion1,
+    isEdith:0
   });
 
    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-    const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
-    // const llenaDatosAsincronos = {
-    //   ...form, idCliente: eliminarCerosIzquierda(noCliente!)
-    // }
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const selectedFile = e.target.files[0];
+      if (selectedFile.type !== 'application/pdf') {
+        setErrorMessage('Solo se permiten archivos en formato PDF.');
+        setFile(null);
+        return;
+      }
+      // console.log('entre ')
+      if( comprobante && selectedFile ){
+        // console.log('es edicion')
+        setForm({...form, isEdith:1})
+        setErrorMessage(null);
+        setFile(selectedFile);
+        return
+      }
+      setForm({...form, comprobante:''})
+      setErrorMessage(null);
+      // setForm({comprobanteFile:selectedFile})
+      setFile(selectedFile);
+    }
+  };
+
+
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+  
     e.preventDefault();
-    try {
+  try {
 
     const dataToSend = new FormData();
-
-    // console.log(form)
     // Recorremos tu objeto 'form' de React y lo inyectamos al contenedor automáticamente
     dataToSend.append('idTarjeta', String(idTarjeta1));
     dataToSend.append('tipoMovimiento', form.tipoMovimiento);
     dataToSend.append('monto', form.monto);
     dataToSend.append('nombreNegocio', form.nombreNegocio);
     dataToSend.append('concepto', form.concepto);
+    dataToSend.append('comprobante', form.comprobante);
     dataToSend.append('fechaMovimiento', form.fechaMovimiento);
     dataToSend.append('idUsuario', String(form.idUsuario));
     dataToSend.append('idMovimientoVinculado', String(idMovimientoVinculado1));
     dataToSend.append('bajaPorEdicion', String(form.bajaPorEdicion));
-    
-    // 🚨 LA LLAVE CRÍTICA: Adjuntamos el archivo binario PDF real.
-    // 'comprobante' es el nombre exacto que espera Multer en uploadPdf.single('comprobante')
-     if (form.comprobanteFile) {
+    dataToSend.append('isEdith', String(form.isEdith));
+    // console.log('hasta aqui')
+        if (file) {
+      // console.log('File ok')
       // 🚨 NOTA DE RED: El primer parámetro debe seguir siendo 'comprobante' 
       // para que encaje con el uploadPdf.single('comprobante') de tu Node.js en AWS
-      dataToSend.append('comprobanteFile', form.comprobanteFile);
+      dataToSend.append('comprobanteFile', file!);
       
     }
 
-      // const data = {
-      //   ...form,
-      //   idTarjeta:idTarjeta1,
-      // };
-  
-      // console.log({ data: data });
+      console.log({ Formdata: Object.fromEntries(dataToSend) });
   
       // const response = await api.post("/admin/agregaAbonoGasto", { data:data});
+
+      const response = await api.post("/admin/agregaAbonoGasto", dataToSend );
+
       // console.log(response.data)
 
-            console.log({ data: Object.fromEntries(dataToSend) });
-  
-      // const response = await api.post("/admin/agregaAbonoGasto", { data:data});
-
-      const response = await api.post("/admin/agregaAbonoGasto", dataToSend, {
-        headers: {
-        'Content-Type': 'multipart/form-data', // Avisa al navegador que van bytes y archivos
-      },
-      });
-  
       if(response.data.status === 200){
         onClose!('1')
         return
@@ -891,7 +891,7 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
       }
 
     } catch (error) {
-      console.log("Error del servidor", error);
+      // console.log("Error del servidor", error);
     }
   };
 
@@ -900,7 +900,7 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
   };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 ">
-      <div className="w-full max-w-xl rounded-2xl bg-(--TextoInactivo) p-8 shadow-2xl text-center border border-[#146f8c] min-w-sm">
+      <div className="w-full max-w-2xl rounded-2xl bg-(--TextoInactivo) p-8 shadow-2xl text-center border border-[#146f8c] min-w-sm">
         <div className="flex items-center justify-between">
           {/* Renderizado condicional del icono dinámico */}
           <div className="flex">
@@ -1016,78 +1016,60 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
                 </svg>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-1">
-              <button type="button" className="cursor-pointer">
-               <div className="flex justify-center items-center gap-3 py-2 px-5 rounded-full bg-(--blanco) text-(--DeepBlue)">
-                Subir comprobante
-                <svg
-                  width="11"
-                  height="13"
-                  viewBox="0 0 11 13"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M5.02734 11.168C5.16016 11.168 5.27539 11.123 5.37305 11.0332C5.4707 10.9434 5.51953 10.834 5.51953 10.7051V8.75977L5.4668 7.88086L5.91211 8.33789L6.39258 8.83008C6.43945 8.87305 6.49023 8.91016 6.54492 8.94141C6.60352 8.96875 6.66406 8.98242 6.72656 8.98242C6.85156 8.98242 6.95703 8.94336 7.04297 8.86523C7.12891 8.7832 7.17188 8.67969 7.17188 8.55469C7.17188 8.48438 7.1582 8.42188 7.13086 8.36719C7.10352 8.3125 7.06445 8.26172 7.01367 8.21484L5.39648 6.73242C5.33398 6.67383 5.27344 6.63086 5.21484 6.60352C5.15625 6.57617 5.09375 6.5625 5.02734 6.5625C4.95703 6.5625 4.89258 6.57617 4.83398 6.60352C4.77539 6.63086 4.71484 6.67383 4.65234 6.73242L3.04102 8.21484C2.99023 8.26172 2.95117 8.3125 2.92383 8.36719C2.89648 8.42188 2.88281 8.48438 2.88281 8.55469C2.88281 8.67969 2.92383 8.7832 3.00586 8.86523C3.08789 8.94336 3.19531 8.98242 3.32812 8.98242C3.38672 8.98242 3.44531 8.96875 3.50391 8.94141C3.5625 8.91016 3.61328 8.87305 3.65625 8.83008L4.13672 8.33789L4.58203 7.88086L4.53516 8.75977V10.7051C4.53516 10.834 4.58203 10.9434 4.67578 11.0332C4.77344 11.123 4.89062 11.168 5.02734 11.168ZM1.9043 12.6855C1.27539 12.6855 0.800781 12.5234 0.480469 12.1992C0.160156 11.875 0 11.3965 0 10.7637V1.92188C0 1.29297 0.160156 0.816406 0.480469 0.492188C0.800781 0.164062 1.27539 0 1.9043 0H4.57617V4.42969C4.57617 5.15625 4.93945 5.51953 5.66602 5.51953H10.0488V10.7637C10.0488 11.3926 9.88867 11.8691 9.56836 12.1934C9.24805 12.5215 8.77344 12.6855 8.14453 12.6855H1.9043ZM5.77148 4.66406C5.54883 4.66406 5.4375 4.55273 5.4375 4.33008V0.0585938C5.57031 0.0742188 5.70312 0.128906 5.83594 0.222656C5.97266 0.316406 6.11328 0.4375 6.25781 0.585938L9.45703 3.83203C9.60938 3.98828 9.73047 4.13281 9.82031 4.26562C9.91406 4.39844 9.96875 4.53125 9.98438 4.66406H5.77148Z"
-                    fill="#1B687C"
+
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-4 items-start">
+                {/* Agregamos 'relative' y 'overflow-hidden' al contenedor principal */}
+                <div className={`relative overflow-hidden flex justify-center items-center gap-3 py-2 px-5 rounded-full bg-(--blanco) w-full ${file ? 'has-file' : ''}`}>
+                  
+                  <span className="text-sm font-[400] text-(--DeepBlue) truncate min-w-0 flex-1 text-center">
+                    {form.comprobante ? comprobante && form.isEdith === 1 ? file?.name : comprobante : file ? file.name : 'Arrastra o selecciona el archivo PDF' }
+                  </span>
+                  <span>
+                    <svg
+                      width="11"
+                      height="13"
+                      viewBox="0 0 11 13"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      >
+                      <path
+                        d="M5.02734 11.168C5.16016 11.168 5.27539 11.123 5.37305 11.0332C5.4707 10.9434 5.51953 10.834 5.51953 10.7051V8.75977L5.4668 7.88086L5.91211 8.33789L6.39258 8.83008C6.43945 8.87305 6.49023 8.91016 6.54492 8.94141C6.60352 8.96875 6.66406 8.98242 6.72656 8.98242C6.85156 8.98242 6.95703 8.94336 7.04297 8.86523C7.12891 8.7832 7.17188 8.67969 7.17188 8.55469C7.17188 8.48438 7.1582 8.42188 7.13086 8.36719C7.10352 8.3125 7.06445 8.26172 7.01367 8.21484L5.39648 6.73242C5.33398 6.67383 5.27344 6.63086 5.21484 6.60352C5.15625 6.57617 5.09375 6.5625 5.02734 6.5625C4.95703 6.5625 4.89258 6.57617 4.83398 6.60352C4.77539 6.63086 4.71484 6.67383 4.65234 6.73242L3.04102 8.21484C2.99023 8.26172 2.95117 8.3125 2.92383 8.36719C2.89648 8.42188 2.88281 8.48438 2.88281 8.55469C2.88281 8.67969 2.92383 8.7832 3.00586 8.86523C3.08789 8.94336 3.19531 8.98242 3.32812 8.98242C3.38672 8.98242 3.44531 8.96875 3.50391 8.94141C3.5625 8.91016 3.61328 8.87305 3.65625 8.83008L4.13672 8.33789L4.58203 7.88086L4.53516 8.75977V10.7051C4.53516 10.834 4.58203 10.9434 4.67578 11.0332C4.77344 11.123 4.89062 11.168 5.02734 11.168ZM1.9043 12.6855C1.27539 12.6855 0.800781 12.5234 0.480469 12.1992C0.160156 11.875 0 11.3965 0 10.7637V1.92188C0 1.29297 0.160156 0.816406 0.480469 0.492188C0.800781 0.164062 1.27539 0 1.9043 0H4.57617V4.42969C4.57617 5.15625 4.93945 5.51953 5.66602 5.51953H10.0488V10.7637C10.0488 11.3926 9.88867 11.8691 9.56836 12.1934C9.24805 12.5215 8.77344 12.6855 8.14453 12.6855H1.9043ZM5.77148 4.66406C5.54883 4.66406 5.4375 4.55273 5.4375 4.33008V0.0585938C5.57031 0.0742188 5.70312 0.128906 5.83594 0.222656C5.97266 0.316406 6.11328 0.4375 6.25781 0.585938L9.45703 3.83203C9.60938 3.98828 9.73047 4.13281 9.82031 4.26562C9.91406 4.39844 9.96875 4.53125 9.98438 4.66406H5.77148Z"
+                        fill="#1B687C"
+                        />
+                    </svg>
+                  </span>
+                  
+                  {/* Estilizamos el input para que ocupe SOLO este contenedor de forma invisible */}
+                  <input 
+                    type="file" 
+                    title="Máximo 5MB"
+                    accept="application/pdf" 
+                    onChange={handleFileChange} 
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                   />
-                </svg>
+
+                </div>
               </div>
-              </button>
-            </div>
           </div>
+          <div className="flex flex-row gap-3 mt-5 justify-end">
+            {/* Botón Cancelar */}
+            <button
+              type="submit"
+              className="w-[35%] py-2 px-2 rounded-full bg-(--DeepBlue) text-(--verdeSuccess) font-medium  focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+            >
+              {textConfirm}
+            </button>
 
-
-
-        {/* <div className="flex mt-5 gap-3">
-          <input
-            type="text"
-            placeholder="*Monto"
-            className="input-generico w-full min-w-24"
-          />
-          <input
-            type="text"
-            placeholder="*Fecha de abono"
-            className="input-generico max-w-40"
-          />
-          <div className="py-1 px-5 rounded-full bg-(--blanco)">
-            <button className="pt-2 cursor-pointer">
-              <svg
-                width="11"
-                height="13"
-                viewBox="0 0 11 13"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M5.02734 11.168C5.16016 11.168 5.27539 11.123 5.37305 11.0332C5.4707 10.9434 5.51953 10.834 5.51953 10.7051V8.75977L5.4668 7.88086L5.91211 8.33789L6.39258 8.83008C6.43945 8.87305 6.49023 8.91016 6.54492 8.94141C6.60352 8.96875 6.66406 8.98242 6.72656 8.98242C6.85156 8.98242 6.95703 8.94336 7.04297 8.86523C7.12891 8.7832 7.17188 8.67969 7.17188 8.55469C7.17188 8.48438 7.1582 8.42188 7.13086 8.36719C7.10352 8.3125 7.06445 8.26172 7.01367 8.21484L5.39648 6.73242C5.33398 6.67383 5.27344 6.63086 5.21484 6.60352C5.15625 6.57617 5.09375 6.5625 5.02734 6.5625C4.95703 6.5625 4.89258 6.57617 4.83398 6.60352C4.77539 6.63086 4.71484 6.67383 4.65234 6.73242L3.04102 8.21484C2.99023 8.26172 2.95117 8.3125 2.92383 8.36719C2.89648 8.42188 2.88281 8.48438 2.88281 8.55469C2.88281 8.67969 2.92383 8.7832 3.00586 8.86523C3.08789 8.94336 3.19531 8.98242 3.32812 8.98242C3.38672 8.98242 3.44531 8.96875 3.50391 8.94141C3.5625 8.91016 3.61328 8.87305 3.65625 8.83008L4.13672 8.33789L4.58203 7.88086L4.53516 8.75977V10.7051C4.53516 10.834 4.58203 10.9434 4.67578 11.0332C4.77344 11.123 4.89062 11.168 5.02734 11.168ZM1.9043 12.6855C1.27539 12.6855 0.800781 12.5234 0.480469 12.1992C0.160156 11.875 0 11.3965 0 10.7637V1.92188C0 1.29297 0.160156 0.816406 0.480469 0.492188C0.800781 0.164062 1.27539 0 1.9043 0H4.57617V4.42969C4.57617 5.15625 4.93945 5.51953 5.66602 5.51953H10.0488V10.7637C10.0488 11.3926 9.88867 11.8691 9.56836 12.1934C9.24805 12.5215 8.77344 12.6855 8.14453 12.6855H1.9043ZM5.77148 4.66406C5.54883 4.66406 5.4375 4.55273 5.4375 4.33008V0.0585938C5.57031 0.0742188 5.70312 0.128906 5.83594 0.222656C5.97266 0.316406 6.11328 0.4375 6.25781 0.585938L9.45703 3.83203C9.60938 3.98828 9.73047 4.13281 9.82031 4.26562C9.91406 4.39844 9.96875 4.53125 9.98438 4.66406H5.77148Z"
-                  fill="#1B687C"
-                />
-              </svg>
+            {/* Botón Confirmar */}
+            <button
+              type="button"
+              onClick={handledClosed}
+              className="w-[35%] py-2 px-2 rounded-full bg-(--DeepBlue) text-(--rojoCancelar) font-medium  focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+            >
+              {textCancel}
             </button>
           </div>
-        </div> */}
-
-        <div className="flex flex-row gap-3 mt-5 justify-end">
-          {/* Botón Cancelar */}
-          <button
-            type="submit"
-            className="w-[35%] py-2 px-2 rounded-full bg-(--DeepBlue) text-(--verdeSuccess) font-medium  focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-          >
-            {textConfirm}
-          </button>
-
-          {/* Botón Confirmar */}
-          <button
-            type="button"
-            onClick={handledClosed}
-            className="w-[35%] py-2 px-2 rounded-full bg-(--DeepBlue) text-(--rojoCancelar) font-medium  focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
-          >
-            {textCancel}
-          </button>
-        </div>
-      </form>
-
+        </form>
       </div>
       {errorMessage && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
@@ -1109,7 +1091,6 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
 };
 
 export const ModalGasto: React.FC<ModalContrasenaProps> = ({
-  // isOpen,
   title,
   tarjetahabiente,
   cta,
@@ -1128,9 +1109,7 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
   comprobante,
   bajaPorEdicion1,
   onClose,
-  // onConfirm,
-  // onCancel,
-  icono,
+  // icono,
 }) => {
   const [form, setForm] = useState({
     idTarjeta: null,
@@ -1163,9 +1142,9 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
         setFile(null);
         return;
       }
-      console.log('entre ')
+      // console.log('entre ')
       if( comprobante && selectedFile ){
-        console.log('es edicion')
+        // console.log('es edicion')
         setForm({...form, isEdith:1})
         setErrorMessage(null);
         setFile(selectedFile);
@@ -1187,7 +1166,7 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
 
     const dataToSend = new FormData();
 
-    console.log({idMovimientoVinculado1:idMovimientoVinculado1})
+    // console.log({idMovimientoVinculado1:idMovimientoVinculado1})
     // Recorremos tu objeto 'form' de React y lo inyectamos al contenedor automáticamente
     dataToSend.append('idTarjeta', String(idTarjeta1));
     dataToSend.append('tipoMovimiento', form.tipoMovimiento);
@@ -1204,26 +1183,18 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
     // 🚨 LA LLAVE CRÍTICA: Adjuntamos el archivo binario PDF real.
     // 'comprobante' es el nombre exacto que espera Multer en uploadPdf.single('comprobante')
      if (file) {
-      console.log('File ok')
+      // console.log('File ok')
       // 🚨 NOTA DE RED: El primer parámetro debe seguir siendo 'comprobante' 
       // para que encaje con el uploadPdf.single('comprobante') de tu Node.js en AWS
       dataToSend.append('comprobanteFile', file!);
       
     }
 
-      // const data = {
-      //   ...form,
-      //   idTarjeta:idTarjeta1,
-      // };
-  
-      // console.log({ data: form });
-      console.log({ Formdata: Object.fromEntries(dataToSend) });
-  
-      // const response = await api.post("/admin/agregaAbonoGasto", { data:data});
+      // console.log({ Formdata: Object.fromEntries(dataToSend) });
 
       const response = await api.post("/admin/agregaAbonoGasto", dataToSend );
 
-      console.log(response.data)
+      // console.log(response.data)
   
       if(response.data.status === 200){
         onClose!('1')
@@ -1234,7 +1205,7 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
       }
 
     } catch (error) {
-      console.log("Error del servidor", error);
+      // console.log("Error del servidor", error);
     }
   };
 
@@ -1411,34 +1382,12 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
           {/* grid grid-cols-1 md:grid-cols-2 */}
           {/* =========================================================================== */}
 
-            {/* 📎 Input de Archivo PDF Customizado */}
-              {/* <div>
-                <label className="form-label !mb-1.5">Comprobante Digital (PDF)</label>
-                <div className={`file-upload-wrapper ${file ? 'has-file' : ''}`}>
-                  <span className="text-xl">{file ? '📄' : '📤'}</span>
-                  <span className="text-xs font-semibold text-slate-300">
-                    {file ? file.name : 'Arrastra o selecciona el archivo PDF'}
-                  </span>
-                  {" "}
-                  <span className="text-[10px] text-(--blanco)">Máximo 5MB</span>
-                  <input 
-                    type="file" 
-                    accept="application/pdf" 
-                    onChange={handleFileChange} 
-                    className="hidden-file-input"
-                  />
-                </div>
-              </div> */}
-
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Agregamos 'relative' y 'overflow-hidden' al contenedor principal */}
-                <div className={`relative overflow-hidden flex justify-center items-center gap-3 py-2 px-5 mt-5 rounded-full bg-(--blanco) ${file ? 'has-file' : ''}`}>
+                <div className={`relative overflow-hidden flex justify-center items-center gap-3 py-2 px-5 mt-5 rounded-full bg-(--blanco) w-full ${file ? 'has-file' : ''}`}>
                   
-                  <span className="text-sm font-[400] text-(--DeepBlue)">
+                  <span className="text-sm font-[400] text-(--DeepBlue) truncate min-w-0 flex-1 text-center">
                     {form.comprobante ? comprobante && form.isEdith === 1 ? file?.name : comprobante : file ? file.name : 'Arrastra o selecciona el archivo PDF' }
-                    {/* {form.isEdith === 1 ? file ? file.name : 'Arrastra o selecciona el archivo PDF' :comprobante } */}
-                    {/* {form.comprobante ? comprobante : file ? file.name : 'Arrastra o selecciona el archivo PDF'} */}
                   </span>
                   <span>
                     <svg
@@ -1466,25 +1415,6 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
 
                 </div>
               </div>
-
-        
-            {/* <button type="button" className="cursor-pointer text-sm ">
-              <div className="flex justify-center items-center gap-3 py-2 px-5 mt-5 rounded-full bg-(--blanco) text-(--DeepBlue)">
-                 {file ? file.name : 'Subir comprobante'}
-                                   <svg
-                    width="11"
-                    height="13"
-                    viewBox="0 0 11 13"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    >
-                    <path
-                      d="M5.02734 11.168C5.16016 11.168 5.27539 11.123 5.37305 11.0332C5.4707 10.9434 5.51953 10.834 5.51953 10.7051V8.75977L5.4668 7.88086L5.91211 8.33789L6.39258 8.83008C6.43945 8.87305 6.49023 8.91016 6.54492 8.94141C6.60352 8.96875 6.66406 8.98242 6.72656 8.98242C6.85156 8.98242 6.95703 8.94336 7.04297 8.86523C7.12891 8.7832 7.17188 8.67969 7.17188 8.55469C7.17188 8.48438 7.1582 8.42188 7.13086 8.36719C7.10352 8.3125 7.06445 8.26172 7.01367 8.21484L5.39648 6.73242C5.33398 6.67383 5.27344 6.63086 5.21484 6.60352C5.15625 6.57617 5.09375 6.5625 5.02734 6.5625C4.95703 6.5625 4.89258 6.57617 4.83398 6.60352C4.77539 6.63086 4.71484 6.67383 4.65234 6.73242L3.04102 8.21484C2.99023 8.26172 2.95117 8.3125 2.92383 8.36719C2.89648 8.42188 2.88281 8.48438 2.88281 8.55469C2.88281 8.67969 2.92383 8.7832 3.00586 8.86523C3.08789 8.94336 3.19531 8.98242 3.32812 8.98242C3.38672 8.98242 3.44531 8.96875 3.50391 8.94141C3.5625 8.91016 3.61328 8.87305 3.65625 8.83008L4.13672 8.33789L4.58203 7.88086L4.53516 8.75977V10.7051C4.53516 10.834 4.58203 10.9434 4.67578 11.0332C4.77344 11.123 4.89062 11.168 5.02734 11.168ZM1.9043 12.6855C1.27539 12.6855 0.800781 12.5234 0.480469 12.1992C0.160156 11.875 0 11.3965 0 10.7637V1.92188C0 1.29297 0.160156 0.816406 0.480469 0.492188C0.800781 0.164062 1.27539 0 1.9043 0H4.57617V4.42969C4.57617 5.15625 4.93945 5.51953 5.66602 5.51953H10.0488V10.7637C10.0488 11.3926 9.88867 11.8691 9.56836 12.1934C9.24805 12.5215 8.77344 12.6855 8.14453 12.6855H1.9043ZM5.77148 4.66406C5.54883 4.66406 5.4375 4.55273 5.4375 4.33008V0.0585938C5.57031 0.0742188 5.70312 0.128906 5.83594 0.222656C5.97266 0.316406 6.11328 0.4375 6.25781 0.585938L9.45703 3.83203C9.60938 3.98828 9.73047 4.13281 9.82031 4.26562C9.91406 4.39844 9.96875 4.53125 9.98438 4.66406H5.77148Z"
-                      fill="#1B687C"
-                      />
-                  </svg>
-              </div>
-            </button> */}
 
           {/* =========================================================================== */}
 
@@ -1626,7 +1556,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
       data: datosActualizados,
     });
 
-    console.log(response.data)
+    // console.log(response.data)
 
     if (response.data.status === 200) {
       const dataRecibida = response.data.data;
@@ -1635,7 +1565,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
       const esDataVacia = !dataRecibida ||  dataRecibida === '' || (typeof dataRecibida === 'object' && Object.keys(dataRecibida).length === 0);
 
       if (esDataVacia) {
-        console.log("Cliente no encontrado");
+        // console.log("Cliente no encontrado");
         setResultBusqueda({
           nombreCompleto: 'No Encontrado',
           noCliente: 0,
@@ -1678,15 +1608,15 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
               ...adicionalForm,
             };
 
-      console.log("Datos a enviar:", data);
+      // console.log("Datos a enviar:", data);
       if (data.tipo === "titular") {
         const response = await api.post("/admin/agregatarjetahabiente", {
           data,
         });
 
         if (response.data.status === 200) {
-          console.log(response);
-          console.log("respuesta exitosa");
+          // console.log(response);
+          // console.log("respuesta exitosa");
           onClose!("1",'');
           return;
         } else {
@@ -1705,14 +1635,14 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
           { data },
         );
         if (response.data.status === 200) {
-          console.log(response);
+          // console.log(response);
           onClose!("1",'');
         } else {
           setErrorMessage(response.data.error.message);
         }
       }
     } catch (error) {
-      console.log("Error del servidor", error);
+      // console.log("Error del servidor", error);
     }
   };
 
@@ -2179,6 +2109,7 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
   title,
   usuarioData,
   tipo,
+  edicionModal,
   onClose,
 
   // =================================================
@@ -2382,7 +2313,8 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
               type="submit"
               className="px-8 py-2.5 rounded-full bg-[#083543] text-emerald-400 font-medium hover:bg-[#05242e] transition-colors border border-cyan-800"
             >
-              Agregar
+              {edicionModal ? 'Guardar':'Agregar'}
+              
             </button>
             <button
               type="button"
@@ -2433,8 +2365,10 @@ export const ModalDetalleGasto: React.FC<DetalleGastoProps> = ({
   // setIdDetalle(id)
   // setComprobanteEditar(comprobante)
 
-  const handlevisualizarTiket = () => {
-    console.log("nombre comprobante: ", comprobante);
+  const handlevisualizarTiket = async () => {
+    // console.log("nombre comprobante: ", comprobante);
+    if(!comprobante) return
+    await abrirVisorComprobantePdf(comprobante!);
   };
 
   return (
@@ -2534,7 +2468,7 @@ export const ModalDetalleAbono : React.FC<DetalleGastoProps> = ({
   isOpen,
   estatus = true,
   monto,
-  nomComercio,
+  // nomComercio,
   concepto,
   fechaCargo,
   noOperacion,
@@ -2550,8 +2484,10 @@ export const ModalDetalleAbono : React.FC<DetalleGastoProps> = ({
   // setIdDetalle(id)
   // setComprobanteEditar(comprobante)
 
-  const handlevisualizarTiket = () => {
-    console.log("visualizando tiket");
+  const handlevisualizarTiket = async () => {
+    // console.log("nombre comprobante: ", comprobante);
+    if(!comprobante) return
+    await abrirVisorComprobantePdf(comprobante!);
   };
 
   return (
