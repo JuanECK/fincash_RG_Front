@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, type HtmlHTMLAttributes } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api, logoutSession } from "../services/api";
@@ -156,45 +156,71 @@ export const AdminDashboard: React.FC = () => {
   //   setBusquedaInput({ ...busquedaInput, [e.target.name]: e.target.value });
   // };
 
-
   const handleBusquedaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const valorStr = e.target.value ;
     setTipoDatoBusqueda(false)
     
     // Expresión regular para validar si contiene solo números
-    const esNumero = /^\d+$/.test(valorStr);
+   
+    // const esNumero = /^\d+$/.test(valorStr);
+    const esNumero = evaluarEntrada(valorStr)
 
     setBusquedaInput((prev:any) => {
       // 1. Si es número y no supera los 16 dígitos, se guarda en noTarjeta
-      if (esNumero) {
+      if (esNumero === 'TARJETA') {
         setTipoDatoBusqueda(true)
         // if(valorStr.length === 16){
           return {
             ...prev,
             // paramBusqueda: valorStr,
-            noTarjeta: valorStr,
+            noTarjeta: valorStr.replace(/\s+/g, ''),
             busquedaCliente: null, // Limpiamos el otro campo
           };
         
+      } else if(esNumero === 'NOMBRE') {
+        // 2. Si es string (o un número que excede los 16 dígitos), se guarda en busquedaCliente
+        return {
+          ...prev,
+          // paramBusqueda: valorStr,
+          noTarjeta: null, // Limpiamos el otro campo
+          busquedaCliente: valorStr === '' ? null:valorStr,
+        };
       } 
-      // 2. Si es string (o un número que excede los 16 dígitos), se guarda en busquedaCliente
-      return {
-        ...prev,
-        // paramBusqueda: valorStr,
-        noTarjeta: null, // Limpiamos el otro campo
-        busquedaCliente: valorStr === '' ? null:valorStr,
-      };
+      else {
+         return {
+          ...prev,
+          // paramBusqueda: valorStr,
+          noTarjeta: null, // Limpiamos el otro campo
+          busquedaCliente: null,
+        };
+      }
     });
   };
+  const evaluarEntrada = (valorOriginal:string) => {
+  // 1. Quitamos los espacios solo para la validación del número
+  const valorSinEspacios = valorOriginal.replace(/\s+/g, '');
+
+  // 2. Evaluamos si es un número de tarjeta (con o sin espacios)
+  if (valorSinEspacios !== '' && /^\d+$/.test(valorSinEspacios)) {
+    return 'TARJETA';
+  }
+
+  // 3. Evaluamos si es un nombre (letras, espacios y caracteres acentuados)
+  if (valorOriginal !== '' && /^[A-Za-zÑñÁáÉéÍíÓóÚúÜü\s]+$/.test(valorOriginal)) {
+    return 'NOMBRE';
+  }
+};
 
     const busqueda = async () => {
-      // console.log({datosBusqueda:busquedaInput})
+      console.log({datosBusqueda:busquedaInput})
       
       if(busquedaInput.noTarjeta === null && busquedaInput.busquedaCliente === null ) return
 
       // console.log('pase el filtro')
       if(tipoDatoBusqueda){
        const longitud = String(busquedaInput.noTarjeta).length;
+      //  const longitudParseada = String(busquedaInput.noTarjeta).replace(/\s+/g, '')
+      //  const longitud = longitudParseada.length
       //  console.log(longitud)
         if(longitud !== 16){
           setErrorMessage("Para buscar por número de tarjeta debe de tener 16 dígitos");
@@ -207,7 +233,7 @@ export const AdminDashboard: React.FC = () => {
       IdCentroN:centroId
     }
 
-    // console.log({data:datosCompletos})
+    console.log({data:datosCompletos})
     const response = await api.post("/admin/busqueda", {
       data: datosCompletos,
     });
@@ -906,6 +932,20 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
   setShowModalGasto(true)
  }
 
+  const copiarAlPortapapeles = (texto:any) => {
+    // navigator.clipboard funciona en navegadores modernos de forma nativa
+    navigator.clipboard.writeText(texto)
+      .then(() => {
+        setErrorMessage(`¡Copiado: ${texto}!`);
+        
+        // Desaparecer el mensaje de éxito después de 1 segundos
+        setTimeout(() => setErrorMessage(''), 1000);
+      })
+      .catch((err) => {
+        console.error('Error al copiar el texto: ', err);
+      });
+  };
+
   return (
     <>
       <div className="dashboard-layout-Admin">
@@ -1044,9 +1084,10 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                   type="text"
                   name="paramBusqueda"
                   autoComplete={"off"}
-                  placeholder="No. de Cliente"
+                  placeholder="No. de tarjeta o tarjetahabiente"
                   className="pr-10 search-input-box"
                   ref={busquedaRef}
+                  // onInput={sinEspacios}
                   onChange={handleBusquedaChange}
                 />
                 {busquedaPaginacion ? (
@@ -1169,53 +1210,15 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                     <tr
                       key={item.idTarjeta}
                       onClick={()=>selecionaClienteTarjetabiente(item.idTarjeta, item, item.estatus)}
-                        
-                        // onClick={()=>{
-                        // selecionaClienteTarjetabiente(
-                        //   item.idTarjeta,
-                        //   item,
-                        //   item.idCliente,
-                        // )}}
-                         
-                        // :
-                        // (setBtnTarjetahabientes(true))
-
-                      
-                      // onClick={() => {setSelectedClient(item); console.log({idTarjeta:item.idTarjeta, cleinteSelec:selectedClient})}}
-
-                      className={`group ${selectedClient.idTarjeta === item.idTarjeta 
-                          ? "selected"
-                          : ""}`
-                        
-                      }
-
-                      // className={
-                      //   selectedClient.idTarjeta === item.idTarjeta 
-                      //     ? "selected"
-                      //     : ""
-                      // }
-                    >
-                    {/* ========================================= REVISAR CODIGO AQUI PARA QUE AGA ESTO ============================== */}
-                    {/* En tu elemento padre (tr), añade la clase "group" junto con la condición "selected"
-                    <tr className={`group ${tuCondicionParaSelected ? 'selected' : ''}`}>
-                      
-                      <td className={`font-bold rounded-tl-full rounded-bl-full ${
-                        item.estatus === true 
-                          ? "text-(--GrisLight) group-[.selected]:text-[white]" 
-                          : "text-(--DeepBlue) group-[.selected]:text-[white]"
-                      }`}>
-                        {item.texto}
-                      </td>
-
-                    </tr> */}
-
-  
+                      className={`group ${selectedClient.idTarjeta === item.idTarjeta  ? "selected" : ""}`
+                      }>
 
                       <td className={`font-bold rounded-tl-full rounded-bl-full ${item.estatus ? 'text-(--GrisLight)' : 'text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)'
                       }`}>
                         {item.Cliente}
                       </td>
-                      <td className={`font-mono tracking-wider ${item.estatus === true ? "text-(--GrisLight)" : 'text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)'}`}>
+                      <td className={`font-mono tracking-wider celda-copiable ${item.estatus === true ? "text-(--GrisLight)" : 'text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)'}`}
+                        onClick={(e) => copiarAlPortapapeles((e.target as HTMLTableCellElement).innerText)}>
                         {formatDigitoBancarios(item.noTarjeta)}
                       </td>
                       <td className={`rounded-tr-full rounded-br-full text-center ${item.estatus === true ? "text-(--GrisLight)" : 'text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)'}`}>

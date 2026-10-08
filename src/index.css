@@ -123,7 +123,7 @@ body{
 
 /* 📁 BARRA LATERAL (CENTROS DE NEGOCIO) */
 .sidebar-panel {
-  @apply w-64 min-w-64 bg-(--MediumBlue) rounded-2xl p-5 border border-[#1a5f74] flex flex-col justify-between;
+  @apply w-64 min-w-64 h-[885px] bg-(--MediumBlue) rounded-2xl p-5 border border-[#1a5f74] flex flex-col justify-between;
 }
 
 .sidebar-title-btn {
@@ -187,6 +187,14 @@ body{
 }
 
 /* 🗂️ TABLAS DE DATOS */
+.celda-copiable {
+  cursor: copy; /* Muestra el icono de copiar al pasar el mouse */
+  transition: background-color 0.2s ease;
+}
+.celda-copiable:hover {
+ color: #f0f0f0; /* Un sutil cambio de fondo para dar feedback */
+}
+
 .table-container {
   @apply flex-1 p-6 flex flex-col justify-between overflow-x-auto;
 }
