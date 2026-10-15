@@ -107,6 +107,14 @@ interface EdicionTargetaCliente {
   telefono: string;
 }
 
+const formateadorMexicano = new Intl.NumberFormat('es-MX', {
+  style: 'decimal',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+
+
 export const Modal: React.FC<ModalProps> = ({
   tipo = null,
   title,
@@ -819,6 +827,29 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
     isEdith:0
   });
 
+const [valorFormateado, setValorFormateado] = useState('');
+
+const manejarInput  = (e:any) => {
+  // 1. Dejar únicamente los dígitos numéricos
+  const digitos = e.target.value.replace(/\D/g, '');
+
+    // Si el usuario borra todo, limpiamos el estado
+    if (!digitos) {
+      setValorFormateado('');
+      setForm({ ...form, monto:''});
+      return;
+    }
+
+    // 2. Convertir a formato flotante simulando centavos (ej: "150" -> 1.50)
+    const numeroFloat = parseFloat(digitos) / 100;
+    setForm({ ...form, monto:String(numeroFloat)});
+
+    // 3. Formatear con las reglas de es-MX (miles con coma, centavos con punto)
+    const resultado = formateadorMexicano.format(numeroFloat);
+
+   setValorFormateado(resultado);
+}
+
    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -964,10 +995,11 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
           <div className=" grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
             <input
               type="text"
-              name="monto"
+              name="valorFormateado"
               required
               autoComplete={"off"}
-              value={form.monto || ""}
+              value={valorFormateado || ""}
+              onChange={manejarInput}
               onInvalid={(e) =>
                 (e.target as HTMLInputElement).setCustomValidity(
                   "Campo obligatorio.",
@@ -976,7 +1008,7 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
               onInput={(e) =>
                 (e.target as HTMLInputElement).setCustomValidity("")
               }
-              onChange={handleFormChange}
+              // onChange={handleFormChange}
               placeholder="*Monto"
               className="input-generico w-full min-w-40"
             />
@@ -1133,6 +1165,29 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+const [valorFormateado, setValorFormateado] = useState<string>('');
+
+const manejarInput  = (e:any) => {
+  // 1. Dejar únicamente los dígitos numéricos
+  const digitos = e.target.value.replace(/\D/g, '');
+  console.log(digitos)
+
+    // Si el usuario borra todo, limpiamos el estado
+    if (!digitos) {
+      setValorFormateado('');
+      setForm({ ...form, monto:''});
+      return;
+    }
+
+    // 2. Convertir a formato flotante simulando centavos (ej: "150" -> 1.50)
+    const numeroFloat = parseFloat(digitos) / 100;
+    setForm({ ...form, monto:String(numeroFloat)});
+
+    // 3. Formatear con las reglas de es-MX (miles con coma, centavos con punto)
+    const resultado = formateadorMexicano.format(numeroFloat);
+   setValorFormateado(resultado);
+}
+
     // Manejador de Cambio de Archivo
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -1190,19 +1245,19 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
       
     }
 
-      // console.log({ Formdata: Object.fromEntries(dataToSend) });
+      console.log({ Formdata: Object.fromEntries(dataToSend) });
 
-      const response = await api.post("/admin/agregaAbonoGasto", dataToSend );
+      // const response = await api.post("/admin/agregaAbonoGasto", dataToSend );
 
-      // console.log(response.data)
+      // // console.log(response.data)
   
-      if(response.data.status === 200){
-        onClose!('1')
-        return
+      // if(response.data.status === 200){
+      //   onClose!('1')
+      //   return
 
-      }else{
-        setErrorMessage(response.data.error.message);
-      }
+      // }else{
+      //   setErrorMessage(response.data.error.message);
+      // }
 
     } catch (error) {
       // console.log("Error del servidor", error);
@@ -1290,7 +1345,8 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
               name="monto"
               required
               autoComplete={"off"}
-              value={form.monto || ""}
+              value={valorFormateado || ""}
+              onChange={manejarInput}
               onInvalid={(e) =>
                 (e.target as HTMLInputElement).setCustomValidity(
                   "Campo obligatorio.",
@@ -1299,7 +1355,7 @@ export const ModalGasto: React.FC<ModalContrasenaProps> = ({
               onInput={(e) =>
                 (e.target as HTMLInputElement).setCustomValidity("")
               }
-              onChange={handleFormChange}
+              // onChange={handleFormChange}
               placeholder="*Monto"
               className="input-generico w-full min-w-40"
             />
@@ -2144,11 +2200,8 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
     }
     // console.log({data});
     const response = await api.post("/admin/agregaCentroNegocios", { data });
-    // console.log(response);
 
     if (response.data.status === 200) {
-      // console.log('respuesta exitosa')
-      // console.log(response);
       onClose!("1", titularForm.nombreCentro);
     } else {
       setErrorMessage(response.data.error.message);
