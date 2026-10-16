@@ -8,6 +8,7 @@ interface AdminContextType {
   centroActivo: string;
   centroId:number;
   idUsuario: string;
+  setDatosHijo: any;
 }
 interface movimientoSelec {
   movimiento:string;
@@ -47,7 +48,7 @@ tipoMovimiento:string;
 }
 
 export const AdminHistorial: React.FC = () => {
-  const { centroActivo, centroId, idUsuario } = useOutletContext<AdminContextType>();
+  const { centroActivo, centroId, idUsuario, setDatosHijo } = useOutletContext<AdminContextType>();
   // const location = useLocation();
   // const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
@@ -124,7 +125,17 @@ export const AdminHistorial: React.FC = () => {
 
       useEffect(()=>{
     cargarDatosPaginados();
+    enviarInformacionAlPadre()
   },[paginaActual, centroActivo])
+
+  const enviarInformacionAlPadre = () => {
+    // Enviamos el objeto, string o número que el padre necesite procesar
+    setDatosHijo({
+      centroActivo: '',
+      centroId: '',
+      accion: false
+    });
+  };
 
   // 🔄 EFFECT: Se ejecuta al cargar la página y cada vez que cambia 'paginaActual'
   const cargarDatosPaginados = async () => {

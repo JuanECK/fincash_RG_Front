@@ -816,7 +816,7 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
     idTarjeta: null,
     tipoMovimiento: "I", // -- 'I' (Abono) o 'E' (Cargo)
     monto: String(monto || '') || "",
-    nombreNegocio: nomComercio || "",
+    nombreNegocio: nomComercio || "Once Capital",
     concepto: concepto || "",
     comprobante: comprobante || "",
     comprobanteFile: null as File | null,
@@ -826,6 +826,14 @@ export const ModalAbono: React.FC<ModalContrasenaProps> = ({
     bajaPorEdicion:bajaPorEdicion1,
     isEdith:0
   });
+  const [ comprobanteB, setComprobanteB ] = useState(false);
+  useEffect(()=>{
+    if( !form.comprobante ){
+      setComprobanteB(true)
+    }else{
+      setComprobanteB(false)
+    }
+  },[form.comprobante])
 
 const [valorFormateado, setValorFormateado] = useState('');
 
@@ -834,7 +842,7 @@ const manejarInput  = (e:any) => {
   const digitos = e.target.value.replace(/\D/g, '');
 
     // Si el usuario borra todo, limpiamos el estado
-    if (!digitos) {
+    if (!digitos || digitos == '00') {
       setValorFormateado('');
       setForm({ ...form, monto:''});
       return;
@@ -846,7 +854,6 @@ const manejarInput  = (e:any) => {
 
     // 3. Formatear con las reglas de es-MX (miles con coma, centavos con punto)
     const resultado = formateadorMexicano.format(numeroFloat);
-
    setValorFormateado(resultado);
 }
 
@@ -1072,12 +1079,22 @@ const manejarInput  = (e:any) => {
                   </span>
                   
                   {/* Estilizamos el input para que ocupe SOLO este contenedor de forma invisible */}
+
                   <input 
                     type="file" 
                     title="Máximo 5MB"
                     accept="application/pdf" 
                     onChange={handleFileChange} 
                     className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    required={comprobanteB}
+                    onInvalid={(e) =>
+                      (e.target as HTMLInputElement).setCustomValidity(
+                        "Campo obligatorio.",
+                      )
+                    }
+                    onInput={(e) =>
+                      (e.target as HTMLInputElement).setCustomValidity("")
+                    }
                   />
 
                 </div>
@@ -1170,10 +1187,9 @@ const [valorFormateado, setValorFormateado] = useState<string>('');
 const manejarInput  = (e:any) => {
   // 1. Dejar únicamente los dígitos numéricos
   const digitos = e.target.value.replace(/\D/g, '');
-  console.log(digitos)
 
     // Si el usuario borra todo, limpiamos el estado
-    if (!digitos) {
+    if (!digitos || digitos == '00') {
       setValorFormateado('');
       setForm({ ...form, monto:''});
       return;
@@ -1245,19 +1261,19 @@ const manejarInput  = (e:any) => {
       
     }
 
-      console.log({ Formdata: Object.fromEntries(dataToSend) });
+      // console.log({ Formdata: Object.fromEntries(dataToSend) });
 
-      // const response = await api.post("/admin/agregaAbonoGasto", dataToSend );
+      const response = await api.post("/admin/agregaAbonoGasto", dataToSend );
 
-      // // console.log(response.data)
+      // console.log(response.data)
   
-      // if(response.data.status === 200){
-      //   onClose!('1')
-      //   return
+      if(response.data.status === 200){
+        onClose!('1')
+        return
 
-      // }else{
-      //   setErrorMessage(response.data.error.message);
-      // }
+      }else{
+        setErrorMessage(response.data.error.message);
+      }
 
     } catch (error) {
       // console.log("Error del servidor", error);
@@ -1339,7 +1355,7 @@ const manejarInput  = (e:any) => {
           )}
         </div>
         <form onSubmit={handleSubmit}>
-          <div className=" grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className=" grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
             <input
               type="text"
               name="monto"
@@ -2198,7 +2214,7 @@ export const ModalAgregarCentroNegocios: React.FC<ModalAgregarProps> = ({
       ...titularForm,
       idCentroN: Number.parseFloat(titularForm.idCentroN as string)
     }
-    // console.log({data});
+    console.log({data});
     const response = await api.post("/admin/agregaCentroNegocios", { data });
 
     if (response.data.status === 200) {

@@ -8,6 +8,7 @@ interface AdminContextType {
   centroActivo: string;
   centroId:number;
   idUsuario: string;
+  setDatosHijo: any;
 }
 interface movimientoSelec {
   movimiento:string;
@@ -46,7 +47,7 @@ interface InputTarjetahabiente {
 }
 
 export const AdminHistorialIndividual: React.FC = () => {
-  const { centroActivo, centroId, idUsuario } = useOutletContext<AdminContextType>();
+  const { centroActivo, centroId, idUsuario, setDatosHijo } = useOutletContext<AdminContextType>();
   const location = useLocation();
   // const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
@@ -114,7 +115,18 @@ export const AdminHistorialIndividual: React.FC = () => {
   useEffect(()=>{
     // console.log(data)
       getDataInput(data)
+      enviarInformacionAlPadre()
   },[data])
+
+    const enviarInformacionAlPadre = () => {
+      
+    // Enviamos el objeto, string o número que el padre necesite procesar
+    setDatosHijo({
+      centroActivo: centroActivo,
+      centroId: centroId,
+      accion: true
+    });
+  };
 
    const limitePorPagina = 15; // Cantidad de filas exactas por pantalla según tu diseño
 
@@ -404,7 +416,7 @@ export const AdminHistorialIndividual: React.FC = () => {
     }
   };
 
-    const handleAgregaAbono = (resultado: '1' | '0') => {
+  const handleAgregaAbono = (resultado: '1' | '0') => {
     
     showEditaModalAbono ? ( setShowEditaModalAbono(false) ):( setShowAgregaModalAbono(false) )
         
@@ -421,7 +433,7 @@ export const AdminHistorialIndividual: React.FC = () => {
     
   };
 
-    const handleAgregaGasto = (resultado: '1' | '0') => {
+  const handleAgregaGasto = (resultado: '1' | '0') => {
       showEditaModalGasto ? (setShowEditaModalGasto(false)):(setShowAgregaModalGasto(false))
     // 3. Si se cumple la condición del "ok", se ejecuta la API aquí mismo
     if (resultado === '1') {
@@ -760,7 +772,7 @@ export const AdminHistorialIndividual: React.FC = () => {
                         type="button"  
                         onClick={mov.monto_formateado.charAt(0) === "+" ? (()=>{handleDetalleMovimientoAbono(mov.idMovimiento)}): (()=>{handleDetalleMovimientoGasto(mov.idMovimiento)}) }
                         className="action-icon-btn" 
-                        title="Agregar gasto">
+                        title="Ver detalle">
                         <span>
                           <svg width="16" height="10" viewBox="0 0 16 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M7.94531 9.96094C7.17188 9.96094 6.43945 9.86719 5.74805 9.67969C5.05664 9.49219 4.41602 9.24414 3.82617 8.93555C3.23633 8.62695 2.70508 8.28711 2.23242 7.91602C1.76367 7.54102 1.36133 7.16797 1.02539 6.79688C0.693359 6.42188 0.439453 6.07422 0.263672 5.75391C0.0878906 5.43359 0 5.17578 0 4.98047C0 4.78125 0.0878906 4.52344 0.263672 4.20703C0.439453 3.88672 0.693359 3.53906 1.02539 3.16406C1.36133 2.78906 1.76367 2.41602 2.23242 2.04492C2.70508 1.67383 3.23633 1.33398 3.82617 1.02539C4.41602 0.716797 5.05664 0.46875 5.74805 0.28125C6.43945 0.09375 7.17188 0 7.94531 0C8.72656 0 9.46289 0.09375 10.1543 0.28125C10.8496 0.46875 11.4922 0.716797 12.082 1.02539C12.6719 1.33398 13.2012 1.67383 13.6699 2.04492C14.1387 2.41602 14.5371 2.78906 14.8652 3.16406C15.1973 3.53906 15.4492 3.88672 15.6211 4.20703C15.7969 4.52344 15.8848 4.78125 15.8848 4.98047C15.8848 5.17578 15.7969 5.43359 15.6211 5.75391C15.4492 6.07422 15.1973 6.42188 14.8652 6.79688C14.5371 7.16797 14.1387 7.54102 13.6699 7.91602C13.2051 8.28711 12.6777 8.62695 12.0879 8.93555C11.498 9.24414 10.8555 9.49219 10.1602 9.67969C9.46484 9.86719 8.72656 9.96094 7.94531 9.96094ZM7.94531 8.25586C8.39453 8.25586 8.81641 8.17188 9.21094 8.00391C9.60938 7.83203 9.95898 7.5957 10.2598 7.29492C10.5605 6.99414 10.7949 6.64648 10.9629 6.25195C11.1348 5.85742 11.2207 5.43359 11.2207 4.98047C11.2207 4.52734 11.1348 4.10352 10.9629 3.70898C10.7949 3.31445 10.5605 2.9668 10.2598 2.66602C9.95898 2.36523 9.60938 2.13086 9.21094 1.96289C8.81641 1.79102 8.39453 1.70508 7.94531 1.70508C7.49219 1.70508 7.06836 1.79102 6.67383 1.96289C6.2793 2.13086 5.93164 2.36523 5.63086 2.66602C5.33008 2.9668 5.09375 3.31445 4.92188 3.70898C4.75391 4.10352 4.66992 4.52734 4.66992 4.98047C4.66992 5.43359 4.75391 5.85742 4.92188 6.25195C5.09375 6.64648 5.33008 6.99414 5.63086 7.29492C5.93164 7.5957 6.2793 7.83203 6.67383 8.00391C7.06836 8.17188 7.49219 8.25586 7.94531 8.25586ZM7.94531 6.17578C7.61328 6.17578 7.33008 6.06055 7.0957 5.83008C6.86523 5.5957 6.75 5.3125 6.75 4.98047C6.75 4.64844 6.86523 4.36719 7.0957 4.13672C7.33008 3.90234 7.61328 3.78516 7.94531 3.78516C8.27344 3.78516 8.55469 3.90234 8.78906 4.13672C9.02344 4.36719 9.14062 4.64844 9.14062 4.98047C9.14062 5.3125 9.02344 5.5957 8.78906 5.83008C8.55469 6.06055 8.27344 6.17578 7.94531 6.17578Z" fill="white"/>
@@ -777,7 +789,7 @@ export const AdminHistorialIndividual: React.FC = () => {
                         <button 
                         type="button" 
                         className="action-icon-btn" 
-                        title="Agregar gasto"
+                        title="Restaurar"
                         onClick={mov.monto_formateado.charAt(0) === "+" ? (()=> setShowRestaurarAbono(true)) : ( () => setShowRestaurarGasto(true)) }
                         >
                           <span>
@@ -791,7 +803,7 @@ export const AdminHistorialIndividual: React.FC = () => {
                         <div className="flex justify-center gap-2 ">
                           <button type="button" 
                           className="action-icon-btn-trash" 
-                          title="Historial"
+                          title="Eliminar"
                           onClick={mov.monto_formateado.charAt(0) === "+" ? (()=> setShowModalEliminaAbono(true)) : ( () => setShowModalEliminaGasto(true)) }
                           >
                             <span>
@@ -1020,7 +1032,7 @@ export const AdminHistorialIndividual: React.FC = () => {
             tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
             cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
             noCliente={dataInputs?.noCliente} 
-            noOperacion={idMovimientoEdicion}
+            // noOperacion={idMovimientoEdicion}
             idTarjeta1={dataInputs?.idTarjeta}
             idUsuario1={Number.parseInt(idUsuario as string, 10) }
             idMovimientoVinculado1={limpiarANumero(idMovimientoEdicion)}
@@ -1044,7 +1056,7 @@ export const AdminHistorialIndividual: React.FC = () => {
           tarjetahabiente={`${dataInputs?.nombreCliente} ${dataInputs.apellidoP} ${dataInputs.apellidoM}`}
           cta={formatDigitoBancarios(dataInputs?.noTarjeta)}
           noCliente={dataInputs?.noCliente} 
-          noOperacion={idMovimientoEdicion}
+          // noOperacion={idMovimientoEdicion}
           concepto = {user?.nombreCompleto}
           idTarjeta1={dataInputs?.idTarjeta}
           idUsuario1={Number.parseInt(idUsuario as string, 10) }

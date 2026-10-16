@@ -63,6 +63,7 @@ interface AdminContextType {
   centroActivo: string;
   centroId:number;
   idUsuario: string;
+  setDatosHijo:any;
   setCentroActivo: React.Dispatch<React.SetStateAction<string>>;
 }
 // interface MiComponenteProps {
@@ -92,7 +93,7 @@ export const AdminDashboard: React.FC = () => {
   const [totalRegistros, setTotalRegistros] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
-  const { centroActivo, centroId, idUsuario } = useOutletContext<AdminContextType>();
+  const { centroActivo, centroId, idUsuario, setDatosHijo } = useOutletContext<AdminContextType>();
   const [btnTarjetahabientes, setBtnTarjetahabientes] = useState(true);
   const [busquedaPaginacion, setBusquedaPaginacion] = useState(false);
   // const [btnGuardarTarjetahabientes, setbtnGuardarTarjetahabientes] = useState(true);
@@ -561,10 +562,20 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
 
 // para regresar siempre a la pagina 1 cuando cambie el centro de negocio
   useEffect(() => {
-    setPaginaActual(1)
-    setBtnTarjetahabientes(true)
+    setPaginaActual(1);
+    setBtnTarjetahabientes(true);
+    enviarInformacionAlPadre();
     // console.log(idUsuario)
   }, [centroActivo]);
+
+  const enviarInformacionAlPadre = () => {
+    // Enviamos el objeto, string o número que el padre necesite procesar
+    setDatosHijo({
+      centroActivo: '',
+      centroId: '',
+      accion: false
+    });
+  };
 
   // Manejador dinámico para actualizar cualquier input del formulario
   // const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1043,7 +1054,9 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
               </h1>
               <div className="flex ">
                 <div className="rounded-full px-6 pb-1 pt-2.5 bg-(--MediumBlue)">
-                  <button type="button" className="cursor-pointer " onClick={() => navigate('/admin/historial')}>
+                  <button type="button" className="cursor-pointer " onClick={() => navigate('/admin/historial')}
+                    title="Historial general"
+                    >
                     <svg
                       width="17"
                       height="14"
@@ -1059,7 +1072,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                   </button>
                 </div>
                 <div className="rounded-full px-4 pb-1 pt-2.5 ml-3 bg-(--MediumBlue)">
-                  <button type="button" onClick={()=> setShowModalTargetahabiente(true)} className="cursor-pointer ">
+                  <button type="button" onClick={()=> setShowModalTargetahabiente(true)} className="cursor-pointer " title="Agregar tarjetahabiente">
                     <svg
                       width="27"
                       height="12"
@@ -1232,7 +1245,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                         { item.estatus !== true ? 
 
                           <div className="flex justify-center gap-2 ">
-                            <button type="button" onClick={()=> setShowModalAviso(true)} className="action-icon-btn" title="Agregar gasto">
+                            <button type="button" onClick={()=> setShowModalAviso(true)} className="action-icon-btn" title="Restaurar">
                               <span>
                                 <svg width="13" height="15" viewBox="0 0 13 15" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <path d="M6.15234 14.9639C5.30469 14.9639 4.50716 14.8044 3.75977 14.4854C3.01693 14.1663 2.36296 13.7243 1.79785 13.1592C1.2373 12.5941 0.797526 11.9401 0.478516 11.1973C0.159505 10.4544 0 9.6569 0 8.80469C0 8.59505 0.0729167 8.41732 0.21875 8.27148C0.369141 8.12109 0.546875 8.0459 0.751953 8.0459C0.966146 8.0459 1.14616 8.12109 1.29199 8.27148C1.44238 8.41732 1.51758 8.59505 1.51758 8.80469C1.51758 9.44271 1.63607 10.042 1.87305 10.6025C2.11458 11.1631 2.44727 11.6553 2.87109 12.0791C3.29948 12.5029 3.79395 12.8356 4.35449 13.0771C4.91504 13.3187 5.51432 13.4395 6.15234 13.4395C6.79492 13.4395 7.39421 13.3187 7.9502 13.0771C8.51074 12.8356 9.00293 12.5029 9.42676 12.0791C9.85514 11.6553 10.1878 11.1631 10.4248 10.6025C10.6663 10.042 10.7871 9.44271 10.7871 8.80469C10.7871 8.16667 10.6663 7.56738 10.4248 7.00684C10.1878 6.44629 9.85514 5.9541 9.42676 5.53027C9.00293 5.10189 8.51074 4.76921 7.9502 4.53223C7.39421 4.29069 6.79492 4.16992 6.15234 4.16992C5.88802 4.16992 5.62826 4.19271 5.37305 4.23828C5.1224 4.2793 4.8763 4.3431 4.63477 4.42969C4.48438 4.48438 4.32943 4.49121 4.16992 4.4502C4.01497 4.40918 3.88281 4.32715 3.77344 4.2041C3.66406 4.08105 3.6071 3.92155 3.60254 3.72559C3.60254 3.52051 3.66406 3.35872 3.78711 3.24023C3.91016 3.12174 4.04004 3.03743 4.17676 2.9873C4.4821 2.88249 4.80111 2.80046 5.13379 2.74121C5.46647 2.68197 5.80599 2.65234 6.15234 2.65234C7.00456 2.65234 7.80208 2.81185 8.54492 3.13086C9.28776 3.44987 9.93945 3.89193 10.5 4.45703C11.0651 5.02214 11.5072 5.67611 11.8262 6.41895C12.1452 7.16178 12.3047 7.95703 12.3047 8.80469C12.3047 9.6569 12.1452 10.4544 11.8262 11.1973C11.5072 11.9401 11.0651 12.5941 10.5 13.1592C9.93945 13.7243 9.28776 14.1663 8.54492 14.4854C7.80208 14.8044 7.00456 14.9639 6.15234 14.9639ZM4.44336 3.58887L6.84277 5.96777C6.91113 6.03158 6.96354 6.10677 7 6.19336C7.03646 6.27539 7.05469 6.36654 7.05469 6.4668C7.05469 6.67643 6.98177 6.85417 6.83594 7C6.69466 7.14128 6.52148 7.21191 6.31641 7.21191C6.11589 7.21191 5.94271 7.14355 5.79688 7.00684L2.99414 4.17676C2.91667 4.09928 2.85742 4.01497 2.81641 3.92383C2.77995 3.82812 2.76172 3.72786 2.76172 3.62305C2.76172 3.41341 2.83919 3.22884 2.99414 3.06934L5.79688 0.225586C5.94271 0.0751953 6.11589 0 6.31641 0C6.52604 0 6.7015 0.0751953 6.84277 0.225586C6.98405 0.371419 7.05469 0.549154 7.05469 0.758789C7.05469 0.859049 7.03646 0.952474 7 1.03906C6.96354 1.12109 6.91341 1.19629 6.84961 1.26465L4.44336 3.58887Z" fill="#D9D9D9"/>
@@ -1258,7 +1271,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                               </span>
                             </button>
                             {/* Abono */}
-                            <button type="button" onClick={() => setShowModalAbono(true)} className="action-icon-btn" title="Abono">
+                            <button type="button" onClick={() => setShowModalAbono(true)} className="action-icon-btn" title="Agregar abono">
                               <span>
                                 <svg
                                   width="16"
@@ -1275,7 +1288,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                             <button 
                             type="button" 
                             className="action-icon-btn" 
-                            title="Historial"
+                            title="Ver historial"
                             onClick={() => navigateToHI()}
                             >
                               <span>
@@ -1293,7 +1306,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                             {/* Historial Tarjeta */}
                             <button type="button" 
                             className="action-icon-btn-trash" 
-                            title="Historial"
+                            title="Eliminar"
                             onClick={()=> setShowModalEliminaTarjeta(true)}
                             >
                               <span>
@@ -1415,6 +1428,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                   }}
                   // className={`mx-3.5 cursor-pointer text-(--VerdeNeon)`}
                   className={`mx-3.5 ${btnTarjetahabientes ? "cursor-not-allowed" : "cursor-pointer text-(--VerdeNeon)"}`}
+                  title="Editar"
                 >
                   <svg
                     width="15"
@@ -1438,6 +1452,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                   }}
                   // className={`mx-3.5 cursor-pointer text-(--VerdeNeon)`}
                   className={`mx-3.5 ${btnTarjetahabientes ? "cursor-not-allowed" : "cursor-pointer text-(--VerdeNeon)"}`}
+                  title="Cambiar contraseña"
                 >
                   <svg
                     width="16"
@@ -1461,6 +1476,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                   }}
                   // className={`mx-3.5 cursor-pointer text-(--rojo)`}
                   className={`mx-3.5 ${btnTarjetahabientes ? "cursor-not-allowed" : "cursor-pointer text-(--rojo)"}`}
+                  title="Eliminar"
                 >
                   <svg
                     width="14"
@@ -1646,12 +1662,13 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                                     </span>
                                     <button
                                       type="button"
-                                      title="Ver comprobante digital"
+                                      title="Ver detalle"
                                       onClick={compra.precio.charAt(0) === "+" ? (()=>{handleDetalleMovimientoAbono(compra.idMovimiento)}): (()=>{handleDetalleMovimientoGasto(compra.idMovimiento)}) }
-                                      className="action-icon-btn !p-1 !bg-transparent border-0 opacity-40 group-hover:opacity-100 text-[#00E5FF] hover:scale-110 transition-all"
+                                      className="action-icon-btn !p-1 !bg-transparent border-0 group-hover:opacity-100 text-[#00E5FF] hover:scale-110 hover:opacity-40 transition-all"
                                     >
                                       <span>
                                         <svg
+                                          aria-label="Ver detalle"
                                           width="14"
                                           height="11"
                                           viewBox="0 0 14 11"

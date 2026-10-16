@@ -297,10 +297,9 @@ export const LoginPage: React.FC = () => {
 
             </div>
             {errors.password && <p className="form-error-text">{errors.password}</p>}
-            <div className="form-label-box">
-              {/* <label className="form-label">Contraseña</label> */}
+            {/* <div className="form-label-box">
               <a href="#forgot" className="olvidaste-Contrasena">Olvidé mi contraseña</a>
-            </div>
+            </div> */}
           </div>
 
           <button type="submit" disabled={isButtonDisabled} className={  "btn-submit-secure"}>

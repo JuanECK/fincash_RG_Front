@@ -12,6 +12,18 @@ interface InputCentroN{
   porcentaje:number | null;
   telefonoTitular:string
 }
+interface datosHijos{
+  centroActivo:string;
+  centroId: string;
+  accion: boolean;
+}
+interface cNegocio{
+  Perfil:string;
+  centroNegocio:string;
+  idCentroN:number;
+  idUsuario:number;
+}
+
 
 export const AdminLayout: React.FC = () => {
 
@@ -21,8 +33,13 @@ export const AdminLayout: React.FC = () => {
     const [centroId, setCentroId] = useState(1);
     const [idUsuario, setIdUsuario] = useState<string | null>(null);
     const [cNegocio, setCNegocio] = useState<any[]>([]);
+    // const [cNegocio, setCNegocio] = useState<cNegocio>();
     const { user } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
+
+    const [datosHijo, setDatosHijo] = useState<datosHijos>();
+    const [datosHijoActivo, setDatosHijoActivo] = useState<any[]>([]);
+
 
     const [dataInputs, getDataInput] = useState<InputCentroN>({
 
@@ -42,6 +59,7 @@ export const AdminLayout: React.FC = () => {
     
     const cargaCentroNegocios = async () => {
       // console.log({Centro:centroActivo})
+  
       const { idUsuario } = user!
       setIdUsuario(idUsuario)
       const response = await api.post("/admin/centroNegocios", { idUsuario });
@@ -50,6 +68,7 @@ export const AdminLayout: React.FC = () => {
 
       if( response.data.status === 200 ){
         setCNegocio(response.data.data.cNegocios)
+        setDatosHijoActivo(response.data.data.cNegocios)
         if(centroActivo === ''){
           setCentroActivo(response.data.data.cNegocios[0]?.centroNegocio)
         }
@@ -78,6 +97,24 @@ export const AdminLayout: React.FC = () => {
     useEffect(()=>{
       cargaCentroNegocios()
     },[])
+
+    useEffect(()=>{
+      // console.log(JSON.stringify(datosHijo))
+
+      if(datosHijo?.accion === false ){
+          setCNegocio(datosHijoActivo)
+      }
+      else if ( datosHijo?.accion === true ){
+        const data = [{
+          centroNegocio:datosHijo.centroActivo,
+          idCentroN:datosHijo.centroId,
+          
+        }]
+        setCNegocio(data)
+      }
+
+
+    },[datosHijo])
 
   const handleCloseModal = (resultado: '1' | '0') => {
     setShowModalAgregaCentroNegocio(false); // Cerramos el modal
@@ -123,6 +160,8 @@ export const AdminLayout: React.FC = () => {
         <aside className="sidebar-panel">
           <div>
             <div className="flex items-center justify-center gap-2 mb-6 px-2 ">
+                        {/* {datosHijo && <p>Datos recibidos del hijo: <strong>{JSON.stringify(datosHijo)}</strong></p>} */}
+
               <svg
                 width="73"
                 height="32"
@@ -183,6 +222,8 @@ export const AdminLayout: React.FC = () => {
             </nav>
           </div>
 
+         { datosHijo?.accion === false && (
+
           <button
             type="button"
             onClick={editaCentroN}
@@ -190,6 +231,8 @@ export const AdminLayout: React.FC = () => {
           >
             Editar
           </button>
+
+         ) }     
         </aside>
 
           
@@ -198,7 +241,7 @@ export const AdminLayout: React.FC = () => {
       <main className="main-content-panel">
 
         {/* <Outlet context={{ centroActivo, setCentroActivo }}/> */}
-        <Outlet context={{ centroActivo, setCentroActivo, centroId, setCentroId, idUsuario, setIdUsuario }}/>
+        <Outlet context={{ centroActivo, setCentroActivo, centroId, setCentroId, idUsuario, setIdUsuario, setDatosHijo }}/>
       </main>
       {showModalAgregaCentroNegocio && (
         <ModalAgregarCentroNegocios
