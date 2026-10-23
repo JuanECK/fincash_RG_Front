@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, type HtmlHTMLAttributes } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api, logoutSession } from "../services/api";
@@ -213,7 +213,7 @@ export const AdminDashboard: React.FC = () => {
 };
 
     const busqueda = async () => {
-      console.log({datosBusqueda:busquedaInput})
+      // console.log({datosBusqueda:busquedaInput})
       
       if(busquedaInput.noTarjeta === null && busquedaInput.busquedaCliente === null ) return
 
@@ -234,7 +234,7 @@ export const AdminDashboard: React.FC = () => {
       IdCentroN:centroId
     }
 
-    console.log({data:datosCompletos})
+    // console.log({data:datosCompletos})
     const response = await api.post("/admin/busqueda", {
       data: datosCompletos,
     });
@@ -247,15 +247,6 @@ export const AdminDashboard: React.FC = () => {
       return
     } 
     setBusquedaPaginacion(false)
-
-      if(response.data.status === 401){
-        // console.log("sesion caducada: ", response.data);
-        setErrorMessage(response.data.error.message)
-        endSessionCockie();
-      }else if(response.data.status === 403 ){
-         setErrorMessage(response.data.error.message)
-        endSessionCockie();
-      }
 
   };
 
@@ -308,17 +299,8 @@ export const AdminDashboard: React.FC = () => {
        return
       }
     
-      if(response.data.status === 401){
-        // console.log("sesion caducada: ", response.data);
-        setErrorMessage(response.data.error.message)
-        endSessionCockie();
-      }else if(response.data.status === 403 ){
-         setErrorMessage(response.data.error.message)
-        endSessionCockie();
-      }
-
-    } catch (error) {
-      console.error("Error cargando los detalles del tarjetahabiente:", error);
+    } catch {
+      console.error("Error cargando los detalles del tarjetahabiente:");
     }
   }
   const handleDetalleMovimientoAbono = async ( id:number ) => {
@@ -332,18 +314,9 @@ export const AdminDashboard: React.FC = () => {
        setDetalleClienteSelecionado(response.data.data.datos)
        return
       }
-    
-      if(response.data.status === 401){
-        // console.log("sesion caducada: ", response.data);
-        setErrorMessage(response.data.error.message)
-        endSessionCockie();
-      }else if(response.data.status === 403 ){
-         setErrorMessage(response.data.error.message)
-        endSessionCockie();
-      }
 
-    } catch (error) {
-      console.error("Error cargando los detalles del tarjetahabiente:", error);
+    } catch {
+      console.error("Error cargando los detalles del tarjetahabiente:");
     }
   }
 
@@ -389,14 +362,6 @@ export const AdminDashboard: React.FC = () => {
         cargarDatosPaginados();
       }
 
-      if(response.data.status === 401){
-        // console.log("sesion caducada: ", response.data);
-        setErrorMessage(response.data.error.message)
-        endSessionCockie();
-      }else if(response.data.status === 403 ){
-         setErrorMessage(response.data.error.message)
-        endSessionCockie();
-      }
     }
   };
 
@@ -408,21 +373,41 @@ export const AdminDashboard: React.FC = () => {
       .trim();                  // 4. Quita el espacio final sobrante
   };
 
+  // const formatPhoneNumberMX = (phone: string | number): string => {
+  //   // 1. Convertir a string y eliminar todo lo que no sea un número
+  //   const cleaned = ('' + phone).replace(/\D/g, '');
+  //   // 2. Verificar que tenga la longitud correcta de México (10 dígitos)
+  //   const match = cleaned.match(/^(\d{2,3})(\d{3,4})(\d{4})$/);
+  //   if (match) {
+  //     // Si empieza con LADA de 2 dígitos (CDMX: 55, GDL: 33, MTY: 81)
+  //     if (match[1].length === 2) {
+  //       return `(${match[1]}) ${match[2]} - ${match[3]}`; // Resultado: (55) 1234-5678
+  //     }
+  //     // Para el resto del país con LADA de 3 dígitos
+  //     return `${match[1]} - ${match[2]} - ${match[3]}`; // Resultado: 442-123-4567
+  //   }
+  //   // Si no tiene 10 dígitos, devuelve el texto limpio o original
+  //   return cleaned;
+  // };
+
+    // 1. Función de formateo dinámico (2 dígitos para 55/33/81, 3 dígitos para el resto)
   const formatPhoneNumberMX = (phone: string | number): string => {
-    // 1. Convertir a string y eliminar todo lo que no sea un número
-    const cleaned = ('' + phone).replace(/\D/g, '');
-    // 2. Verificar que tenga la longitud correcta de México (10 dígitos)
-    const match = cleaned.match(/^(\d{2,3})(\d{3,4})(\d{4})$/);
-    if (match) {
-      // Si empieza con LADA de 2 dígitos (CDMX: 55, GDL: 33, MTY: 81)
-      if (match[1].length === 2) {
-        return `(${match[1]}) ${match[2]} - ${match[3]}`; // Resultado: (55) 1234-5678
-      }
-      // Para el resto del país con LADA de 3 dígitos
-      return `${match[1]} - ${match[2]} - ${match[3]}`; // Resultado: 442-123-4567
+    const cleaned = ("" + phone).replace(/\D/g, "").slice(0, 10);
+
+    // Verificar si empieza con 55, 33 u 81 (LADA de 2 dígitos)
+    const isTwoDigitLada = /^(55|33|81)/.test(cleaned);
+
+    if (isTwoDigitLada) {
+      // Formato de 2 dígitos: (55) 1234 - 5678
+      if (cleaned.length <= 2) return cleaned;
+      if (cleaned.length <= 6) return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)} - ${cleaned.slice(6)}`;
+    } else {
+      // Formato del resto del país: 442 - 123 - 4567 (3 dígitos de LADA)
+      if (cleaned.length <= 3) return cleaned;
+      if (cleaned.length <= 6) return `${cleaned.slice(0, 3)} - ${cleaned.slice(3)}`;
+      return `${cleaned.slice(0, 3)} - ${cleaned.slice(3, 6)} - ${cleaned.slice(6)}`;
     }
-    // Si no tiene 10 dígitos, devuelve el texto limpio o original
-    return cleaned;
   };
 
   // const eliminaTargetahabiente = () => {
@@ -473,14 +458,6 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
   const response = await api.post("/admin/detalleCliente", { idTarjeta });
   setDetallesCliente(response.data.data);
 
-  if(response.data.status === 401){
-    // console.log("sesion caducada: ", response.data);
-    setErrorMessage(response.data.error.message)
-    endSessionCockie();
-  }else if(response.data.status === 403 ){
-      setErrorMessage(response.data.error.message)
-    endSessionCockie();
-  }
 }
 
   const selecionaClienteTarjetabiente = async (
@@ -499,7 +476,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
       try {
         const response = await api.post("/admin/detalleCliente", { idTarjeta });
         // console.log({Server:response.data.data.usuario.length === 0})
-        // console.log(estatus)
+        // console.log(console.log(response.data))
   
         if (response.data.status === 200) {
           if( estatus !== true ){
@@ -518,16 +495,13 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
           // console.log({dataInputs:dataInputs})
           return;
         }
-        if(response.data.status === 401){
-          // console.log("sesion caducada: ", response.data);
-          setErrorMessage(response.data.error.message)
-          endSessionCockie();
-        }else if(response.data.status === 403 ){
-          setErrorMessage(response.data.error.message)
-          endSessionCockie();
-      }
-      } catch (error) {
-        console.error("Error cargando los detalles del tarjetahabiente:", error);
+//  if(response.data.status === 401){
+//           setErrorMessageSesion(response.data.error.message)
+//       }else if(response.data.status === 403 ){
+//           setErrorMessageSesion(response.data.error.message)
+//       }
+      } catch  {
+        console.error("Error cargando los detalles del tarjetahabiente:");
       } finally {
         setLoading(false);
       }
@@ -593,14 +567,6 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
       setMontoTotalCargos(response.data.data.MontoTotalCargos);
     }
 
-    if(response.data.status === 401){
-      // console.log("sesion caducada: ", response.data);
-      setErrorMessage(response.data.error.message)
-      endSessionCockie();
-    }else if(response.data.status === 403 ){
-        setErrorMessage(response.data.error.message)
-      endSessionCockie();
-    }
     // if(response.data.status === 403 || response.data.status === 401){
     //   console.log("sesion caducada: ", response.data.status);
     //   endSessionCockie();
@@ -609,6 +575,20 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
 
   useEffect(() => {
     cargarDatosPaginados();
+    setDetallesCliente(null);
+    setBtnTarjetahabientes(true)
+    getDataInput({
+      apellidoP: "",   
+      apellidoM: "",      
+      correo: "",           
+      fechaVencimiento:"",
+      idCentroN: null,
+      idTarjeta:null,          
+      noTarjeta: "",       
+      nombreCliente: "",  
+      telefono: "",
+      noCliente:""
+    });
   }, [paginaActual, centroActivo]); // 👈 Escucha los cambios de página
 
   // 🔄 EFFECT: Se ejecuta al cargar la página y cada vez que cambia 'paginaActual'
@@ -652,16 +632,9 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
         // console.log(selectedClient)
         return;
       }
-      if(response.data.status === 401){
-        // console.log("sesion caducada: ", response.data);
-        setErrorMessage(response.data.error.message)
-        endSessionCockie();
-      }else if(response.data.status === 403 ){
-         setErrorMessage(response.data.error.message)
-        endSessionCockie();
-      }
-    } catch (error) {
-      console.error("Error cargando la tabla paginada de red:", error);
+
+    } catch {
+      console.error("Error cargando la tabla paginada de red:");
     } finally {
       setIsLoadingTable(false);
     }
@@ -901,13 +874,13 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
     navigate("/", { replace: false });
   };
 
-  const endSessionCockie = () => {
-    // setIsLoggingOut(true);
-    // 2. Limpiamos el estado global en el Frontend de React
-    logout();
-    // 3. Redirigimos al Login borrando el historial de navegación
-    navigate("/", { replace: true });
-  };
+  // const endSessionCockie = () => {
+  //   // setIsLoggingOut(true);
+  //   // 2. Limpiamos el estado global en el Frontend de React
+  //   logout();
+  //   // 3. Redirigimos al Login borrando el historial de navegación
+  //   navigate("/", { replace: true });
+  // };
 
   //   return (
   //     <div className="login-page-container flex-col gap-6">
@@ -1231,7 +1204,7 @@ const detalleClienteGastoAbono = async(idTarjeta:number | null) => {
                         {item.Cliente}
                       </td>
                       <td className={`font-mono tracking-wider celda-copiable ${item.estatus === true ? "text-(--GrisLight)" : 'text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)'}`}
-                        onClick={(e) => copiarAlPortapapeles((e.target as HTMLTableCellElement).innerText)}>
+                        onDoubleClick={(e) => copiarAlPortapapeles((e.target as HTMLTableCellElement).innerText)}>
                         {formatDigitoBancarios(item.noTarjeta)}
                       </td>
                       <td className={`rounded-tr-full rounded-br-full text-center ${item.estatus === true ? "text-(--GrisLight)" : 'text-(--DeepBlue) group-[.selected]:text-(--GrisLightHigth)'}`}>

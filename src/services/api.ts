@@ -44,8 +44,81 @@ api.interceptors.request.use((config) => {
   }
   return config;
 }, (error) => {
+  
   return Promise.reject(error);
 });
+
+// ===========================================
+// 🔄 INYECCIÓN DE INTERCEPTOR DE RESPUESTA (RESPONSE) GLOBAL
+// Variable auxiliar tipo callback que guardará la función logout del contexto
+export let logoutGlobalCallback: (() => void) | null = null;
+let abrirModalErrorCallback: ((mensaje: string) => void) | null = null;
+
+// Función puente actualizada que enlazará el App.tsx con este archivo
+export const vincularSeguridadConAxios = (
+  logoutFn: () => void,
+  abrirModalFn: (mensaje: string) => void
+) => {
+  logoutGlobalCallback = logoutFn;
+  abrirModalErrorCallback = abrirModalFn;
+};
+
+
+api.interceptors.response.use(
+  (response) => {
+    // 🛡️ DETECTOR ADAPTATIVO PARA RESPUESTAS ENMASCARADAS (HTTP 200 con Status Interno)
+    // Evaluamos si el backend envió el código de expulsión dentro del cuerpo del JSON
+    // console.log(response)
+
+     // 🔍 AUDITORÍA DE RUTA: Obtenemos la URL de la petición actual
+    const urlPeticion = response.config.url || '';
+
+    // 🛡️ LISTA BLANCA (Exclusiones de Seguridad):
+    // Definimos las rutas que TIENEN permitido responder con 401/403 sin tirar el sistema.
+    // Al cargar la página, /auth/me responderá 401 de forma natural si no hay cookies, y eso está BIEN.
+    const esRutaExcluida = urlPeticion.includes('/auth/login') || urlPeticion.includes('/auth/me');
+
+    if (response.data && (response.data.status === 403 || response.data.status === 401)) {
+      
+      // 🚨 CORTOCIRCUITO: Si la ruta está en la lista blanca, dejamos pasar el error limpiamente
+      // hacia el componente (para que el LoginPage apague el cargando o no te auto-redirija)
+      if (esRutaExcluida) {
+        return response;
+      }
+      
+       // 🚷 Si NO es una ruta excluida (ej: estás dentro del Dashboard e intentas consultar /admin/tarjetahabientes),
+      // significa que tu sesión expiró de verdad o te revocaron los permisos en AWS. Ejecutamos la expulsión:
+      console.warn(`⛔ [SEGURIDAD FRONT] Detectado Status Interno ${response.data.status}. Expulsando usuario...`);
+
+      // 1. Limpiamos el estado global en la memoria RAM de React
+      // if (logoutGlobalCallback) {
+      //   logoutGlobalCallback();
+      // }
+      
+      // 2. Sacamos al usuario a la raíz borrando el historial de navegación
+      // window.location.href = '/';
+
+      // 🚨 ENCIENDE EL MODAL COMPARTIDO EN LUGAR DE REFRESCAR LA PÁGINA
+      if (abrirModalErrorCallback) {
+        const mensajeServidor = response.data.error?.message || 'Tu sesión ha caducado por inactividad o seguridad.';
+        abrirModalErrorCallback(mensajeServidor);
+      }
+      
+      // Cancelamos el flujo de la petición retornando una promesa rechazada
+      // para que el componente de React no intente renderizar datos corruptos
+      return Promise.reject(new Error(`Acceso denegado: Código ${response.data.status}`));
+    }
+
+    // Si el status interno es 'success' o correcto, dejamos pasar la respuesta intacta
+    return response;
+  },
+  (error) => {
+    // Este bloque queda únicamente como respaldo por si el servidor de AWS sufriera 
+    // una caída total de red (HTTP 500 o 502), la cual sí arrojaría un error nativo
+    return Promise.reject(error);
+  }
+);
+// ===========================================
 
 export const logoutSession = async (): Promise<boolean> => {
   try {

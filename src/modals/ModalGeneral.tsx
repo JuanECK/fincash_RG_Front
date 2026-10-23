@@ -172,8 +172,8 @@ export const Modal: React.FC<ModalProps> = ({
       } else {
         setErrorMessage(response.data.error.message);
       }
-    } catch (error) {
-      // console.log("Error del servidor", error);
+    } catch  {
+      console.log("Error del servidor");
     }
   };
 
@@ -285,6 +285,64 @@ export const ModalEditaTarjetahabiente: React.FC<ModalAgregarProps> = ({
     const num = valor.replace(/^0+/, "") || "0";
     return Number.parseInt(num as string, 10);
   };
+
+// const [telephoneNumber, setTelephoneNumber] = useState('');
+// const [cardNumber, setCardNumber] = useState('');
+
+//   const formatPhoneNumberMX = (phone: string | number): string => {
+//   // 1. Convertir a string y eliminar todo lo que no sea un número
+//   const cleaned = ('' + phone).replace(/\D/g, '');
+//   // 2. Verificar que tenga la longitud correcta de México (10 dígitos)
+//   const match = cleaned.match(/^(\d{2,3})(\d{3,4})(\d{4})$/);
+//   if (match) {
+//     // Si empieza con LADA de 2 dígitos (CDMX: 55, GDL: 33, MTY: 81)
+//     if (match[1].length === 2) {
+//       return `(${match[1]}) ${match[2]} - ${match[3]}`; // Resultado: (55) 1234-5678
+//     }
+//     // Para el resto del país con LADA de 3 dígitos
+//     return `${match[1]} - ${match[2]} - ${match[3]}`; // Resultado: 442-123-4567
+//   }
+//   // Si no tiene 10 dígitos, devuelve el texto limpio o original
+//   return cleaned;
+// };
+
+
+  // 1. Función de formateo dinámico (2 dígitos para 55/33/81, 3 dígitos para el resto)
+  const formatPhoneNumberMX = (phone: string | number): string => {
+    const cleaned = ("" + phone).replace(/\D/g, "").slice(0, 10);
+
+    // Verificar si empieza con 55, 33 u 81 (LADA de 2 dígitos)
+    const isTwoDigitLada = /^(55|33|81)/.test(cleaned);
+
+    if (isTwoDigitLada) {
+      // Formato de 2 dígitos: (55) 1234 - 5678
+      if (cleaned.length <= 2) return cleaned;
+      if (cleaned.length <= 6) return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)} - ${cleaned.slice(6)}`;
+    } else {
+      // Formato del resto del país: 442 - 123 - 4567 (3 dígitos de LADA)
+      if (cleaned.length <= 3) return cleaned;
+      if (cleaned.length <= 6) return `${cleaned.slice(0, 3)} - ${cleaned.slice(3)}`;
+      return `${cleaned.slice(0, 3)} - ${cleaned.slice(3, 6)} - ${cleaned.slice(6)}`;
+    }
+  };
+
+
+const formatCardNumber = (value:any) => {
+  return value
+    .replace(/\D/g, '') // Elimina no-números
+    .replace(/(.{4})/g, '$1 ') // Añade espacio cada 4 caracteres
+    .trim(); // Quita el espacio final si llega a los 16 dígitos
+};
+
+  const [telephoneNumber, setTelephoneNumber] = useState(
+    usuarioData?.telefono ? formatPhoneNumberMX(usuarioData.telefono) : ""
+  );
+
+  const [cardNumber, setCardNumber] = useState(
+    usuarioData?.noTarjeta ? formatCardNumber(usuarioData.telefono) : ""
+  );
+
   const [titularForm, setTitularForm] = useState<EdicionTargetaCliente>({
     apellidoP: usuarioData?.apellidoP || "",
     apellidoM: usuarioData?.apellidoM || "",
@@ -293,10 +351,69 @@ export const ModalEditaTarjetahabiente: React.FC<ModalAgregarProps> = ({
     idCentroN: usuarioData?.idCentroN || null,
     idTarjeta: usuarioData?.idTarjeta || null,
     idCliente: eliminarCerosIzquierda(usuarioData?.noCliente) || null,
-    noTarjeta: usuarioData?.noTarjeta || "",
+    noTarjeta: usuarioData?.noTarjeta ? ("" + usuarioData.noTarjeta).replace(/\D/g, "").slice(0, 16) : "",
+    // noTarjeta: formatCardNumber(usuarioData?.noTarjeta) || "",
     nombreCliente: usuarioData?.nombreCliente || "",
-    telefono: usuarioData?.telefono || "",
+    telefono: usuarioData?.telefono ? ("" + usuarioData.telefono).replace(/\D/g, "").slice(0, 10) : "",
+    // telefono: formatPhoneNumberMX(usuarioData?.telefono) || "",
   });
+
+  // 3. useEffect por si el modal se mantiene abierto pero "usuarioData" cambia externamente
+  useEffect(() => {
+    if (usuarioData?.telefono) {
+      setTelephoneNumber(formatPhoneNumberMX(usuarioData.telefono));
+      setTitularForm((prev) => ({
+        ...prev,
+        telefono: ("" + usuarioData.telefono).replace(/\D/g, "").slice(0, 10),
+      }));
+    }
+    if (usuarioData?.noTarjeta) {
+      setCardNumber(formatCardNumber(usuarioData.noTarjeta));
+      setTitularForm((prev) => ({
+        ...prev,
+        noTarjeta: ("" + usuarioData.noTarjeta).replace(/\D/g, "").slice(0, 16),
+      }));
+    }
+
+  }, [usuarioData]);
+
+    // 4. Manejador del cambio al escribir
+  const handleChangeFormatTelephone = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputVal = e.target.value;
+    
+    // Obtenemos solo los números limpios
+    const cleanNumbers = inputVal.replace(/\D/g, "").slice(0, 10);
+    // Generamos la versión visual formateada
+    const formattedValue = formatPhoneNumberMX(cleanNumbers);
+
+    // Guardamos el número limpio en tu formulario/objeto de envío
+    setTitularForm({ ...titularForm, telefono: cleanNumbers });
+    // Guardamos el valor visual formateado para el input
+    setTelephoneNumber(formattedValue);
+  };
+
+  // const handleChangeFormatTelephone = (e:any) => {
+  //   const inputVal = e.target.value;
+  //   console.log(inputVal)
+    
+  //   // Formateamos el valor de entrada
+  //   const formattedValue = formatPhoneNumberMX(inputVal);
+  //   setTitularForm({...titularForm, telefono:inputVal.replace(/\D/g, '')})
+    
+  //   // Actualizamos el estado
+  //   setTelephoneNumber(formattedValue);
+  // };
+
+  const handleChangeFormatCard = (e:any) => {
+    const inputVal = e.target.value;
+    
+    // Formateamos el valor de entrada
+    const formattedValue = formatCardNumber(inputVal);
+    setTitularForm({...titularForm, noTarjeta:inputVal.replace(/\D/g, '')})
+    
+    // Actualizamos el estado
+    setCardNumber(formattedValue);
+  };
 
   // setTitularForm(usuarioData)
   // console.log(usuarioData)
@@ -360,8 +477,8 @@ export const ModalEditaTarjetahabiente: React.FC<ModalAgregarProps> = ({
       } else {
         setErrorMessage(response.data.error.message);
       }
-    } catch (error) {
-      // console.log("Error del servidor", error);
+    } catch {
+      console.log("Error del servidor");
     }
   };
 
@@ -485,7 +602,7 @@ export const ModalEditaTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 name="telefono"
                 placeholder="*Teléfono"
                 autoComplete={"off"}
-                value={titularForm.telefono}
+                value={telephoneNumber}
                 onInvalid={(e) =>
                   (e.target as HTMLInputElement).setCustomValidity(
                     "Campo obligatorio.",
@@ -494,9 +611,9 @@ export const ModalEditaTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 onInput={(e) =>
                   (e.target as HTMLInputElement).setCustomValidity("")
                 }
-                onChange={handleTitularChange}
+                onChange={handleChangeFormatTelephone}
                 className="input-style"
-                maxLength={10}
+                maxLength={16}
               />
               <div className="md:col-span-2">
                 <input
@@ -527,7 +644,7 @@ export const ModalEditaTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 name="noTarjeta"
                 placeholder="*No. de Tarjeta (16 dígitos)"
                 autoComplete={"off"}
-                value={titularForm.noTarjeta}
+                value={cardNumber}
                 onInvalid={(e) =>
                   (e.target as HTMLInputElement).setCustomValidity(
                     "Campo obligatorio.",
@@ -536,8 +653,8 @@ export const ModalEditaTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 onInput={(e) =>
                   (e.target as HTMLInputElement).setCustomValidity("")
                 }
-                onChange={handleTitularChange}
-                maxLength={16}
+                onChange={handleChangeFormatCard}
+                maxLength={19}
                 className="input-style"
               />
               <input
@@ -656,8 +773,8 @@ export const ModalContraseña: React.FC<ModalContrasenaProps> = ({
       } else {
         setErrorMessage(response.data.error.message);
       }
-    } catch (error) {
-      // console.log("Error del servidor", error);
+    } catch {
+      console.log("Error del servidor");
     }
   };
 
@@ -928,8 +1045,8 @@ const manejarInput  = (e:any) => {
         setErrorMessage(response.data.error.message);
       }
 
-    } catch (error) {
-      // console.log("Error del servidor", error);
+    } catch {
+      console.log("Error del servidor");
     }
   };
 
@@ -1275,8 +1392,8 @@ const manejarInput  = (e:any) => {
         setErrorMessage(response.data.error.message);
       }
 
-    } catch (error) {
-      // console.log("Error del servidor", error);
+    } catch {
+      console.log("Error del servidor");
     }
   };
 
@@ -1545,6 +1662,10 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
     nombreCompleto: "",
   });
 
+const [telephoneNumber, setTelephoneNumber] = useState('');
+const [cardNumber, setCardNumber] = useState('');
+const [cardNumberAditional, setCardNumberAditional] = useState('');
+
   const [busquedaInput, setBusquedaInput] = useState({
     IdCliente: "",
     tipo: "NoCliente",
@@ -1577,6 +1698,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
         saldo: "",
         fechaVencimiento: "",
       });
+      setCardNumberAditional('')
     } else {
       setTitularForm({
         nombreCliente: "",
@@ -1589,6 +1711,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
         saldo: "",
         fechaVencimiento: "",
       });
+      setCardNumber('')
     }
   }, [tipoUsuario]);
 
@@ -1616,6 +1739,85 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
   //     setResultBusqueda(response.data.data);
   //   } 
   // };
+
+
+// const formatPhoneNumberMX = (phone: string | number): string => {
+//   // 1. Convertir a string y eliminar todo lo que no sea un número
+//   const cleaned = ('' + phone).replace(/\D/g, '');
+//   // 2. Verificar que tenga la longitud correcta de México (10 dígitos)
+//   const match = cleaned.match(/^(\d{2,3})(\d{3,4})(\d{4})$/);
+//   if (match) {
+//     // Si empieza con LADA de 2 dígitos (CDMX: 55, GDL: 33, MTY: 81)
+//     if (match[1].length === 2) {
+//       return `(${match[1]}) ${match[2]} - ${match[3]}`; // Resultado: (55) 1234-5678
+//     }
+//     // Para el resto del país con LADA de 3 dígitos
+//     return `${match[1]} - ${match[2]} - ${match[3]}`; // Resultado: 442-123-4567
+//   }
+//   // Si no tiene 10 dígitos, devuelve el texto limpio o original
+//   return cleaned;
+// };
+
+  // 1. Función de formateo dinámico (2 dígitos para 55/33/81, 3 dígitos para el resto)
+  const formatPhoneNumberMX = (phone: string | number): string => {
+    const cleaned = ("" + phone).replace(/\D/g, "").slice(0, 10);
+
+    // Verificar si empieza con 55, 33 u 81 (LADA de 2 dígitos)
+    const isTwoDigitLada = /^(55|33|81)/.test(cleaned);
+
+    if (isTwoDigitLada) {
+      // Formato de 2 dígitos: (55) 1234 - 5678
+      if (cleaned.length <= 2) return cleaned;
+      if (cleaned.length <= 6) return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)} - ${cleaned.slice(6)}`;
+    } else {
+      // Formato del resto del país: 442 - 123 - 4567 (3 dígitos de LADA)
+      if (cleaned.length <= 3) return cleaned;
+      if (cleaned.length <= 6) return `${cleaned.slice(0, 3)} - ${cleaned.slice(3)}`;
+      return `${cleaned.slice(0, 3)} - ${cleaned.slice(3, 6)} - ${cleaned.slice(6)}`;
+    }
+  };
+
+const formatCardNumber = (value:any) => {
+  return value
+    .replace(/\D/g, '') // Elimina no-números
+    .replace(/(.{4})/g, '$1 ') // Añade espacio cada 4 caracteres
+    .trim(); // Quita el espacio final si llega a los 16 dígitos
+};
+
+
+  const handleChangeFormatTelephone = (e:any) => {
+    const inputVal = e.target.value;
+    
+    // Formateamos el valor de entrada
+    const formattedValue = formatPhoneNumberMX(inputVal);
+    setTitularForm({...titularForm, telefono:inputVal.replace(/\D/g, '')})
+    
+    // Actualizamos el estado
+    setTelephoneNumber(formattedValue);
+  };
+
+  const handleChangeFormatCard = (e:any) => {
+    const inputVal = e.target.value;
+    
+    // Formateamos el valor de entrada
+    const formattedValue = formatCardNumber(inputVal);
+    setTitularForm({...titularForm, noTarjeta:inputVal.replace(/\D/g, '')})
+    
+    // Actualizamos el estado
+    setCardNumber(formattedValue);
+  };
+
+  const handleChangeFormatCardAditional = (e:any) => {
+    const inputVal = e.target.value;
+    
+    // Formateamos el valor de entrada
+    const formattedValue = formatCardNumber(inputVal);
+    setAdicionalForm({...adicionalForm, noTarjeta:inputVal.replace(/\D/g, '')})
+    
+    // Actualizamos el estado
+    setCardNumberAditional(formattedValue);
+  };
 
   const busqueda = async () => {
   const datosActualizados = {
@@ -1648,8 +1850,8 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
       // 2. Si tiene datos, rellenamos el estado con la respuesta de la API
       setResultBusqueda(dataRecibida.resultado);
     }
-  } catch (error) {
-    console.error("Error al realizar la búsqueda:", error);
+  } catch {
+    console.error("Error al realizar la búsqueda:");
     // Opcional: Manejar el estado de error aquí si la API se cae (500, 404, etc.)
   }
 };
@@ -1713,8 +1915,8 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
           setErrorMessage(response.data.error.message);
         }
       }
-    } catch (error) {
-      // console.log("Error del servidor", error);
+    } catch {
+      console.log("Error del servidor");
     }
   };
 
@@ -1778,7 +1980,8 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
         >
           {/* ================= SECCIÓN TITULAR ================= */}
           <div
-            className={`space-y-4 transition-opacity duration-300 ${tipoUsuario !== "titular" ? "opacity-40" : "opacity-100"}`}
+            className={`space-y-4 transition-opacity duration-300`}
+            // className={`space-y-4 transition-opacity duration-300 ${tipoUsuario !== "titular" ? "opacity-40" : "opacity-100"}`}
           >
             <label className="flex items-center w-[50px] gap-2 font-semibold text-lg cursor-pointer select-none">
               {/* Opción: Titular */}
@@ -1884,7 +2087,8 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 name="telefono"
                 placeholder="*Teléfono"
                 autoComplete={"off"}
-                value={titularForm.telefono}
+                value={telephoneNumber}
+                // value={titularForm.telefono}
                 onInvalid={(e) =>
                   (e.target as HTMLInputElement).setCustomValidity(
                     "Campo obligatorio.",
@@ -1893,9 +2097,11 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 onInput={(e) =>
                   (e.target as HTMLInputElement).setCustomValidity("")
                 }
-                onChange={handleTitularChange}
+                onChange={handleChangeFormatTelephone}
+                // onChange={handleTitularChange}
                 disabled={tipoUsuario !== "titular"}
                 required={tipoUsuario === "titular"}
+                maxLength={16}
                 className="input-style"
               />
               <input
@@ -1946,7 +2152,8 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 name="noTarjeta"
                 placeholder="*No. de Tarjeta (16 dígitos)"
                 autoComplete={"off"}
-                value={titularForm.noTarjeta}
+                value={cardNumber}
+                // value={titularForm.noTarjeta}
                 onInvalid={(e) =>
                   (e.target as HTMLInputElement).setCustomValidity(
                     "Campo obligatorio.",
@@ -1955,10 +2162,11 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 onInput={(e) =>
                   (e.target as HTMLInputElement).setCustomValidity("")
                 }
-                onChange={handleTitularChange}
+                onChange={handleChangeFormatCard}
+                // onChange={handleTitularChange}
                 disabled={tipoUsuario !== "titular"}
                 required={tipoUsuario === "titular"}
-                maxLength={16}
+                maxLength={19} //16 dígitos + 3 espacios
                 className="input-style"
               />
               <input
@@ -1996,6 +2204,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 }
                 disabled={tipoUsuario !== "titular"}
                 required={tipoUsuario === "titular"}
+                maxLength={5}
                 className="input-style"
               />
             </div>
@@ -2005,7 +2214,8 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
 
           {/* ================= SECCIÓN TARJETA ADICIONAL ================= */}
           <div
-            className={`space-y-4 transition-opacity duration-300 ${tipoUsuario !== "adicional" ? "opacity-40" : "opacity-100"}`}
+            className={`space-y-4 transition-opacity duration-300 `}
+            // className={`space-y-4 transition-opacity duration-300 ${tipoUsuario !== "adicional" ? "opacity-40" : "opacity-100"}`}
           >
             <label className="flex items-center w-[200px] gap-2 font-semibold text-lg cursor-pointer select-none">
               <input
@@ -2084,8 +2294,10 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 type="text"
                 name="noTarjeta"
                 placeholder="*No. de Tarjeta (16 dígitos)"
-                value={adicionalForm.noTarjeta}
-                onChange={handleAdicionalChange}
+                value={cardNumberAditional}
+                // value={adicionalForm.noTarjeta}
+                onChange={handleChangeFormatCardAditional}
+                // onChange={handleAdicionalChange}
                 onInvalid={(e) =>
                   (e.target as HTMLInputElement).setCustomValidity(
                     "Campo obligatorio.",
@@ -2096,7 +2308,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 }
                 disabled={tipoUsuario !== "adicional"}
                 required={tipoUsuario === "adicional"}
-                maxLength={16}
+                maxLength={19}
                 className="input-style"
               />
               <input
@@ -2134,6 +2346,7 @@ export const ModalAgregarTarjetahabiente: React.FC<ModalAgregarProps> = ({
                 }
                 disabled={tipoUsuario !== "adicional"}
                 required={tipoUsuario === "adicional"}
+                maxLength={5}
                 className="input-style"
               />
             </div>

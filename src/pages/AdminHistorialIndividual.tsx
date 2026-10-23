@@ -165,8 +165,8 @@ export const AdminHistorialIndividual: React.FC = () => {
       }
       // console.log("sesion caducada: ", response.data.status);
       endSessionCockie();
-    } catch (error) {
-      console.error("Error cargando la tabla paginada de red:", error);
+    } catch {
+      console.error("Error cargando la tabla paginada de red:");
     } finally {
       setIsLoadingTable(false);
     }
@@ -328,8 +328,8 @@ export const AdminHistorialIndividual: React.FC = () => {
        setDetalleClienteSelecionado(response.data.data.datos)
        return
       }
-    } catch (error) {
-      console.error("Error cargando los detalles del tarjetahabiente:", error);
+    } catch {
+      console.error("Error cargando los detalles del tarjetahabiente:");
     }
   }
 
@@ -343,8 +343,8 @@ export const AdminHistorialIndividual: React.FC = () => {
        setDetalleClienteSelecionado(response.data.data.datos)
        return
       }
-    } catch (error) {
-      console.error("Error cargando los detalles del tarjetahabiente:", error);
+    } catch {
+      console.error("Error cargando los detalles del tarjetahabiente:");
     }
   }
 

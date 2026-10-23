@@ -17,12 +17,12 @@ interface datosHijos{
   centroId: string;
   accion: boolean;
 }
-interface cNegocio{
-  Perfil:string;
-  centroNegocio:string;
-  idCentroN:number;
-  idUsuario:number;
-}
+// interface cNegocio{
+//   Perfil:string;
+//   centroNegocio:string;
+//   idCentroN:number;
+//   idUsuario:number;
+// }
 
 
 export const AdminLayout: React.FC = () => {

@@ -164,10 +164,11 @@ export const AdminHistorial: React.FC = () => {
         }
         return;
       }
+
       // console.log("sesion caducada: ", response.data.status);
-      endSessionCockie();
-    } catch (error) {
-      console.error("Error cargando la tabla paginada de red:", error);
+      // endSessionCockie();
+    } catch {
+      console.error("Error cargando la tabla paginada de red:");
     } finally {
       setIsLoadingTable(false);
     }
@@ -328,6 +329,7 @@ export const AdminHistorial: React.FC = () => {
       setTarjetahabientes(response.data.data.tarjetahabientes)
       return
     } 
+
     setBusquedaPaginacion(false)
     setErrorMessage('No se encontraron coincidencias')
     busquedaRef.current!.value = "";
@@ -368,8 +370,9 @@ export const AdminHistorial: React.FC = () => {
        getDataInput(response.data.data.datos)
        return
       }
-    } catch (error) {
-      console.error("Error cargando los detalles del tarjetahabiente:", error);
+
+    } catch {
+      console.error("Error cargando los detalles del tarjetahabiente:");
     }
   }
 
@@ -384,8 +387,8 @@ export const AdminHistorial: React.FC = () => {
        getDataInput(response.data.data.datos)
        return
       }
-    } catch (error) {
-      console.error("Error cargando los detalles del tarjetahabiente:", error);
+    } catch {
+      console.error("Error cargando los detalles del tarjetahabiente:");
     }
   }
 
@@ -436,6 +439,7 @@ export const AdminHistorial: React.FC = () => {
           }
           cargarDatosPaginados();
         }
+
       }
     };
     const handledRestaurarAbono = async (resultado: '1' | '0') => {
@@ -454,6 +458,7 @@ export const AdminHistorial: React.FC = () => {
         }
         cargarDatosPaginados();
       }
+
     }
   };
 
@@ -501,13 +506,13 @@ export const AdminHistorial: React.FC = () => {
     navigate("/", { replace: true });
   };
 
-  const endSessionCockie = () => {
-    // setIsLoggingOut(true);
-    // 2. Limpiamos el estado global en el Frontend de React
-    logout();
-    // 3. Redirigimos al Login borrando el historial de navegación
-    navigate("/", { replace: true });
-  };
+  // const endSessionCockie = () => {
+  //   // setIsLoggingOut(true);
+  //   // 2. Limpiamos el estado global en el Frontend de React
+  //   logout();
+  //   // 3. Redirigimos al Login borrando el historial de navegación
+  //   navigate("/", { replace: true });
+  // };
 
     function limpiarANumero(textoMoneda: string): number {
     // 1. Quitar todo lo que NO sea un número o un punto decimal
